@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StudyForge — Asistente de estudio con IA</title>
+
+    <!-- Fuente limpia -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind (CDN para prototipo). En tu Vite+PostCSS ya no hace falta este script. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: "#F2E9FF",
+                100: "#E6D4FF",
+                200: "#C9A9FF",
+                300: "#A97DFF",
+                400: "#8C51FF",
+                500: "#7C3AED", /* púrpura principal */
+                600: "#6B26DB",
+                700: "#5816BA",
+                800: "#441090",
+                900: "#300A66",
+              }
+            },
+            boxShadow: {
+              glass: "0 10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06)"
+            },
+            backdropBlur: {
+              xl: "18px"
+            }
+          }
+        }
+      }
+    </script>
+
+    <style>
+      :root { color-scheme: dark; }
+      html, body { height: 100%; }
+      body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+      /* Fondo con halos y grid sutil */
+      .hero-bg {
+        background:
+          radial-gradient(60rem 40rem at 85% 10%, rgba(136, 126, 153, 0.35), transparent 60%),
+          radial-gradient(40rem 30rem at 10% 90%, rgba(59,130,246,.18), transparent 60%),
+          radial-gradient(30rem 20rem at 50% -10%, rgba(255,255,255,.06), transparent 60%),
+          linear-gradient(180deg, #5d5d86 0%, #434383 60%, #2c2c81 100%);
+        position: relative;
+      }
+      .grid-overlay {
+        background-image:
+          linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+        background-size: 40px 40px, 40px 40px;
+        mask-image: radial-gradient(100% 60% at 70% 40%, rgba(0,0,0,.9), transparent 75%);
+        pointer-events: none;
+      }
+      /* Borde brillante del contenedor */
+      .frame {
+        position: relative;
+        border-radius: 1.5rem;
+        background: rgba(20,20,30,.45);
+        box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 25px 80px rgba(0,0,0,.65);
+      }
+      .frame::before {
+        content:"";
+        position:absolute; inset:0;
+        border-radius:inherit;
+        padding:1px;
+        background: linear-gradient(135deg, rgba(124,58,237,.6), rgba(255,255,255,.06), rgba(59,130,246,.4));
+        -webkit-mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        pointer-events:none;
+      }
+      /* Botón con glow */
+      .btn-glow {
+        box-shadow: 0 0 0 rgba(133, 94, 199, 0);
+        transition: box-shadow .25s ease, transform .2s ease;
+      }
+      .btn-glow:hover {
+        box-shadow: 0 8px 30px rgba(74, 40, 133, 0.45);
+        transform: translateY(-1px);
+      }
+      /* Vidrio */
+      .glass {
+        background: rgba(87, 87, 109, 0.6);
+        box-shadow: var(--tw-shadow), inset 0 1px 0 rgba(255,255,255,.06);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(160, 75, 75, 0.08);
+      }
+    </style>
+  </head>
+
+  <body class="hero-bg text-white/90 antialiased">
+    <div class="absolute inset-0 grid-overlay"></div>
+
+    <header class="max-w-7xl mx-auto px-6 pt-8">
+      <nav class="glass rounded-2xl shadow-glass px-5 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-8 w-8 rounded-full bg-brand-500/90 ring-8 ring-brand-500/20"></span>
+          <span class="font-extrabold tracking-tight text-white">StudyForge</span>
+          <span class="hidden sm:inline text-white/40 text-sm ml-2">Asistente de estudio con IA</span>
+        </div>
+
+        <ul class="hidden md:flex items-center gap-6 text-sm text-white/80">
+          <li><a class="hover:text-white" href="/index.html">Inicio</a></li>
+          <li><a class="hover:text-white" href="/src/pages/features.html">Características</a></li>
+          <li><a class="hover:text-white" href="/src/pages/aboutus.html">Sobre nosotros</a></li>
+        </ul>
+
+        <div class="flex items-center gap-2">
+          <a href="/src/pages/signup.html" class="hidden sm:inline px-4 py-2 rounded-xl glass">Crear cuenta</a>
+          <a href="/src/pages/login.html" class="px-4 py-2 rounded-xl bg-brand-500 btn-glow">Ingresar</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 mt-10 md:mt-16">
+      <section class="frame p-6 md:p-10 lg:p-14">
+        <div class="grid lg:grid-cols-2 gap-10 items-center">
+          <!-- Copy -->
+          <div>
+            <h1 class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+              Prepárate para una <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-white">nueva era</span> de estudio con IA
+            </h1>
+
+            <p class="mt-5 text-white/70 max-w-xl">
+              Sube tus documentos, obtén <span class="text-white">resúmenes claros</span> y genera
+              <span class="text-white">quizzes adaptativos</span> según tu progreso. Feedback inmediato y tu avance siempre guardado.
+            </p>
+
+            <!-- Bullets -->
+            <ul class="mt-6 grid sm:grid-cols-2 gap-3 text-sm text-white/70">
+              <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Carga PDF, Word y texto</li>
+              <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Resúmenes automáticos</li>
+              <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Evaluaciones adaptativas</li>
+              <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Estadísticas y progreso</li>
+            </ul>
+          </div>
+
+          <!-- Imagen -->
+          <div class="relative">
+            <div class="absolute -inset-6 md:-inset-10 -z-10 rounded-[2rem] bg-gradient-to-tr from-brand-500/20 via-transparent to-sky-400/20 blur-2xl"></div>
+           <img src="img/robot.png" alt="Asistente StudyForge" class="w-full max-w-lg mx-auto rounded-3xl shadow-2xl">
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Mini features (opcional) -->
+      <section id="features" class="mt-12 grid md:grid-cols-3 gap-6">
+        <div class="glass rounded-2xl p-6">
+          <h3 class="font-semibold mb-1">Sube y organiza</h3>
+          <p class="text-sm text-white/70">Procesa archivos y centraliza tu material de estudio.</p>
+        </div>
+        <div class="glass rounded-2xl p-6">
+          <h3 class="font-semibold mb-1">Resúmenes precisos</h3>
+          <p class="text-sm text-white/70">Explicaciones claras y sintetizadas por IA.</p>
+        </div>
+        <div class="glass rounded-2xl p-6">
+          <h3 class="font-semibold mb-1">Quizzes adaptativos</h3>
+          <p class="text-sm text-white/70">La dificultad se ajusta a tu rendimiento.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="max-w-7xl mx-auto px-6 py-10 text-sm text-white/50">
+      © <span id="y"></span> StudyForge. Todos los derechos reservados.
+      <script>document.getElementById("y").textContent = new Date().getFullYear()</script>
+    </footer>
+  </body>
+</html>
+

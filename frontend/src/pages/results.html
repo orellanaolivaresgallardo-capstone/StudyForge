@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StudyForge — Resultados</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: dark light; }
+    .glass{ background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04)); }
+    .card{ box-shadow:0 10px 30px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06); }
+    .btn{ background:linear-gradient(90deg,#7c3aed,#a855f7); }
+    .btn:hover{ filter:brightness(1.06); }
+  </style>
+</head>
+<body class="min-h-screen bg-[#1f1b3a] text-slate-100">
+
+  <!-- SECCIÓN RESULTADOS -->
+  <section class="max-w-7xl mx-auto px-6 py-10">
+    <div class="glass card rounded-2xl p-6 md:p-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold">Resultados del análisis</h2>
+          <p class="text-slate-300">Resúmenes generados por IA a partir de tus documentos.</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="refreshBtn" class="rounded-xl px-4 py-2 text-sm bg-white/10 hover:bg-white/15 border border-white/10">Actualizar</button>
+          <button id="downloadBtn" class="rounded-xl px-4 py-2 text-sm btn">Descargar .txt</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="mt-6 flex flex-wrap gap-2 text-sm">
+        <button data-tab="summary" class="tab-btn active rounded-full px-3 py-1.5 bg-white/15 border border-white/10">Resumen</button>
+        <button data-tab="bullets" class="tab-btn rounded-full px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10">Puntos clave</button>
+        <button data-tab="glossary" class="tab-btn rounded-full px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10">Glosario</button>
+        <button data-tab="quiz" class="tab-btn rounded-full px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10">Preguntas</button>
+      </div>
+
+      <!-- Toolbar secundaria -->
+      <div class="mt-4 flex items-center justify-between gap-3">
+        <div class="text-xs text-slate-300" id="metaInfo">—</div>
+        <div class="flex items-center gap-2">
+          <button id="copyBtn" class="rounded-lg px-3 py-1.5 text-xs bg-white/10 hover:bg-white/15 border border-white/10">Copiar</button>
+          <label class="text-xs text-slate-300 flex items-center gap-2 select-none">
+            <input id="denseToggle" type="checkbox" class="rounded border-slate-400/50 bg-white/10"> Densidad compacta
+          </label>
+        </div>
+      </div>
+
+      <!-- Estados -->
+      <div id="state-loading" class="mt-6">
+        <div class="animate-pulse space-y-3">
+          <div class="h-4 bg-white/10 rounded"></div>
+          <div class="h-4 bg-white/10 rounded w-11/12"></div>
+          <div class="h-4 bg-white/10 rounded w-10/12"></div>
+          <div class="h-4 bg-white/10 rounded w-8/12"></div>
+        </div>
+      </div>
+      <div id="state-empty" class="mt-6 hidden">
+        <div class="rounded-xl border border-white/10 bg-white/5 p-6 text-slate-300">
+          No hay resultados aún. Sube un documento y presiona <span class="font-semibold">Actualizar</span>.
+        </div>
+      </div>
+      <div id="state-error" class="mt-6 hidden">
+        <div class="rounded-xl border border-rose-300/20 bg-rose-500/10 p-6 text-rose-100">
+          Ocurrió un error al obtener los resultados. <button id="retryBtn" class="underline">Reintentar</button>
+        </div>
+      </div>
+
+      <!-- Contenido -->
+      <div id="content" class="mt-6 hidden">
+        <!-- Resumen (párrafos) -->
+        <article data-panel="summary" class="panel">
+          <div id="summaryText" class="prose prose-invert max-w-none prose-p:my-3"></div>
+        </article>
+
+        <!-- Puntos clave (bullets) -->
+        <article data-panel="bullets" class="panel hidden">
+          <ul id="bulletsList" class="list-disc pl-6 space-y-2 text-slate-200"></ul>
+        </article>
+
+        <!-- Glosario (grid) -->
+        <article data-panel="glossary" class="panel hidden">
+          <div id="glossaryGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </article>
+
+        <!-- Preguntas (QA) -->
+        <article data-panel="quiz" class="panel hidden">
+          <ol id="quizList" class="space-y-4 list-decimal pl-6"></ol>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // --- utilidades ---
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => Array.from(document.querySelectorAll(s));
+    const state = {
+      data: null,
+      active: "summary",
+      dense: false,
+    };
+    const metaInfo = $("#metaInfo");
+    const content = $("#content");
+    const stLoading = $("#state-loading");
+    const stEmpty = $("#state-empty");
+    const stError = $("#state-error");
+
+    function setState(view) {
+      stLoading.classList.toggle("hidden", view !== "loading");
+      stEmpty.classList.toggle("hidden", view !== "empty");
+      stError.classList.toggle("hidden", view !== "error");
+      content.classList.toggle("hidden", view !== "ready");
+    }
+
+    function render(data) {
+      state.data = data;
+      metaInfo.textContent = `Origen: ${data.source || "—"} • Tokens: ${data.tokens ?? "—"} • Confianza: ${data.confidence ?? "—"}`;
+      // Resumen
+      $("#summaryText").innerHTML = (data.summary || "").split("\n").map(p => `<p>${p}</p>`).join("");
+      // Bullets
+      const bl = $("#bulletsList"); bl.innerHTML = "";
+      (data.bullets || []).forEach(t => {
+        const li = document.createElement("li"); li.textContent = t; bl.appendChild(li);
+      });
+      // Glosario
+      const gg = $("#glossaryGrid"); gg.innerHTML = "";
+      (data.glossary || []).forEach(([term, def]) => {
+        const card = document.createElement("div");
+        card.className = "rounded-xl border border-white/10 bg-white/5 p-4";
+        card.innerHTML = `<div class="font-semibold">${term}</div><div class="text-sm text-slate-300 mt-1">${def}</div>`;
+        gg.appendChild(card);
+      });
+      // Quiz
+      const ql = $("#quizList"); ql.innerHTML = "";
+      (data.quiz || []).forEach((q, i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<div class="font-medium">${q.q}</div>
+          <ul class="mt-2 list-disc pl-6 text-slate-300 text-sm">${q.options.map(o => `<li>${o}</li>`).join("")}</ul>
+          <details class="mt-2 text-xs text-slate-400"><summary>Mostrar respuesta</summary><div class="mt-1">✅ ${q.answer}</div></details>`;
+        ql.appendChild(li);
+      });
+      setState( (data.summary || data.bullets || data.glossary || data.quiz) ? "ready" : "empty" );
+      applyDensity();
+      switchTab(state.active);
+    }
+
+    function switchTab(tab) {
+      state.active = tab;
+      $$(".tab-btn").forEach(b => {
+        b.classList.toggle("active", b.dataset.tab === tab);
+        b.classList.toggle("bg-white/15", b.dataset.tab === tab);
+        b.classList.toggle("bg-white/5", b.dataset.tab !== tab);
+      });
+      $$(".panel").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab));
+    }
+
+    function copyCurrent() {
+      if (!state.data) return;
+      let text = "";
+      if (state.active === "summary") text = $("#summaryText").innerText;
+      if (state.active === "bullets") text = [...$("#bulletsList").children].map(li => "• " + li.textContent).join("\n");
+      if (state.active === "glossary") text = [...$("#glossaryGrid").children].map(c => {
+        const [t, d] = c.querySelectorAll("div"); return `${t.textContent}: ${d.textContent}`;
+      }).join("\n");
+      if (state.active === "quiz") text = [...$("#quizList").children].map((li,i)=>`${i+1}. ${li.querySelector(".font-medium").textContent}`).join("\n");
+      navigator.clipboard.writeText(text || "").then(()=> {
+        $("#copyBtn").textContent = "Copiado ✓";
+        setTimeout(()=> $("#copyBtn").textContent = "Copiar", 1200);
+      });
+    }
+
+    function downloadTxt() {
+      if (!state.data) return;
+      const blob = new Blob([$("#content").innerText.trim()], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "studyforge-resultados.txt"; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function applyDensity() {
+      const compact = $("#denseToggle").checked;
+      content.classList.toggle("text-sm", compact);
+      content.classList.toggle("leading-snug", compact);
+    }
+
+    // --- Eventos ---
+    $$(".tab-btn").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+    $("#copyBtn").addEventListener("click", copyCurrent);
+    $("#downloadBtn").addEventListener("click", downloadTxt);
+    $("#denseToggle").addEventListener("change", applyDensity);
+    $("#refreshBtn").addEventListener("click", fetchData);
+    $("#retryBtn")?.addEventListener("click", fetchData);
+
+    // --- Demo / fetch backend ---
+    async function fetchData() {
+      setState("loading");
+      try {
+        // Reemplaza esta parte por tu endpoint real:
+        // const res = await fetch("/api/summarize?id=XYZ");
+        // if (!res.ok) throw new Error("HTTP " + res.status);
+        // const data = await res.json();
+
+        // DEMO (mock):
+        await new Promise(r => setTimeout(r, 600));
+        const data = {
+          source: "mi-archivo.pdf",
+          tokens: 1420,
+          confidence: "alta",
+          summary:
+`El documento describe los fundamentos del aprendizaje supervisado y su aplicación en clasificación.
+Se comparan modelos lineales con árboles de decisión, destacando ventajas y trade-offs.
+Se proponen métricas (accuracy, F1) y un flujo de validación con K-fold.`,
+          bullets: [
+            "Definiciones clave: features, etiquetas, overfitting, regularización.",
+            "Modelos: Regresión logística vs. Árboles (profundidad y poda).",
+            "Métricas: accuracy puede sesgarse; F1 balancea precisión y recall.",
+            "Recomendación: usar validación cruzada y normalizar features."
+          ],
+          glossary: [
+            ["Overfitting", "Modelo que memoriza y rinde mal en datos nuevos."],
+            ["Regularización", "Penalización para reducir la complejidad del modelo."],
+            ["F1-Score", "Media armónica entre precisión y recall."]
+          ],
+          quiz: [
+            { q: "¿Qué métrica usarías en clases desbalanceadas?", options: ["Accuracy","F1","MSE","AUC-ROC"], answer: "F1 o AUC-ROC" },
+            { q: "¿Qué técnica reduce el overfitting?", options: ["Aumentar epochs","Regularización","Menos datos","Learning rate alto"], answer: "Regularización" }
+          ]
+        };
+
+        render(data);
+      } catch (e) {
+        setState("error");
+      }
+    }
+
+    // Init
+    fetchData();
+  </script>
+</body>
+</html>

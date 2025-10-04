@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crear cuenta — StudyForge</title>
+
+  <!-- Tailwind CSS (Play CDN para desarrollo) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fuente opcional -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light dark; }
+    html, body { height: 100%; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
+  </style>
+</head>
+<body class="min-h-screen antialiased bg-slate-950 relative overflow-hidden">
+
+  <!-- Fondo con blobs y gradientes -->
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0">
+    <div class="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-fuchsia-500/40 blur-[120px]"></div>
+    <div class="absolute top-10 right-[-6rem] h-[28rem] w-[28rem] rounded-full bg-violet-600/40 blur-[140px]"></div>
+    <div class="absolute -bottom-24 left-1/3 h-96 w-96 rounded-full bg-sky-500/40 blur-[120px]"></div>
+  </div>
+
+  <!-- Contenedor -->
+  <main class="relative z-10 flex items-center justify-center p-6 md:p-10">
+    <div class="w-full max-w-xl">
+      <section class="rounded-3xl bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur-md p-6 sm:p-8 md:p-10">
+        <header class="mb-8">
+          <h1 class="text-4xl font-extrabold tracking-tight text-slate-900">Crear cuenta</h1>
+          <p class="mt-2 text-slate-600">
+            Crear una cuenta ó
+            <a href="/src/pages/login.html" class="font-semibold text-violet-600 hover:text-violet-700">Iniciar sesión</a>
+          </p>
+        </header>
+
+        <form id="signupForm" novalidate class="space-y-6">
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-slate-700">Correo electrónico</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autocomplete="email"
+              class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+              placeholder="you@example.com"
+              aria-describedby="email-error"
+            />
+            <p id="email-error" class="mt-1 hidden text-sm text-rose-600"></p>
+          </div>
+
+          <!-- Username -->
+          <div>
+            <label for="username" class="block text-sm font-medium text-slate-700">Nombre de Usuario</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              minlength="3"
+              maxlength="24"
+              pattern="^[a-zA-Z0-9_\.]+$"
+              autocomplete="username"
+              class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+              placeholder="studyforge_user"
+              aria-describedby="username-error"
+            />
+            <p class="mt-1 text-xs text-slate-500">3–24 caracteres. Letras, números, “_” y “.”</p>
+            <p id="username-error" class="mt-1 hidden text-sm text-rose-600"></p>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label for="password" class="block text-sm font-medium text-slate-700">Contraseña</label>
+            <div class="mt-2 relative">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                minlength="8"
+                pattern="^(?=.*[A-Za-z])(?=.*\d).{8,}$"
+                autocomplete="new-password"
+                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-12 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+                placeholder="••••••••"
+                aria-describedby="password-hint password-error"
+              />
+              <!-- Toggle visibility button -->
+              <button
+                type="button"
+                id="togglePassword"
+                class="absolute inset-y-0 right-2 my-auto grid h-9 w-10 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+                aria-label="Mostrar u ocultar contraseña"
+              >
+                <!-- eye icon -->
+                <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/>
+                </svg>
+                <!-- eye-off icon (hidden by default) -->
+                <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3.3 2.3 2 3.6l2.6 2.6C3 8.2 1.9 10 2 12c1 2.5 5 7 10 7 2 0 3.9-.7 5.5-1.7l2.9 2.9 1.3-1.3L3.3 2.3ZM12 7c-1.1 0-2 .3-2.8.9l1.4 1.4c.4-.2.9-.3 1.4-.3a3 3 0 0 1 3 3c0 .5-.1 1-.3 1.4l1.4 1.4c.6-.8.9-1.7.9-2.8a5 5 0 0 0-5-5Z"/>
+                </svg>
+              </button>
+            </div>
+            <p id="password-hint" class="mt-1 text-xs text-slate-500">
+              Mínimo 8 caracteres e incluye al menos 1 letra y 1 número.
+            </p>
+            <p id="password-error" class="mt-1 hidden text-sm text-rose-600"></p>
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            class="w-full rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-600/30 transition hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-violet-500/40"
+          >
+            Registrarse
+          </button>
+
+          <p class="text-center text-xs text-slate-500">
+            Por registrarte para crear una cuenta, Usted está aceptando nuestros
+            <a href="#" class="font-medium text-slate-600 underline decoration-slate-300 hover:text-slate-800">Términos de servicio</a>
+            y
+            <a href="#" class="font-medium text-slate-600 underline decoration-slate-300 hover:text-slate-800">Política de privacidad</a>
+          </p>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <!-- JS: validaciones + toggle password -->
+  <script>
+    const form = document.getElementById('signupForm');
+    const email = document.getElementById('email');
+    const user = document.getElementById('username');
+    const pass = document.getElementById('password');
+
+    const emailErr = document.getElementById('email-error');
+    const userErr  = document.getElementById('username-error');
+    const passErr  = document.getElementById('password-error');
+
+    // Mostrar/ocultar contraseña
+    const toggleBtn = document.getElementById('togglePassword');
+    const eyeOpen = document.getElementById('eyeOpen');
+    const eyeClosed = document.getElementById('eyeClosed');
+
+    toggleBtn.addEventListener('click', function () {
+      if (pass.type === 'password') {
+        pass.type = 'text';
+        eyeOpen.classList.add('hidden');
+        eyeClosed.classList.remove('hidden');
+      } else {
+        pass.type = 'password';
+        eyeOpen.classList.remove('hidden');
+        eyeClosed.classList.add('hidden');
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      let valid = true;
+
+      // Email validation
+      if (!email.checkValidity()) {
+        emailErr.textContent = 'Por favor entrar un correo electrónico válido.';
+        emailErr.classList.remove('hidden');
+        valid = false;
+      } else {
+        emailErr.textContent = '';
+        emailErr.classList.add('hidden');
+      }
+
+      // Username validation
+      if (!user.checkValidity()) {
+        userErr.textContent = 'Nombre de usuario debe ser de 3–24 carácteres and sólo contener letras, números, "_" o "."';
+        userErr.classList.remove('hidden');
+        valid = false;
+      } else {
+        userErr.textContent = '';
+        userErr.classList.add('hidden');
+      }
+
+      // Password validation
+      if (!pass.checkValidity()) {
+        passErr.textContent = 'La contraseña debe ser en 8 carácteres e incluir 1 letra y 1 número.';
+        passErr.classList.remove('hidden');
+        valid = false;
+      } else {
+        passErr.textContent = '';
+        passErr.classList.add('hidden');
+      }
+
+      if (!valid) {
+        e.preventDefault();
+      }
+    });
+      </script>
+</body>
+</html>
+<!doctype html>
+<html lang="es">
+
