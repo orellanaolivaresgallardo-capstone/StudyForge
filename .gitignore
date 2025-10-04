@@ -13,3 +13,4 @@ dist/
 # Entornos
 .env
 .env.*
+!.env.example
