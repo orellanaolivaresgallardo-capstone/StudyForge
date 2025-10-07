@@ -42,19 +42,16 @@
         <div class="rounded-2xl border border-slate-200 bg-white p-6">
           <h1 class="text-2xl font-bold">Subir documentos</h1>
           <p class="mt-1 text-slate-500">
-            Admite PDF, Word (.doc, .docx) y TXT. Tamaño total recomendado ≤ 25 MB.
+            Admite PDF, Word (.doc, .docx) y TXT. Tamaño por archivo ≤ 25 MB.
           </p>
 
           <!-- Dropzone -->
-          <div
-            class="mt-5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center"
-          >
+          <div id="dropzone"
+            class="mt-5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition-colors">
             <div class="mx-auto w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center">
               <svg viewBox="0 0 24 24" class="h-6 w-6 text-slate-600" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M19 13v6H5v-6H3v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2Zm-6-1 3.5 3.5-1.4 1.4L13 15.8V4h-2v11.8l-2.1 2.1-1.4-1.4L11 12Z"
-                />
+                <path fill="currentColor"
+                  d="M19 13v6H5v-6H3v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2Zm-6-1 3.5 3.5-1.4 1.4L13 15.8V4h-2v11.8l-2.1 2.1-1.4-1.4L11 12Z" />
               </svg>
             </div>
             <p class="mt-3 text-sm">
@@ -64,13 +61,7 @@
               </label>
             </p>
             <p class="mt-1 text-xs text-slate-500">PDF, DOC, DOCX, TXT</p>
-            <input
-              id="fileUpload"
-              type="file"
-              accept=".pdf,.doc,.docx,.txt"
-              multiple
-              class="hidden"
-            />
+            <input id="fileUpload" type="file" accept=".pdf,.doc,.docx,.txt" multiple class="hidden" />
           </div>
 
           <!-- Lista de archivos seleccionados -->
@@ -78,19 +69,18 @@
             <h2 class="text-sm font-medium text-slate-700 mb-2">Archivos seleccionados</h2>
             <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200" id="files"></ul>
             <div class="mt-3 flex items-center gap-3">
-              <button
-                id="uploadBtn"
-                class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-white text-sm font-medium"
-              >
-                Subir archivos
+              <button id="uploadBtn"
+                class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-white text-sm font-medium disabled:opacity-60">
+                <span id="btnText">Subir y procesar</span>
+                <span id="btnSpinner" class="hidden ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white"></span>
               </button>
-              <button
-                id="clearBtn"
-                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm hover:bg-slate-50"
-              >
+              <button id="clearBtn" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm hover:bg-slate-50">
                 Limpiar
               </button>
             </div>
+            <p id="footNote" class="mt-2 text-xs text-slate-500">
+              Tras la subida, se generará automáticamente un <b>resumen</b> y un <b>quiz</b>.
+            </p>
           </div>
         </div>
       </section>
@@ -108,46 +98,251 @@
       </aside>
     </main>
 
+    <!-- Toast -->
+    <div id="toast" class="pointer-events-none fixed bottom-4 left-1/2 z-50 hidden -translate-x-1/2 rounded-xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg">
+      <span id="toastMsg"></span>
+    </div>
+
     <script>
+      // ====== Ajusta estos endpoints a tu backend ======
+      const UPLOAD_URL    = "http://localhost:8000/files";
+      const SUMMARIZE_URL = "http://localhost:8000/ai/summarize";
+      const QUIZ_URL      = "http://localhost:8000/ai/quiz";
+      // Resultado final (SPA hash o ruta normal):
+      const RESULTS_URL   = "/src/pages/results.html"; // por ejemplo: "/#/results?doc=ID"  (cámbialo a "/src/pages/results.html" si usas archivos estáticos)
+      // =================================================
+
+      const ACCEPTED_EXT = ["pdf", "doc", "docx", "txt"];
+      const MAX_MB = 25;
+
       const input = document.getElementById("fileUpload");
+      const dropzone = document.getElementById("dropzone");
       const list = document.getElementById("files");
       const fileList = document.getElementById("fileList");
       const uploadBtn = document.getElementById("uploadBtn");
+      const btnText = document.getElementById("btnText");
+      const btnSpinner = document.getElementById("btnSpinner");
       const clearBtn = document.getElementById("clearBtn");
 
-      input.addEventListener("change", () => {
-        list.innerHTML = "";
-        if (input.files.length > 0) {
-          fileList.classList.remove("hidden");
-          Array.from(input.files).forEach((file) => {
-            const li = document.createElement("li");
-            li.className = "flex items-center justify-between p-3";
-            li.innerHTML = `
-              <div class="flex items-center gap-3">
-                <div class="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center">
-                  <span class="text-[10px] font-bold text-slate-600 uppercase">${file.name.split(".").pop()}</span>
-                </div>
-                <div>
-                  <div class="text-sm font-medium truncate">${file.name}</div>
-                  <div class="text-xs text-slate-500">${(file.size / 1024).toFixed(1)} KB</div>
-                </div>
-              </div>
-            `;
-            list.appendChild(li);
-          });
-        } else {
-          fileList.classList.add("hidden");
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toastMsg");
+
+      const showToast = (msg, ms = 2400) => {
+        toastMsg.textContent = msg;
+        toast.classList.remove("hidden");
+        setTimeout(() => toast.classList.add("hidden"), ms);
+      };
+
+      // ====== Detectar tipo por extensión / MIME ======
+      function getExt(file) {
+        const name = file.name || "";
+        const ext = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+        return ext;
+      }
+
+      function detectType(file) {
+        const ext = getExt(file);
+        if (ACCEPTED_EXT.includes(ext)) return ext;
+        // fallback por MIME
+        const t = (file.type || "").toLowerCase();
+        if (t.includes("pdf")) return "pdf";
+        if (t.includes("word") || t.includes("msword")) return "doc";
+        if (t.includes("officedocument.wordprocessingml.document")) return "docx";
+        if (t.includes("text/plain")) return "txt";
+        return "desconocido";
+      }
+
+      function readableSize(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
         }
+
+      function validateFiles(files) {
+        const issues = [];
+        const valid = [];
+        for (const f of files) {
+          const ext = detectType(f);
+          const mb = f.size / (1024 * 1024);
+          if (!ACCEPTED_EXT.includes(ext)) {
+            issues.push(`❌ ${f.name}: tipo no permitido`);
+            continue;
+          }
+          if (mb > MAX_MB) {
+            issues.push(`❌ ${f.name}: excede ${MAX_MB} MB (${mb.toFixed(2)} MB)`);
+            continue;
+          }
+          valid.push(f);
+        }
+        return { valid, issues };
+      }
+
+      function renderList(files, issues) {
+        list.innerHTML = "";
+        for (const f of files) {
+          const ext = detectType(f).toUpperCase();
+          const li = document.createElement("li");
+          li.className = "flex items-center justify-between p-3";
+          li.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center">
+                <span class="text-[10px] font-bold text-slate-600 uppercase">${ext}</span>
+              </div>
+              <div>
+                <div class="text-sm font-medium truncate max-w-[18rem]" title="${f.name}">${f.name}</div>
+                <div class="text-xs text-slate-500">${readableSize(f.size)}</div>
+              </div>
+            </div>
+            <span class="text-xs text-slate-500">${detectType(f)}</span>
+          `;
+          list.appendChild(li);
+        }
+        if (issues.length) {
+          const err = document.createElement("li");
+          err.className = "p-3 text-sm text-rose-600 bg-rose-50";
+          err.innerHTML = `<b>Archivos ignorados:</b><br>${issues.map(i => `• ${i}`).join("<br>")}`;
+          list.appendChild(err);
+        }
+        fileList.classList.toggle("hidden", files.length === 0 && issues.length === 0);
+        uploadBtn.disabled = files.length === 0;
+      }
+
+      // File input
+      input.addEventListener("change", () => {
+        const { valid, issues } = validateFiles(Array.from(input.files || []));
+        renderList(valid, issues);
+        // guardamos selección válida en el input: recrear FileList no es simple, así que almacenamos en memoria
+        input._validFiles = valid;
       });
 
+      // Drag & drop
+      ["dragenter", "dragover"].forEach(evt =>
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault(); e.stopPropagation();
+          dropzone.classList.add("border-indigo-400", "bg-indigo-50/50");
+        })
+      );
+      ["dragleave", "drop"].forEach(evt =>
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault(); e.stopPropagation();
+          dropzone.classList.remove("border-indigo-400", "bg-indigo-50/50");
+        })
+      );
+      dropzone.addEventListener("drop", (e) => {
+        const dt = e.dataTransfer;
+        const files = Array.from(dt.files || []);
+        const { valid, issues } = validateFiles(files);
+        renderList(valid, issues);
+        input._validFiles = valid;
+      });
+
+      // Limpiar
       clearBtn.addEventListener("click", () => {
         input.value = "";
+        input._validFiles = [];
         list.innerHTML = "";
         fileList.classList.add("hidden");
       });
 
-      uploadBtn.addEventListener("click", () => {
-        alert(`Subiendo ${input.files.length} archivo(s)... (ejemplo demo)`);
+      async function uploadFiles(files) {
+        const token = localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
+        const formData = new FormData();
+        files.forEach((f) => formData.append("files", f, f.name));
+        const res = await fetch(UPLOAD_URL, {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: formData,
+        });
+        const ok = res.status === 201 || res.status === 200;
+        let data = null;
+        try { data = await res.json(); } catch {}
+        return { ok, status: res.status, data };
+      }
+
+      async function summarize(documentId) {
+        const token = localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
+        const res = await fetch(`${SUMMARIZE_URL}?level=tldr`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ documentId }),
+        });
+        const ok = res.status === 200;
+        let data = null;
+        try { data = await res.json(); } catch {}
+        return { ok, status: res.status, data };
+      }
+
+      async function makeQuiz(documentId, n = 5) {
+        const token = localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
+        const res = await fetch(`${QUIZ_URL}?n=${n}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ documentId }),
+        });
+        const ok = res.status === 200;
+        let data = null;
+        try { data = await res.json(); } catch {}
+        return { ok, status: res.status, data };
+      }
+
+      // Subir + procesar (resumen y quiz) + redirigir
+      uploadBtn.addEventListener("click", async () => {
+        const files = input._validFiles || [];
+        if (!files.length) return showToast("Selecciona al menos un archivo válido.");
+
+        // UI loading
+        uploadBtn.disabled = true;
+        btnText.textContent = "Subiendo y procesando…";
+        btnSpinner.classList.remove("hidden");
+
+        try {
+          const { ok, status, data } = await uploadFiles(files);
+          if (!ok) {
+            if (status === 401) return showToast("Sesión expirada. Inicia sesión nuevamente.");
+            if (status === 413) return showToast("Archivo demasiado grande.");
+            return showToast("No se pudo subir. Intenta de nuevo.");
+          }
+
+          // Suponemos que el backend retorna un array de documentos o un objeto con documentId
+          // Ejemplos aceptados: {documentId:"123"} o {items:[{documentId:"123"}, ...]}
+          const docId =
+            data?.documentId ||
+            data?.id ||
+            (Array.isArray(data) && data[0]?.documentId) ||
+            data?.items?.[0]?.documentId;
+
+          if (!docId) {
+            showToast("Subida exitosa, pero no recibimos el ID del documento.");
+            return;
+          }
+
+          showToast("Documento subido. Generando resumen…", 1800);
+          const sum = await summarize(docId);
+          if (!sum.ok) showToast("Resumen en cola. Se generará en segundo plano.");
+
+          showToast("Creando quiz…", 1600);
+          const qz = await makeQuiz(docId, 5);
+          if (!qz.ok) showToast("Quiz en cola. Se generará en segundo plano.");
+
+          // Redirigir a resultados con el ID
+          setTimeout(() => {
+            const target = `${RESULTS_URL}?doc=${encodeURIComponent(docId)}`;
+            window.location.href = target;
+          }, 900);
+        } catch (err) {
+          console.error(err);
+          showToast("Error de red o servidor no disponible.");
+        } finally {
+          uploadBtn.disabled = false;
+          btnText.textContent = "Subir y procesar";
+          btnSpinner.classList.add("hidden");
+        }
       });
     </script>
   </body>

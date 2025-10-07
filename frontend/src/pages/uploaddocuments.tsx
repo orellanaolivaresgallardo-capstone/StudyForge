@@ -1,73 +1,280 @@
-import { useCallback, useRef, useState } from "react";
+/// <reference types="vite/client" />
+// src/pages/UploadPage.tsx
+import React, { useCallback, useMemo, useRef, useState } from "react";
 
-const ACCEPT = {
-  "application/pdf": [".pdf"],
-  "application/msword": [".doc"],
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-  "text/plain": [".txt"],
-};
+/* =========================
+   Tipos estrictos de API
+========================= */
+type ApiUploadItem = { documentId?: string; id?: string };
 
-function bytesToSize(n: number) {
-  const units = ["B", "KB", "MB", "GB"]; let i = 0; let v = n;
-  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
-  return `${v.toFixed(v < 10 && i > 0 ? 1 : 0)} ${units[i]}`;
+type ApiUploadResp =
+  | ApiUploadItem[] // p.ej. [{ documentId: "abc" }]
+  | {               // p.ej. { items:[{ id:"xyz" }]} o { documentId:"123" }
+      documentId?: string;
+      id?: string;
+      items?: ApiUploadItem[];
+    }
+  | null;
+
+/* =========================
+   Config (sin any)
+========================= */
+const UPLOAD_URL =
+  import.meta.env.VITE_UPLOAD_URL ?? "http://localhost:8000/files";
+const SUMMARIZE_URL =
+  import.meta.env.VITE_SUMMARIZE_URL ?? "http://localhost:8000/ai/summarize";
+const QUIZ_URL =
+  import.meta.env.VITE_QUIZ_URL ?? "http://localhost:8000/ai/quiz";
+// Hash routing por defecto; cambia a "/results" si usas router normal
+const RESULTS_URL =
+  import.meta.env.VITE_RESULTS_URL ?? "/src/pages/results.tsx";
+
+/* =========================
+   Constantes y helpers
+========================= */
+const ACCEPTED_EXT = ["pdf", "doc", "docx", "txt"] as const;
+type AcceptedExt = typeof ACCEPTED_EXT[number];
+type KnownFileType = AcceptedExt | "desconocido";
+
+const MAX_MB = 25;
+
+function isAcceptedExt(x: string): x is AcceptedExt {
+  return (ACCEPTED_EXT as readonly string[]).includes(x);
 }
 
-export default function UploadDocuments() {
-  const [files, setFiles] = useState<File[]>([]);
-  const [dragOver, setDragOver] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+function getToken(): string | null {
+  return localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
+}
 
-  const onFiles = useCallback((list: FileList | null) => {
-    if (!list) return;
-    const allowedExt = new Set([".pdf", ".doc", ".docx", ".txt"]);
-    const next: File[] = [];
-    for (const f of Array.from(list)) {
-      const ext = ("." + f.name.split(".").pop()!.toLowerCase());
-      if (allowedExt.has(ext)) next.push(f);
+function extFromName(name: string): string {
+  const p = name.lastIndexOf(".");
+  return p >= 0 ? name.slice(p + 1).toLowerCase() : "";
+}
+
+function detectType(file: File): KnownFileType {
+  const ext = extFromName(file.name);
+  if (isAcceptedExt(ext)) return ext;
+
+  const t = (file.type || "").toLowerCase();
+  if (t.includes("pdf")) return "pdf";
+  if (t.includes("msword")) return "doc";
+  if (t.includes("officedocument.wordprocessingml.document")) return "docx";
+  if (t.includes("text/plain")) return "txt";
+  return "desconocido";
+}
+
+function readableSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+/* =========================
+   Extraer documentId seguro
+========================= */
+function extractDocId(data: ApiUploadResp): string | undefined {
+  // Caso 1: array
+  if (Array.isArray(data)) {
+    const first = data[0];
+    if (first && typeof first === "object") {
+      const doc = first.documentId ?? first.id;
+      if (typeof doc === "string" && doc.length) return doc;
     }
-    setFiles((prev) => {
-      const names = new Set(prev.map((f) => f.name + f.size));
-      const merged = [...prev];
-      for (const f of next) if (!names.has(f.name + f.size)) merged.push(f);
-      return merged;
-    });
+    return undefined;
+  }
+
+  // Caso 2: objeto
+  if (data && typeof data === "object") {
+    if (Array.isArray(data.items)) {
+      const first = data.items[0];
+      if (first) {
+        const doc = first.documentId ?? first.id;
+        if (typeof doc === "string" && doc.length) return doc;
+      }
+    }
+    if (typeof data.documentId === "string" && data.documentId.length)
+      return data.documentId;
+    if (typeof data.id === "string" && data.id.length) return data.id;
+  }
+
+  // Caso 3: null/otro
+  return undefined;
+}
+
+/* =========================
+   Componente
+========================= */
+export default function UploadPage() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [issues, setIssues] = useState<string[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string, ms = 2400) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), ms);
   }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    onFiles(e.dataTransfer.files);
-  };
+  const hasSelection = files.length > 0 || issues.length > 0;
 
-  const removeAt = (idx: number) => setFiles((f) => f.filter((_, i) => i !== idx));
+  const onPick = useCallback((list: FileList | null) => {
+    const next: File[] = [];
+    const bad: string[] = [];
+    if (list) {
+      Array.from(list).forEach((f) => {
+        const t = detectType(f);
+        const mb = f.size / (1024 * 1024);
 
-  const totalSize = files.reduce((a, b) => a + b.size, 0);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!files.length) return;
-    setUploading(true);
-    try {
-      const form = new FormData();
-      files.forEach((f) => form.append("files", f));
-      // TODO: replace URL with your backend endpoint, e.g. "/api/upload"
-      // const res = await fetch("/api/upload", { method: "POST", body: form });
-      // if (!res.ok) throw new Error("Error al subir archivos");
-      await new Promise((r) => setTimeout(r, 900)); // demo
-      alert(`Subida completa (archivos: ${files.length})`);
-      setFiles([]);
-    } catch {
-      alert("No se pudo completar la subida");
-    } finally {
-      setUploading(false);
+        if (t === "desconocido") {
+          bad.push(`❌ ${f.name}: tipo no permitido`);
+        } else if (mb > MAX_MB) {
+          bad.push(`❌ ${f.name}: excede ${MAX_MB} MB (${mb.toFixed(2)} MB)`);
+        } else {
+          next.push(f);
+        }
+      });
     }
-  };
+    setFiles(next);
+    setIssues(bad);
+  }, []);
+
+  const onInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => onPick(e.target.files),
+    [onPick]
+  );
+
+  const onDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOver(false);
+      onPick(e.dataTransfer?.files ?? null);
+    },
+    [onPick]
+  );
+
+  const onDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  }, []);
+  const onDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  }, []);
+  const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setFiles([]);
+    setIssues([]);
+    if (inputRef.current) inputRef.current.value = "";
+  }, []);
+
+  async function uploadFiles(payload: File[]) {
+    const form = new FormData();
+    payload.forEach((f) => form.append("files", f, f.name));
+    const token = getToken();
+    const res = await fetch(UPLOAD_URL, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
+    });
+    const ok = res.status === 200 || res.status === 201;
+    let data: ApiUploadResp = null;
+    try {
+      data = (await res.json()) as ApiUploadResp;
+    } catch {
+      // backend podría no devolver JSON; lo ignoramos
+    }
+    return { ok, status: res.status, data };
+  }
+
+  async function summarize(documentId: string) {
+    const token = getToken();
+    const res = await fetch(`${SUMMARIZE_URL}?level=tldr`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ documentId }),
+    });
+    return { ok: res.status === 200, status: res.status };
+  }
+
+  async function makeQuiz(documentId: string, n = 5) {
+    const token = getToken();
+    const res = await fetch(`${QUIZ_URL}?n=${n}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ documentId }),
+    });
+    return { ok: res.status === 200, status: res.status };
+  }
+
+  const handleProcess = useCallback(async () => {
+    if (!files.length) return showToast("Selecciona al menos un archivo válido.");
+    setLoading(true);
+    try {
+      const up = await uploadFiles(files);
+      if (!up.ok) {
+        if (up.status === 401) return showToast("Sesión expirada. Inicia sesión nuevamente.");
+        if (up.status === 413) return showToast("Archivo demasiado grande.");
+        return showToast("No se pudo subir. Intenta de nuevo.");
+      }
+
+      const docId = extractDocId(up.data);
+      if (!docId) {
+        showToast("Subida exitosa, pero no recibimos el ID del documento.");
+        return;
+      }
+
+      showToast("Documento subido. Generando resumen…", 1800);
+      const s = await summarize(docId);
+      if (!s.ok) showToast("Resumen en cola. Se generará en segundo plano.");
+
+      showToast("Creando quiz…", 1600);
+      const q = await makeQuiz(docId, 5);
+      if (!q.ok) showToast("Quiz en cola. Se generará en segundo plano.");
+
+      // Redirigir a resultados
+      const target = `${RESULTS_URL}?doc=${encodeURIComponent(docId)}`;
+      setTimeout(() => {
+        window.location.href = target;
+        // Si usas React Router:
+        // navigate(`/results?doc=${encodeURIComponent(docId)}`);
+      }, 900);
+    } catch (e) {
+      console.error(e);
+      showToast("Error de red o servidor no disponible.");
+    } finally {
+      setLoading(false);
+    }
+  }, [files, showToast]);
+
+  const dropClasses = useMemo(
+    () =>
+      `mt-5 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
+        dragOver
+          ? "border-indigo-400 bg-indigo-50/50"
+          : "border-slate-300 bg-slate-50"
+      }`,
+    [dragOver]
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Top bar */}
+      {/* Header */}
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto max-w-7xl px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -75,7 +282,9 @@ export default function UploadDocuments() {
             <span className="font-semibold">StudyForge</span>
           </div>
           <div className="flex items-center gap-2">
-            <button className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-50">Upgrade</button>
+            <button className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-50">
+              Upgrade
+            </button>
             <div className="h-8 w-8 rounded-full bg-slate-200" />
           </div>
         </div>
@@ -87,7 +296,9 @@ export default function UploadDocuments() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="mb-2 text-xs font-medium text-slate-500">Navigation</div>
             <nav className="space-y-1 text-sm">
-              <a className="block rounded-lg px-3 py-2 bg-slate-100 text-slate-900 font-medium">Cargar documentos</a>
+              <span className="block rounded-lg px-3 py-2 bg-slate-100 text-slate-900 font-medium">
+                Cargar documentos
+              </span>
               <a className="block rounded-lg px-3 py-2 hover:bg-slate-50">Proyectos</a>
               <a className="block rounded-lg px-3 py-2 hover:bg-slate-50">Historial</a>
               <a className="block rounded-lg px-3 py-2 hover:bg-slate-50">Ayuda</a>
@@ -99,88 +310,126 @@ export default function UploadDocuments() {
         <section className="col-span-12 lg:col-span-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
             <h1 className="text-2xl font-bold">Subir documentos</h1>
-            <p className="mt-1 text-slate-500">Admite PDF, Word (.doc, .docx) y TXT. Tamaño total recomendado ≤ 25 MB.</p>
+            <p className="mt-1 text-slate-500">
+              Admite PDF, Word (.doc, .docx) y TXT. Tamaño por archivo ≤ 25 MB.
+            </p>
 
             {/* Dropzone */}
             <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              className={
-                `mt-5 rounded-xl border-2 border-dashed ${dragOver ? "border-indigo-400 bg-indigo-50" : "border-slate-300 bg-slate-50"} ` +
-                "px-6 py-10 text-center"
-              }
+              className={dropClasses}
+              onDragEnter={onDragEnter}
+              onDragLeave={onDragLeave}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
             >
               <div className="mx-auto w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" className="h-6 w-6 text-slate-600" aria-hidden>
-                  <path fill="currentColor" d="M19 13v6H5v-6H3v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2Zm-6-1 3.5 3.5-1.4 1.4L13 15.8V4h-2v11.8l-2.1 2.1-1.4-1.4L11 12Z" />
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-slate-600" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M19 13v6H5v-6H3v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2Zm-6-1 3.5 3.5-1.4 1.4L13 15.8V4h-2v11.8l-2.1 2.1-1.4-1.4L11 12Z"
+                  />
                 </svg>
               </div>
               <p className="mt-3 text-sm">
                 Arrastra y suelta archivos aquí, o
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  className="ml-1 font-semibold text-indigo-600 hover:underline"
+                <label
+                  htmlFor="fileUpload"
+                  className="ml-1 font-semibold text-indigo-600 hover:underline cursor-pointer"
                 >
                   explora tu equipo
-                </button>
+                </label>
               </p>
               <p className="mt-1 text-xs text-slate-500">PDF, DOC, DOCX, TXT</p>
               <input
                 ref={inputRef}
+                id="fileUpload"
                 type="file"
-                accept={Object.values(ACCEPT).flat().join(",")}
+                accept=".pdf,.doc,.docx,.txt"
                 multiple
-                onChange={(e) => onFiles(e.currentTarget.files)}
                 className="hidden"
+                onChange={onInputChange}
               />
             </div>
 
-            {/* Selected files list */}
-            {files.length > 0 && (
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-slate-600">{files.length} archivo(s) • {bytesToSize(totalSize)}</div>
-                  <button onClick={() => setFiles([])} className="text-sm text-slate-500 hover:text-slate-700">Limpiar</button>
-                </div>
+            {/* Lista */}
+            {hasSelection && (
+              <div className="mt-6">
+                <h2 className="text-sm font-medium text-slate-700 mb-2">
+                  Archivos seleccionados
+                </h2>
                 <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200">
-                  {files.map((f, i) => (
-                    <li key={f.name + i} className="flex items-center gap-3 p-3">
-                      <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-slate-600 uppercase">{f.name.split(".").pop()}</span>
+                  {files.map((f) => {
+                    const t = detectType(f).toUpperCase();
+                    return (
+                      <li key={f.name} className="flex items-center justify-between p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center">
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">
+                              {t}
+                            </span>
+                          </div>
+                          <div>
+                            <div
+                              className="text-sm font-medium truncate max-w-[18rem]"
+                              title={f.name}
+                            >
+                              {f.name}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {readableSize(f.size)}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs text-slate-500">{detectType(f)}</span>
+                      </li>
+                    );
+                  })}
+                  {!!issues.length && (
+                    <li className="p-3 text-sm text-rose-600 bg-rose-50">
+                      <b>Archivos ignorados:</b>
+                      <div className="mt-1">
+                        {issues.map((i) => (
+                          <div key={i}>• {i}</div>
+                        ))}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate text-sm font-medium">{f.name}</div>
-                        <div className="text-xs text-slate-500">{bytesToSize(f.size)}</div>
-                      </div>
-                      <button onClick={() => removeAt(i)} className="rounded-md border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50">Quitar</button>
                     </li>
-                  ))}
+                  )}
                 </ul>
 
-                <form onSubmit={handleSubmit} className="pt-2 flex items-center gap-3">
+                <div className="mt-3 flex items-center gap-3">
                   <button
-                    type="submit"
-                    disabled={!files.length || uploading}
-                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-white text-sm font-medium disabled:opacity-50"
+                    onClick={handleProcess}
+                    disabled={!files.length || loading}
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-white text-sm font-medium disabled:opacity-60"
                   >
-                    {uploading ? "Subiendo…" : "Subir archivos"}
+                    {loading ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" />
+                        Subiendo y procesando…
+                      </span>
+                    ) : (
+                      "Subir y procesar"
+                    )}
                   </button>
                   <button
-                    type="button"
-                    onClick={() => inputRef.current?.click()}
+                    onClick={clearAll}
+                    disabled={loading}
                     className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm hover:bg-slate-50"
                   >
-                    Agregar más
+                    Limpiar
                   </button>
-                </form>
+                </div>
+
+                <p className="mt-2 text-xs text-slate-500">
+                  Tras la subida, se generará automáticamente un <b>resumen</b> y un{" "}
+                  <b>quiz</b>. Luego te redirigiremos a resultados.
+                </p>
               </div>
             )}
           </div>
         </section>
 
-        {/* Right column / tips */}
+        {/* Right column */}
         <aside className="col-span-12 lg:col-span-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
             <h3 className="font-semibold">Recomendaciones</h3>
@@ -192,6 +441,13 @@ export default function UploadDocuments() {
           </div>
         </aside>
       </main>
+
+      {/* Toast */}
+      {toast && (
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
