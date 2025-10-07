@@ -209,3 +209,10 @@ La cadena de conexión fija `search_path=studyforge,public`.
 ## 13. Licencia
 
 WIP
+
+## 14. Documentación
+
+- [Resumen del estado actual](docs/SUMMARY.md)
+- [Decisiones técnicas](docs/DECISIONS.md)
+- [Próximos pasos (corto plazo)](docs/NEXT_STEPS.md)
+- [Roadmap por fases](docs/ROADMAP.md)
