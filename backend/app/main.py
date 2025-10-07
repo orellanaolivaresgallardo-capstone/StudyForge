@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.health import router as health_router
 from app.routers.documents import router as documents_router
+from app.routers.auth import router as auth_router  # ← nuevo
 
 app = FastAPI(title="StudyForge API")
 
@@ -24,4 +25,5 @@ app.add_middleware(
 
 # Rutas principales
 app.include_router(health_router, prefix="/health", tags=["health"])
+app.include_router(auth_router)  # el router ya define prefix="/auth" y tags=["auth"]
 app.include_router(documents_router, prefix="/documents", tags=["documents"])
