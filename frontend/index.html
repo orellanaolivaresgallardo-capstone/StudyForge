@@ -103,82 +103,87 @@
   </head>
 
   <body class="hero-bg text-white/90 antialiased">
-    <div class="absolute inset-0 grid-overlay"></div>
+    <!-- ✅ React se monta aquí arriba del todo -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
 
-    <header class="max-w-7xl mx-auto px-6 pt-8">
-      <nav class="glass rounded-2xl shadow-glass px-5 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span class="inline-flex h-8 w-8 rounded-full bg-brand-500/90 ring-8 ring-brand-500/20"></span>
-          <span class="font-extrabold tracking-tight text-white">StudyForge</span>
-          <span class="hidden sm:inline text-white/40 text-sm ml-2">Asistente de estudio con IA</span>
-        </div>
+    <!-- ✅ Tu landing completa encapsulada para poder ocultarla desde main.tsx -->
+    <div id="landing">
+      <div class="absolute inset-0 grid-overlay"></div>
 
-        <ul class="hidden md:flex items-center gap-6 text-sm text-white/80">
-          <li><a class="hover:text-white" href="/index.html">Inicio</a></li>
-          <li><a class="hover:text-white" href="/src/pages/features.html">Características</a></li>
-          <li><a class="hover:text-white" href="/src/pages/aboutus.html">Sobre nosotros</a></li>
-        </ul>
-
-        <div class="flex items-center gap-2">
-          <a href="/src/pages/signup.html" class="hidden sm:inline px-4 py-2 rounded-xl glass">Crear cuenta</a>
-          <a href="/src/pages/login.html" class="px-4 py-2 rounded-xl bg-brand-500 btn-glow">Ingresar</a>
-        </div>
-      </nav>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-6 mt-10 md:mt-16">
-      <section class="frame p-6 md:p-10 lg:p-14">
-        <div class="grid lg:grid-cols-2 gap-10 items-center">
-          <!-- Copy -->
-          <div>
-            <h1 class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
-              Prepárate para una <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-white">nueva era</span> de estudio con IA
-            </h1>
-
-            <p class="mt-5 text-white/70 max-w-xl">
-              Sube tus documentos, obtén <span class="text-white">resúmenes claros</span> y genera
-              <span class="text-white">quizzes adaptativos</span> según tu progreso. Feedback inmediato y tu avance siempre guardado.
-            </p>
-
-            <!-- Bullets -->
-            <ul class="mt-6 grid sm:grid-cols-2 gap-3 text-sm text-white/70">
-              <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Carga PDF, Word y texto</li>
-              <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Resúmenes automáticos</li>
-              <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Evaluaciones adaptativas</li>
-              <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Estadísticas y progreso</li>
-            </ul>
+      <header class="max-w-7xl mx-auto px-6 pt-8">
+        <nav class="glass rounded-2xl shadow-glass px-5 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex h-8 w-8 rounded-full bg-brand-500/90 ring-8 ring-brand-500/20"></span>
+            <span class="font-extrabold tracking-tight text-white">StudyForge</span>
+            <span class="hidden sm:inline text-white/40 text-sm ml-2">Asistente de estudio con IA</span>
           </div>
 
-          <!-- Imagen -->
-          <div class="relative">
-            <div class="absolute -inset-6 md:-inset-10 -z-10 rounded-[2rem] bg-gradient-to-tr from-brand-500/20 via-transparent to-sky-400/20 blur-2xl"></div>
-           <img src="img/robot.png" alt="Asistente StudyForge" class="w-full max-w-lg mx-auto rounded-3xl shadow-2xl">
+          <ul class="hidden md:flex items-center gap-6 text-sm text-white/80">
+            <li><a class="hover:text-white" href="/index.html">Inicio</a></li>
+            <li><a class="hover:text-white" href="/src/pages/features.html">Características</a></li>
+            <li><a class="hover:text-white" href="/src/pages/aboutus.html">Sobre nosotros</a></li>
+          </ul>
 
+          <div class="flex items-center gap-2">
+            <a href="/src/pages/signup.html" class="hidden sm:inline px-4 py-2 rounded-xl glass">Crear cuenta</a>
+            <a href="/src/pages/login.html" class="px-4 py-2 rounded-xl bg-brand-500 btn-glow">Ingresar</a>
           </div>
-        </div>
-      </section>
+        </nav>
+      </header>
 
-      <!-- Mini features (opcional) -->
-      <section id="features" class="mt-12 grid md:grid-cols-3 gap-6">
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold mb-1">Sube y organiza</h3>
-          <p class="text-sm text-white/70">Procesa archivos y centraliza tu material de estudio.</p>
-        </div>
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold mb-1">Resúmenes precisos</h3>
-          <p class="text-sm text-white/70">Explicaciones claras y sintetizadas por IA.</p>
-        </div>
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold mb-1">Quizzes adaptativos</h3>
-          <p class="text-sm text-white/70">La dificultad se ajusta a tu rendimiento.</p>
-        </div>
-      </section>
-    </main>
+      <main class="max-w-7xl mx-auto px-6 mt-10 md:mt-16">
+        <section class="frame p-6 md:p-10 lg:p-14">
+          <div class="grid lg:grid-cols-2 gap-10 items-center">
+            <!-- Copy -->
+            <div>
+              <h1 class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+                Prepárate para una <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-white">nueva era</span> de estudio con IA
+              </h1>
 
-    <footer class="max-w-7xl mx-auto px-6 py-10 text-sm text-white/50">
-      © <span id="y"></span> StudyForge. Todos los derechos reservados.
-      <script>document.getElementById("y").textContent = new Date().getFullYear()</script>
-    </footer>
+              <p class="mt-5 text-white/70 max-w-xl">
+                Sube tus documentos, obtén <span class="text-white">resúmenes claros</span> y genera
+                <span class="text-white">quizzes adaptativos</span> según tu progreso. Feedback inmediato y tu avance siempre guardado.
+              </p>
+
+              <!-- Bullets -->
+              <ul class="mt-6 grid sm:grid-cols-2 gap-3 text-sm text-white/70">
+                <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Carga PDF, Word y texto</li>
+                <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Resúmenes automáticos</li>
+                <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Evaluaciones adaptativas</li>
+                <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span> Estadísticas y progreso</li>
+              </ul>
+            </div>
+
+            <!-- Imagen -->
+            <div class="relative">
+              <div class="absolute -inset-6 md:-inset-10 -z-10 rounded-[2rem] bg-gradient-to-tr from-brand-500/20 via-transparent to-sky-400/20 blur-2xl"></div>
+              <img src="img/robot.png" alt="Asistente StudyForge" class="w-full max-w-lg mx-auto rounded-3xl shadow-2xl">
+            </div>
+          </div>
+        </section>
+
+        <!-- Mini features (opcional) -->
+        <section id="features" class="mt-12 grid md:grid-cols-3 gap-6">
+          <div class="glass rounded-2xl p-6">
+            <h3 class="font-semibold mb-1">Sube y organiza</h3>
+            <p class="text-sm text-white/70">Procesa archivos y centraliza tu material de estudio.</p>
+          </div>
+          <div class="glass rounded-2xl p-6">
+            <h3 class="font-semibold mb-1">Resúmenes precisos</h3>
+            <p class="text-sm text-white/70">Explicaciones claras y sintetizadas por IA.</p>
+          </div>
+          <div class="glass rounded-2xl p-6">
+            <h3 class="font-semibold mb-1">Quizzes adaptativos</h3>
+            <p class="text-sm text-white/70">La dificultad se ajusta a tu rendimiento.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="max-w-7xl mx-auto px-6 py-10 text-sm text-white/50">
+        © <span id="y"></span> StudyForge. Todos los derechos reservados.
+        <script>document.getElementById("y").textContent = new Date().getFullYear()</script>
+      </footer>
+    </div>
   </body>
 </html>
-
