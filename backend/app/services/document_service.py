@@ -1,15 +1,35 @@
 ﻿# app/services/document_service.py
 from sqlalchemy.orm import Session
-from app.repositories.document_repo import DocumentRepo
-from app.schemas.document_schemas import DocumentIn, DocumentOut, DocumentListOut
+from sqlalchemy import desc
+
+from app.repositories.models import Document
+from app.schemas.document_schemas import DocumentIn
 
 class DocumentService:
-    def __init__(self, repo: DocumentRepo | None = None):
-        self.repo = repo or DocumentRepo()
+    def list(self, db: Session, owner_id: int):
+        """
+        Devuelve SOLO los documentos del usuario indicado.
+        """
+        items = (
+            db.query(Document)
+            .filter(Document.user_id == owner_id)
+            .order_by(desc(Document.created_at))
+            .all()
+        )
+        # El router ya espera DocumentListOut -> {"items": [...]}
+        return {"items": items}
 
-    def list(self, db: Session) -> DocumentListOut:
-        return self.repo.list(db)
-
-    def create(self, db: Session, data: DocumentIn) -> DocumentOut:
-        # aquí podrías aplicar reglas/validaciones antes de insertar
-        return self.repo.insert(db, data)
+    def create(self, db: Session, payload: DocumentIn, owner_id: int):
+        """
+        Crea un documento asignándolo SIEMPRE al usuario indicado (owner_id).
+        """
+        doc = Document(
+            title=payload.title,
+            description=payload.description,
+            content=payload.content,
+            user_id=owner_id,
+        )
+        db.add(doc)
+        db.commit()
+        db.refresh(doc)
+        return doc
