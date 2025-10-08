@@ -1,29 +1,18 @@
-﻿from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator
+﻿# app/schemas/document_schemas.py
+from pydantic import BaseModel, Field
 from pydantic import ConfigDict
 
 class DocumentIn(BaseModel):
-    title: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=300)
     content: str = Field(min_length=1)
-    description: Optional[str] = None
-
-    @field_validator("title", "content", mode="before")
-    @classmethod
-    def not_blank(cls, v: str):
-        if v is None:
-            raise ValueError("no puede estar vacío")
-        v2 = v.strip()
-        if not v2:
-            raise ValueError("no puede estar vacío")
-        return v2  # ya sale sin espacios de sobra
 
 class DocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     title: str
-    description: Optional[str] = None
-    # Permite construir desde objetos ORM (SQLAlchemy)
-    model_config = ConfigDict(from_attributes=True)
+    description: str | None = None
+    # Nota: omitimos content en la vista de lista y creación para mantener respuestas livianas
 
 class DocumentListOut(BaseModel):
-    items: List[DocumentOut]
-
+    items: list[DocumentOut]

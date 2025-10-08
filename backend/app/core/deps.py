@@ -14,14 +14,25 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> User:
     if not creds or creds.scheme.lower() != "bearer":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token faltante")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="token faltante",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     payload = decode_token(creds.credentials)
     if not payload or "sub" not in payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token inválido o expirado")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="token inválido o expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     user = db.get(User, int(payload["sub"]))
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="usuario no encontrado")
-
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="usuario no encontrado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user

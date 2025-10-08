@@ -1,183 +1,287 @@
-import { useState } from "react";
+// src/pages/signup.tsx
+import { useRef, useState } from "react";
 
-function EyeIcon({ open }: { open: boolean }) {
-  return open ? (
-    <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5 opacity-70">
-      <path fill="currentColor" d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/>
-    </svg>
-  ) : (
-    <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5 opacity-70">
-      <path fill="currentColor" d="M3.3 2.3 2 3.6l3 3C3.2 8 1.9 9.7 2 12c1 2.5 5 7 10 7 2.2 0 4.3-.7 6-1.9l2.7 2.7 1.3-1.3-18.7-18Z"/>
-      <path fill="currentColor" d="M8.5 7.1 10 8.6a4.9 4.9 0 0 1 6.8 6.8l1.5 1.5c1.3-1 2.4-2.2 3.2-3.5-1-2.5-5-7-10-7-1.1 0-2.2.2-3.2.6Zm1.4 5.6a2.1 2.1 0 0 0 2.4 2.4l-2.4-2.4Z"/>
-    </svg>
-  );
-}
+type ApiResponse =
+  | { access_token?: string; token?: string; message?: string }
+  | Record<string, unknown>;
 
-export default function SignUp() {
-  const [showPwd, setShowPwd] = useState(false);
+const API_BASE =
+  (import.meta.env?.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
+const SIGNUP_URL = `${API_BASE}/auth/signup`;
+const LOGIN_URL  = `${API_BASE}/auth/login`;
+
+// Redirección a la página HTML real de documentos
+const REDIRECT_URL =
+  (import.meta.env?.VITE_UPLOAD_REDIRECT_PATH as string | undefined) ??
+  "/src/pages/uploaddocuments.html";
+
+export default function SignupPage() {
+  const formRef = useRef<HTMLFormElement | null>(null);
+
   const [email, setEmail] = useState("");
-  const [user, setUser] = useState("");
-  const [pwd, setPwd] = useState("");
-  const [promo, setPromo] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{email?: string; user?: string; pwd?: string}>({});
+  const [username, setUsername] = useState(""); // UI-only (no lo envía al backend actual)
+  const [password, setPassword] = useState("");
 
-  const validate = () => {
-    const e: typeof errors = {};
-    if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Ingresa un correo válido";
-    if (user.trim().length < 3) e.user = "Mínimo 3 caracteres";
-    if (pwd.length < 8) e.pwd = "Mínimo 8 caracteres";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = async (ev: React.FormEvent) => {
-    ev.preventDefault();
-    setMsg(null);
+  const [emailErr, setEmailErr] = useState<string | null>(null);
+  const [userErr, setUserErr] = useState<string | null>(null);
+  const [passErr, setPassErr] = useState<string | null>(null);
+
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string, ms = 2200) {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), ms);
+  }
+
+  function validate(): boolean {
+    setEmailErr(null);
+    setUserErr(null);
+    setPassErr(null);
+
+    const emailValid = /\S+@\S+\.\S+/.test(email.trim());
+    if (!emailValid) setEmailErr("Ingresa un correo electrónico válido.");
+
+    // username es solo de UI; puedes validarlo o dejarlo opcional
+    const userValid =
+      username.length === 0 || // opcional
+      (username.length >= 3 &&
+        username.length <= 24 &&
+        /^[a-zA-Z0-9_.]+$/.test(username));
+    if (!userValid)
+      setUserErr(
+        'El nombre de usuario debe tener 3–24 caracteres y solo letras, números, "_" o "."'
+      );
+
+    const passValid = password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+    if (!passValid) setPassErr("Mínimo 8 caracteres, con al menos 1 letra y 1 número.");
+
+    return emailValid && userValid && passValid;
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (!validate()) return;
 
+    setLoading(true);
+
     try {
-      setSubmitting(true);
-      // TODO: ajusta la URL a tu backend Django
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup/`, {
+      // 1) Crear cuenta (backend solo espera email + password)
+      const res = await fetch(SIGNUP_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, username: user, password: pwd, marketing_optout: promo }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
-      if (!res.ok) throw new Error(await res.text());
-      setMsg("¡Cuenta creada! Revisa tu correo para confirmar.");
-      setEmail(""); setUser(""); setPwd(""); setPromo(false);
-    } catch (err: unknown) {
-      setMsg("No pudimos crear tu cuenta. Intenta de nuevo.");
-      if (err instanceof Error) {
-        console.error(err.message);
-      } else {
-        console.error(err);
+
+      const ok = res.status === 201;
+      if (!ok) {
+        if (res.status === 409) {
+          showToast("Ese correo ya existe.");
+        } else if (res.status === 400) {
+          showToast("Datos inválidos. Revisa el formulario.");
+        } else {
+          showToast("No se pudo crear la cuenta. Intenta nuevamente.");
+        }
+        return;
       }
+
+      // 2) Auto-login
+      try {
+        const res2 = await fetch(LOGIN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        });
+        if (res2.ok) {
+          const d2 = (await res2.json()) as ApiResponse;
+          const token = (d2 as any)?.access_token ?? (d2 as any)?.token;
+          if (typeof token === "string" && token.length) {
+            localStorage.setItem("sf_token", token);
+            sessionStorage.removeItem("sf_token");
+          }
+        }
+      } catch {
+        /* si falla el auto-login, igual seguimos */
+      }
+
+      showToast("Cuenta creada con éxito. Redirigiendo…");
+      setTimeout(() => {
+        window.location.href = REDIRECT_URL;
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      showToast("Error de red o servidor no disponible.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
-  };
-
-  const isValid = email && user && pwd && validate();
+  }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center px-4 py-10 text-slate-900">
-      {/* Fondo degradado tipo “waves” */}
-      <BackgroundWaves />
-
-      <div className="relative w-full max-w-xl">
-        <div className="rounded-3xl bg-white/95 shadow-2xl ring-1 ring-black/5 p-8 md:p-10 backdrop-blur">
-          <h1 className="text-4xl font-extrabold tracking-tight">Sign up</h1>
-          <p className="mt-2 text-slate-500">
-            Create an account or{" "}
-            <a href="#" className="text-violet-600 hover:underline">Sign in</a>
-          </p>
-
-          <form className="mt-8 space-y-5" onSubmit={onSubmit} noValidate>
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email address</label>
-              <input
-                id="email" type="email" value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`mt-2 w-full rounded-xl border px-4 py-3 outline-none transition
-                ${errors.email ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-200 focus:ring-2 focus:ring-violet-200"}`}
-                placeholder="you@example.com"
-              />
-              {errors.email && <p className="mt-1 text-xs text-rose-500">{errors.email}</p>}
-            </div>
-
-            {/* Username */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-slate-700">Username</label>
-              <input
-                id="username" value={user}
-                onChange={(e) => setUser(e.target.value)}
-                className={`mt-2 w-full rounded-xl border px-4 py-3 outline-none transition
-                ${errors.user ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-200 focus:ring-2 focus:ring-violet-200"}`}
-                placeholder="martin_o"
-              />
-              {errors.user && <p className="mt-1 text-xs text-rose-500">{errors.user}</p>}
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">Password</label>
-              <div className={`mt-2 flex items-center rounded-xl border pr-3
-                ${errors.pwd ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-200 focus-within:ring-2 focus-within:ring-violet-200"}`}>
-                <input
-                  id="password"
-                  type={showPwd ? "text" : "password"}
-                  value={pwd}
-                  onChange={(e) => setPwd(e.target.value)}
-                  className="w-full rounded-l-xl bg-transparent px-4 py-3 outline-none"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  aria-label={showPwd ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  onClick={() => setShowPwd((s) => !s)}
-                  className="grid place-items-center"
-                >
-                  <EyeIcon open={showPwd} />
-                </button>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">Mínimo 8 caracteres.</p>
-              {errors.pwd && <p className="mt-1 text-xs text-rose-500">{errors.pwd}</p>}
-            </div>
-
-            {/* Marketing */}
-            <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={promo}
-                onChange={(e) => setPromo(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-              />
-              <span>No quiero recibir correos con noticias o promociones.</span>
-            </label>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={!isValid || submitting}
-              className="mt-2 w-full rounded-full bg-violet-600 px-6 py-3 font-semibold text-white shadow-lg
-                         enabled:hover:bg-violet-700 enabled:shadow-violet-300/50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              {submitting ? "Creando…" : "Sign up"}
-            </button>
-
-            <p className="text-center text-xs text-slate-400">
-              By signing up you accept our terms of service and privacy policy.
-            </p>
-
-            {msg && (
-              <div className="rounded-xl bg-slate-50 text-slate-700 px-4 py-3 text-sm ring-1 ring-slate-200">
-                {msg}
-              </div>
-            )}
-          </form>
-        </div>
+    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+      {/* Fondos */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-fuchsia-500/40 blur-[120px]" />
+        <div className="absolute top-10 right-[-6rem] h-[28rem] w-[28rem] rounded-full bg-violet-600/40 blur-[140px]" />
+        <div className="absolute -bottom-24 left-1/3 h-96 w-96 rounded-full bg-sky-500/40 blur-[120px]" />
       </div>
-    </div>
-  );
-}
 
-function BackgroundWaves() {
-  // fondo suave estilo imagen: blobs + gradientes
-  return (
-    <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
-      <div className="absolute -top-40 -left-20 h-[32rem] w-[32rem] rounded-full blur-3xl opacity-60"
-           style={{ background: "radial-gradient(closest-side, #f8c8ff, transparent)" }} />
-      <div className="absolute -top-20 right-0 h-[36rem] w-[36rem] rounded-full blur-3xl opacity-70"
-           style={{ background: "radial-gradient(closest-side, #b388ff, transparent)" }} />
-      <div className="absolute bottom-0 -left-10 h-[30rem] w-[30rem] rounded-full blur-3xl opacity-80"
-           style={{ background: "radial-gradient(closest-side, #5ee1ff, transparent)" }} />
-      <div className="absolute -bottom-24 right-[-6rem] h-[34rem] w-[34rem] rounded-full blur-3xl opacity-80"
-           style={{ background: "radial-gradient(closest-side, #7c3aed, transparent)" }} />
-      <div className="absolute inset-0 bg-white/40 backdrop-blur-3xl" />
+      <main className="relative z-10 flex items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-xl">
+          <section className="rounded-3xl bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur-md p-6 sm:p-8 md:p-10">
+            <header className="mb-8">
+              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+                Crear cuenta
+              </h1>
+              <p className="mt-2 text-slate-600">
+                ¿Ya tienes cuenta?{" "}
+                <a
+                  href="/src/pages/login.html"
+                  className="font-semibold text-violet-600 hover:text-violet-700"
+                >
+                  Inicia sesión
+                </a>
+              </p>
+            </header>
+
+            <form ref={formRef} onSubmit={onSubmit} noValidate className="space-y-6">
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+                  Correo electrónico
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+                  placeholder="you@example.com"
+                  aria-invalid={!!emailErr}
+                  aria-describedby="email-error"
+                />
+                {emailErr && (
+                  <p id="email-error" className="mt-1 text-sm text-rose-600">
+                    {emailErr}
+                  </p>
+                )}
+              </div>
+
+              {/* Username (solo UI) */}
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-slate-700">
+                  Nombre de usuario (opcional)
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  minLength={3}
+                  maxLength={24}
+                  pattern="^[a-zA-Z0-9_\.]+$"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+                  placeholder="studyforge_user"
+                  aria-invalid={!!userErr}
+                  aria-describedby="username-error"
+                />
+                <p className="mt-1 text-xs text-slate-500">Opcional. 3–24 caracteres, letras, números, “_” y “.”</p>
+                {userErr && (
+                  <p id="username-error" className="mt-1 text-sm text-rose-600">
+                    {userErr}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                  Contraseña
+                </label>
+                <div className="mt-2 relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPass ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-12 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+                    placeholder="••••••••"
+                    aria-invalid={!!passErr}
+                    aria-describedby="password-hint password-error"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((s) => !s)}
+                    className="absolute inset-y-0 right-2 my-auto grid h-9 w-10 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+                    aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {!showPass ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3.3 2.3 2 3.6l2.6 2.6C3 8.2 1.9 10 2 12c1 2.5 5 7 10 7 2 0 3.9-.7 5.5-1.7l2.9 2.9 1.3-1.3L3.3 2.3ZM12 7c-1.1 0-2 .3-2.8.9l1.4 1.4c.4-.2.9-.3 1.4-.3a3 3 0 0 1 3 3c0 .5-.1 1-.3 1.4l1.4 1.4c.6-.8.9-1.7.9-2.8a5 5 0 0 0-5-5Z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <p id="password-hint" className="mt-1 text-xs text-slate-500">
+                  Mínimo 8 caracteres e incluye al menos 1 letra y 1 número.
+                </p>
+                {passErr && (
+                  <p id="password-error" className="mt-1 text-sm text-rose-600">
+                    {passErr}
+                  </p>
+                )}
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-600/30 transition hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-violet-500/40 disabled:opacity-70"
+              >
+                <span className="inline-flex items-center justify-center gap-2">
+                  {loading && (
+                    <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white/60 border-t-white" />
+                  )}
+                  {loading ? "Creando cuenta…" : "Registrarse"}
+                </span>
+              </button>
+
+              <p className="text-center text-xs text-slate-500">
+                Al registrarte aceptas nuestros{" "}
+                <a href="#" className="font-medium text-slate-600 underline decoration-slate-300 hover:text-slate-800">
+                  Términos de servicio
+                </a>{" "}
+                y{" "}
+                <a href="#" className="font-medium text-slate-600 underline decoration-slate-300 hover:text-slate-800">
+                  Política de privacidad
+                </a>
+                .
+              </p>
+            </form>
+          </section>
+        </div>
+      </main>
+
+      {/* Toast */}
+      {toast && (
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
