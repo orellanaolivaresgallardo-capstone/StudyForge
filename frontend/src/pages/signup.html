@@ -1,4 +1,4 @@
-  <!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -21,7 +21,7 @@
     <div class="absolute -bottom-24 left-1/3 h-96 w-96 rounded-full bg-sky-500/40 blur-[120px]"></div>
   </div>
 
-  <main class="relative z-10 flex items-center justify-center p-6 md:p-10">
+  <main class="relative z-10 min-h-screen flex items-center justify-center p-6 md:p-10">
     <div class="w-full max-w-xl">
       <section class="rounded-3xl bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur-md p-6 sm:p-8 md:p-10">
         <header class="mb-8">
@@ -42,14 +42,14 @@
             <p id="email-error" class="mt-1 hidden text-sm text-rose-600"></p>
           </div>
 
-          <!-- Username -->
+          <!-- Username (opcional: no se envía al backend) -->
           <div>
             <label for="username" class="block text-sm font-medium text-slate-700">Nombre de usuario</label>
-            <input id="username" name="username" type="text" required minlength="3" maxlength="24"
+            <input id="username" name="username" type="text" minlength="3" maxlength="24"
               pattern="^[a-zA-Z0-9_\.]+$" autocomplete="username"
               class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
               placeholder="studyforge_user" aria-describedby="username-error" />
-            <p class="mt-1 text-xs text-slate-500">3–24 caracteres. Letras, números, “_” y “.”</p>
+            <p class="mt-1 text-xs text-slate-500">Opcional. 3–24 caracteres. Letras, números, “_” y “.”</p>
             <p id="username-error" class="mt-1 hidden text-sm text-rose-600"></p>
           </div>
 
@@ -93,7 +93,6 @@
           </p>
         </form>
 
-        <!-- Toast -->
         <div id="toast" class="pointer-events-none fixed bottom-4 left-1/2 z-50 hidden -translate-x-1/2 rounded-xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg">
           <span id="toastMsg"></span>
         </div>
@@ -101,30 +100,31 @@
     </div>
   </main>
 
-  <!-- JS -->
   <script>
-    const AUTH_URL = "http://localhost:8000/auth/signup";   // 🔁 Ajusta si tu backend usa otra ruta
-    const REDIRECT_URL = "/src/pages/uploaddocuments.html";                      // 🔁 Cambia si tu página se llama distinto
+    const API_BASE     = "http://localhost:8000";
+    const SIGNUP_URL   = API_BASE + "/auth/signup";
+    const LOGIN_URL    = API_BASE + "/auth/login";
+    const REDIRECT_URL = "/src/pages/uploaddocuments.html";
 
-    const form = document.getElementById('signupForm');
-    const email = document.getElementById('email');
-    const user = document.getElementById('username');
-    const pass = document.getElementById('password');
+    const form      = document.getElementById('signupForm');
+    const email     = document.getElementById('email');
+    const user      = document.getElementById('username'); // UI-only
+    const pass      = document.getElementById('password');
 
-    const emailErr = document.getElementById('email-error');
-    const userErr  = document.getElementById('username-error');
-    const passErr  = document.getElementById('password-error');
+    const emailErr  = document.getElementById('email-error');
+    const userErr   = document.getElementById('username-error');
+    const passErr   = document.getElementById('password-error');
 
     const toggleBtn = document.getElementById('togglePassword');
-    const eyeOpen = document.getElementById('eyeOpen');
+    const eyeOpen   = document.getElementById('eyeOpen');
     const eyeClosed = document.getElementById('eyeClosed');
 
     const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const btnSpinner = document.getElementById('btnSpinner');
+    const btnText   = document.getElementById('btnText');
+    const btnSpinner= document.getElementById('btnSpinner');
 
-    const toast = document.getElementById('toast');
-    const toastMsg = document.getElementById('toastMsg');
+    const toast     = document.getElementById('toast');
+    const toastMsg  = document.getElementById('toastMsg');
 
     function showToast(msg, ms = 2500) {
       toastMsg.textContent = msg;
@@ -153,7 +153,8 @@
         valid = false;
       } else { emailErr.textContent = ''; emailErr.classList.add('hidden'); }
 
-      if (!user.checkValidity()) {
+      // username opcional
+      if (user.value && !user.checkValidity()) {
         userErr.textContent = 'El nombre de usuario debe tener 3–24 caracteres y solo letras, números, "_" o "."';
         userErr.classList.remove('hidden');
         valid = false;
@@ -168,60 +169,49 @@
       return valid;
     }
 
-    async function registerUser(payload) {
-      const res = await fetch(AUTH_URL, {
+    async function doSignup(email, password) {
+      const r = await fetch(SIGNUP_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
-      // Suponemos 201 o 200 en alta exitosa y que puede devolver {token: "..."}
-      const ok = res.status === 201 || res.status === 200;
-      let data = null;
-      try { data = await res.json(); } catch (_) {}
-      return { ok, status: res.status, data };
+      if (r.status === 201) return true;
+      if (r.status === 409) throw new Error("Ese correo ya existe.");
+      if (r.status === 400) throw new Error("Datos inválidos. Revisa el formulario.");
+      throw new Error("No se pudo crear la cuenta. Intenta nuevamente.");
+    }
+
+    async function doLogin(email, password) {
+      const r = await fetch(LOGIN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      });
+      if (!r.ok) throw new Error("No se pudo iniciar sesión tras el registro.");
+      const data = await r.json().catch(() => ({}));
+      const token = data.access_token || data.token;
+      if (!token) throw new Error("Login OK pero sin token.");
+      localStorage.setItem("sf_token", token);
+      sessionStorage.removeItem("sf_token");
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!validate()) return;
 
-      // UI loading
       submitBtn.disabled = true;
       btnText.textContent = "Creando cuenta…";
       btnSpinner.classList.remove('hidden');
 
-      const payload = {
-        email: email.value.trim(),
-        username: user.value.trim(),
-        password: pass.value
-      };
-
       try {
-        const { ok, status, data } = await registerUser(payload);
-
-        if (ok) {
-          // Guarda token si viene
-          if (data?.token) {
-            localStorage.setItem("sf_token", data.token);
-          }
-          showToast("Cuenta creada con éxito. Redirigiendo…", 1500);
-          // Redirigir a la subida de documentos
-          setTimeout(() => { window.location.href = REDIRECT_URL; }, 800);
-        } else {
-          // Mensajes típicos de error
-          if (status === 409) {
-            showToast("Ese correo o usuario ya existe.");
-          } else if (status === 400) {
-            showToast("Datos inválidos. Revisa el formulario.");
-          } else {
-            showToast("No se pudo crear la cuenta. Intenta nuevamente.");
-          }
-        }
+        await doSignup(email.value, pass.value);
+        await doLogin(email.value, pass.value);
+        showToast("Cuenta creada con éxito. Redirigiendo…", 1200);
+        setTimeout(() => { window.location.href = REDIRECT_URL; }, 800);
       } catch (err) {
         console.error(err);
-        showToast("Error de red o servidor no disponible.");
+        showToast(err?.message || "Error de red o servidor no disponible.");
       } finally {
-        // Reset loading
         submitBtn.disabled = false;
         btnText.textContent = "Registrarse";
         btnSpinner.classList.add('hidden');

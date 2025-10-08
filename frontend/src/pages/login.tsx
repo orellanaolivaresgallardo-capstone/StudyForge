@@ -1,19 +1,17 @@
-// src/pages/LoginPage.tsx
+// src/pages/login.tsx
 import { useState } from "react";
-// import { useNavigate } from "react-router-dom"; // <- si usas React Router
 
-type LoginResp = { token?: string; message?: string } | Record<string, unknown>;
+type LoginResp = { access_token?: string; token?: string; message?: string } | Record<string, unknown>;
 
-const AUTH_URL =
-  (import.meta as ImportMeta).env?.VITE_AUTH_LOGIN_URL ?? "http://localhost:8000/auth/login";
+const API_BASE =
+  (import.meta as ImportMeta).env?.VITE_API_BASE ?? "http://localhost:8000";
+const AUTH_URL = `${API_BASE}/auth/login`;
 
-// Para SPA con hash routing usa "#/upload", para router normal usa "/upload"
+// Para páginas sueltas (no router SPA), redirigimos a la HTML real:
 const REDIRECT_URL =
-  (import.meta as ImportMeta).env?.VITE_UPLOAD_REDIRECT_PATH ?? "/#/upload";
+  (import.meta as ImportMeta).env?.VITE_UPLOAD_REDIRECT_PATH ?? "/src/pages/uploaddocuments.html";
 
 export default function LoginPage() {
-  // const navigate = useNavigate(); // <- si usas React Router
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -50,7 +48,7 @@ export default function LoginPage() {
       const res = await fetch(AUTH_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
       const ok = res.status === 200;
@@ -58,20 +56,24 @@ export default function LoginPage() {
       try {
         data = (await res.json()) as LoginResp;
       } catch {
-        // backend podría no devolver cuerpo en error; ignoramos
+        /* ignore parse errors on non-JSON responses */
       }
 
       if (ok) {
-        const token = (data as LoginResp)?.token as string | undefined;
-        if (token) {
+        const token =
+          (data as any)?.access_token ??
+          (data as any)?.token ??
+          undefined;
+
+        if (typeof token === "string" && token.length) {
           // remember = true -> localStorage; false -> sessionStorage
           (remember ? localStorage : sessionStorage).setItem("sf_token", token);
-          // Limpia el otro storage para evitar conflictos
+          // limpia el otro storage para evitar conflictos
           (remember ? sessionStorage : localStorage).removeItem("sf_token");
         }
+
         showToast("Inicio de sesión exitoso. Redirigiendo…");
         setTimeout(() => {
-          // navigate("/upload"); // <- si usas React Router
           window.location.href = REDIRECT_URL;
         }, 700);
       } else if (res.status === 401) {
@@ -101,7 +103,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-extrabold text-slate-900">Iniciar sesión</h1>
         <p className="mt-2 text-slate-600">
           Accede a tu cuenta o{" "}
-          <a href="/#/signup" className="text-fuchsia-600 hover:underline">
+          <a href="/src/pages/signup.html" className="text-fuchsia-600 hover:underline">
             crea una nueva
           </a>
           .
@@ -165,7 +167,7 @@ export default function LoginPage() {
               />
               Recordarme
             </label>
-            <a href="/#/forgot-password" className="text-sm font-medium text-fuchsia-600 hover:underline">
+            <a href="#" className="text-sm font-medium text-fuchsia-600 hover:underline">
               ¿Olvidaste tu contraseña?
             </a>
           </div>

@@ -1,349 +1,373 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="h-full">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StudyForge — Subir documentos</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StudyForge — Mis documentos</title>
+
+    <!-- Tailwind para prototipo -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: { extend: { colors: { brand: { 500: "#7C3AED" } } } },
+      };
+    </script>
+
+    <style>
+      :root { color-scheme: dark; }
+      body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+      .dropzone.dragover { border-color: #7C3AED; background-color: rgba(124,58,237,.08); }
+      .fade-in { animation: fade .18s ease-out; }
+      @keyframes fade { from{opacity:.0; transform:translateY(2px)} to{opacity:1; transform:none} }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    </style>
+
+    <script>
+      const API_BASE = "http://localhost:8000";
+
+      function getToken() {
+        return localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
+      }
+      function logout() {
+        localStorage.removeItem("sf_token");
+        sessionStorage.removeItem("sf_token");
+        window.location.href = "/index.html";
+      }
+      function toast(msg) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), 2300);
+      }
+      function escapeHtml(str) {
+        return String(str ?? "")
+          .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+      }
+
+      async function fetchMe(token) {
+        try {
+          const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+          if (res.status === 401) throw new Error("unauthorized");
+          if (!res.ok) return null;
+          return await res.json();
+        } catch { return null; }
+      }
+      async function fetchDocuments(token) {
+        const res = await fetch(`${API_BASE}/documents`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.status === 401) throw new Error("unauthorized");
+        if (!res.ok) throw new Error("fetch_error");
+        return await res.json();
+      }
+      async function createDocument(token, payload) {
+        const res = await fetch(`${API_BASE}/documents`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+        if (res.status === 401) throw new Error("unauthorized");
+        if (res.status === 422) throw new Error("validation");
+        if (!res.ok) throw new Error("create_error");
+        return await res.json();
+      }
+
+      function renderList(data) {
+        const list = document.getElementById("doc-list");
+        list.innerHTML = "";
+        const items = (data && data.items) || [];
+        if (!items.length) {
+          list.innerHTML = `<li class="text-slate-400 text-sm">No tienes documentos aún. Crea el primero 👇</li>`;
+          return;
+        }
+        for (const d of items) {
+          const li = document.createElement("li");
+          li.className = "rounded-xl bg-slate-800/60 border border-slate-700 px-4 py-3 fade-in";
+          li.innerHTML = `
+            <div class="font-semibold text-white">${escapeHtml(d.title ?? "(Sin título)")}</div>
+            <div class="text-sm text-slate-400">${escapeHtml(d.description ?? "")}</div>
+          `;
+          list.appendChild(li);
+        }
+      }
+
+      // ============ NUEVA LECTURA ROBUSTA DE TEXTO ============
+      function readAsTextUtf8(file) {
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result ?? ""));
+          r.onerror = () => reject(r.error || new Error("read_error_utf8"));
+          r.readAsText(file, "utf-8");
+        });
+      }
+      function readAsTextDefault(file) {
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result ?? ""));
+          r.onerror = () => reject(r.error || new Error("read_error_default"));
+          r.readAsText(file);
+        });
+      }
+      function readAsDecoded(file, encoding) {
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => {
+            try {
+              const buf = r.result; // ArrayBuffer
+              const dec = new TextDecoder(encoding, { fatal: false });
+              resolve(dec.decode(buf));
+            } catch (e) {
+              reject(e);
+            }
+          };
+          r.onerror = () => reject(r.error || new Error("read_error_buffer"));
+          r.readAsArrayBuffer(file);
+        });
+      }
+
+      async function readFileAsTextSmart(file) {
+        const ext = (file.name.split(".").pop() || "").toLowerCase();
+        const isTxtExt = ["txt","md","csv","log"].includes(ext);
+        const isTextMime = (file.type || "").startsWith("text/");
+
+        console.info("[D&D] file:", { name: file.name, type: file.type, size: file.size, ext });
+
+        if (!(isTxtExt || isTextMime) && file.type && !file.type.startsWith("text/")) {
+          // MIME explícitamente no text/*
+          throw new Error("unsupported_format");
+        }
+
+        // 1) Intento principal: readAsText UTF-8
+        try {
+          let t = await readAsTextUtf8(file);
+          if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1); // quita BOM
+          t = t.replace(/\r\n/g, "\n");
+          if (t.length) return t;
+        } catch (e) {
+          console.warn("readAsText('utf-8') falló:", e);
+        }
+
+        // 2) readAsText sin encoding (algunos navegadores/archivos antiguos)
+        try {
+          let t = await readAsTextDefault(file);
+          if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+          t = t.replace(/\r\n/g, "\n");
+          if (t.length) return t;
+        } catch (e) {
+          console.warn("readAsText() por defecto falló:", e);
+        }
+
+        // 3) ArrayBuffer + TextDecoder UTF-8
+        try {
+          let t = await readAsDecoded(file, "utf-8");
+          if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+          t = t.replace(/\r\n/g, "\n");
+          if (t.length) return t;
+        } catch (e) {
+          console.warn("ArrayBuffer+TextDecoder('utf-8') falló:", e);
+        }
+
+        // 4) Fallbacks comunes para Windows (no todos los navegadores soportan estos label)
+        for (const enc of ["windows-1252", "latin1"]) {
+          try {
+            let t = await readAsDecoded(file, enc);
+            if (t.length) return t;
+          } catch (e) {
+            console.warn(`ArrayBuffer+TextDecoder('${enc}') falló:`, e);
+          }
+        }
+
+        // 5) Último intento: si no trae type (muchos .txt), probamos igualmente como text si es pequeño
+        if (!file.type && file.size <= 5 * 1024 * 1024) {
+          try {
+            let t = await readAsTextUtf8(file);
+            if (t.length) return t;
+          } catch (e) {
+            console.warn("Último intento utf-8 sin type también falló:", e);
+          }
+        }
+
+        throw new Error("unreadable_text");
+      }
+      // =========================================================
+
+      function hookDropzone() {
+        const dz = document.getElementById("dropzone");
+        const fileInput  = document.getElementById("file-input");
+        const titleEl    = document.getElementById("title");
+        const descEl     = document.getElementById("description");
+        const contentEl  = document.getElementById("content");
+
+        async function handleFiles(fileList) {
+          if (!fileList || !fileList.length) return;
+          const file = fileList[0];
+
+          // Sugerir título/desc si faltan
+          const base = file.name.replace(/\.[^/.]+$/, "");
+          if (!titleEl.value.trim()) titleEl.value = base;
+          if (!descEl.value.trim())  descEl.value  = `Importado desde archivo (${file.name})`;
+
+          try {
+            const text = await readFileAsTextSmart(file);
+            contentEl.value = text; // <-- AQUÍ LLENAMOS EL TEXTAREA
+            console.info(`[D&D] leído ${text.length} caracteres`);
+            toast(`Archivo importado ✅ (${text.length} chars)`);
+          } catch (err) {
+            console.error("lectura falló:", err);
+            if (String(err.message) === "unsupported_format") {
+              toast("Formato no soportado para extracción. Usa .txt/.md por ahora.");
+            } else {
+              toast("No se pudo leer el archivo. Abre la consola para más detalles.");
+            }
+          }
+        }
+
+        dz.addEventListener("click", () => fileInput.click());
+        ["dragenter","dragover"].forEach(ev =>
+          dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add("dragover"); })
+        );
+        ["dragleave","drop"].forEach(ev =>
+          dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove("dragover"); })
+        );
+        dz.addEventListener("drop", (e) => {
+          const files = e.dataTransfer?.files;
+          handleFiles(files);
+        });
+
+        fileInput.addEventListener("change", () => {
+          handleFiles(fileInput.files);
+          fileInput.value = "";
+        });
+      }
+
+      async function init() {
+        const token = getToken();
+        if (!token) { window.location.replace("/src/pages/login.html"); return; }
+
+        const me = await fetchMe(token);
+        if (me && me.email) {
+          const el = document.getElementById("user-email");
+          if (el) el.textContent = me.email;
+        }
+
+        try {
+          const data = await fetchDocuments(token);
+          renderList(data);
+        } catch (e) {
+          if (String(e.message) === "unauthorized") { logout(); return; }
+          toast("No se pudieron cargar tus documentos.");
+        }
+
+        hookDropzone();
+
+        const form = document.getElementById("doc-form");
+        form.addEventListener("submit", async (ev) => {
+          ev.preventDefault();
+          const title = document.getElementById("title").value.trim();
+          const description = document.getElementById("description").value.trim();
+          const content = document.getElementById("content").value.trim();
+
+          if (!title || !content) { toast("Título y contenido son obligatorios."); return; }
+
+          try {
+            const created = await createDocument(getToken(), { title, description, content });
+            toast("Documento creado ✅");
+            const li = document.createElement("li");
+            li.className = "rounded-xl bg-slate-800/60 border border-slate-700 px-4 py-3 fade-in";
+            li.innerHTML = `
+              <div class="font-semibold text-white">${escapeHtml(created.title ?? title)}</div>
+              <div class="text-sm text-slate-400">${escapeHtml(created.description ?? description)}</div>
+            `;
+            const list = document.getElementById("doc-list");
+            if (list.firstChild && list.firstChild.textContent?.includes("No tienes documentos")) {
+              list.innerHTML = "";
+            }
+            list.prepend(li);
+            form.reset();
+          } catch (e) {
+            if (String(e.message) === "unauthorized") { logout(); return; }
+            if (String(e.message) === "validation") { toast("Revisa los datos (no se permiten vacíos)."); return; }
+            toast("No se pudo crear el documento.");
+          }
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900">
-    <!-- Barra superior -->
-    <header class="border-b border-slate-200 bg-white/80 backdrop-blur">
-      <div class="mx-auto max-w-7xl px-6 py-3 flex items-center justify-between">
+
+  <body class="min-h-screen bg-slate-950 text-white">
+    <!-- barra -->
+    <header class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur border-b border-slate-800">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="h-6 w-6 rounded-lg bg-gradient-to-br from-yellow-400 to-amber-500"></div>
-          <span class="font-semibold">StudyForge</span>
+          <span class="inline-flex h-8 w-8 rounded-full bg-brand-500 ring-8 ring-brand-500/20"></span>
+          <span class="font-bold">StudyForge</span>
+          <span class="text-slate-400 text-sm hidden sm:inline">Mis documentos</span>
         </div>
-        <div class="flex items-center gap-2">
-          <button class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-50">
-            Upgrade
+        <div class="flex items-center gap-4">
+          <span id="user-email" class="text-slate-300 text-sm"></span>
+          <button onclick="logout()" class="rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-sm">
+            Cerrar sesión
           </button>
-          <div class="h-8 w-8 rounded-full bg-slate-200"></div>
         </div>
       </div>
     </header>
 
-    <main class="mx-auto max-w-7xl px-6 py-8 grid grid-cols-12 gap-6">
-      <!-- Sidebar -->
-      <aside class="col-span-12 lg:col-span-3">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4">
-          <div class="mb-2 text-xs font-medium text-slate-500">Navigation</div>
-          <nav class="space-y-1 text-sm">
-            <a class="block rounded-lg px-3 py-2 bg-slate-100 text-slate-900 font-medium">Cargar documentos</a>
-            <a class="block rounded-lg px-3 py-2 hover:bg-slate-50">Proyectos</a>
-            <a class="block rounded-lg px-3 py-2 hover:bg-slate-50">Historial</a>
-            <a class="block rounded-lg px-3 py-2 hover:bg-slate-50">Ayuda</a>
-          </nav>
-        </div>
-      </aside>
+    <!-- contenido -->
+    <main class="max-w-6xl mx-auto px-4 py-8 grid lg:grid-cols-2 gap-8">
+      <!-- formulario / drop -->
+      <section class="rounded-2xl bg-slate-900/70 border border-slate-800 p-6">
+        <h2 class="text-xl font-semibold">Crear documento</h2>
+        <p class="text-slate-400 text-sm mb-4">
+          Puedes arrastrar un <span class="mono">.txt</span> o <span class="mono">.md</span>, o pegar el contenido abajo. <br/>
+          Para <span class="mono">PDF/DOCX</span> agregaremos extracción en el paso 8.
+        </p>
 
-      <!-- Contenido principal -->
-      <section class="col-span-12 lg:col-span-6">
-        <div class="rounded-2xl border border-slate-200 bg-white p-6">
-          <h1 class="text-2xl font-bold">Subir documentos</h1>
-          <p class="mt-1 text-slate-500">
-            Admite PDF, Word (.doc, .docx) y TXT. Tamaño por archivo ≤ 25 MB.
-          </p>
-
-          <!-- Dropzone -->
-          <div id="dropzone"
-            class="mt-5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition-colors">
-            <div class="mx-auto w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" class="h-6 w-6 text-slate-600" aria-hidden="true">
-                <path fill="currentColor"
-                  d="M19 13v6H5v-6H3v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2Zm-6-1 3.5 3.5-1.4 1.4L13 15.8V4h-2v11.8l-2.1 2.1-1.4-1.4L11 12Z" />
-              </svg>
-            </div>
-            <p class="mt-3 text-sm">
-              Arrastra y suelta archivos aquí, o
-              <label for="fileUpload" class="ml-1 font-semibold text-indigo-600 hover:underline cursor-pointer">
-                explora tu equipo
-              </label>
-            </p>
-            <p class="mt-1 text-xs text-slate-500">PDF, DOC, DOCX, TXT</p>
-            <input id="fileUpload" type="file" accept=".pdf,.doc,.docx,.txt" multiple class="hidden" />
-          </div>
-
-          <!-- Lista de archivos seleccionados -->
-          <div id="fileList" class="mt-6 hidden">
-            <h2 class="text-sm font-medium text-slate-700 mb-2">Archivos seleccionados</h2>
-            <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200" id="files"></ul>
-            <div class="mt-3 flex items-center gap-3">
-              <button id="uploadBtn"
-                class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-white text-sm font-medium disabled:opacity-60">
-                <span id="btnText">Subir y procesar</span>
-                <span id="btnSpinner" class="hidden ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white"></span>
-              </button>
-              <button id="clearBtn" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm hover:bg-slate-50">
-                Limpiar
-              </button>
-            </div>
-            <p id="footNote" class="mt-2 text-xs text-slate-500">
-              Tras la subida, se generará automáticamente un <b>resumen</b> y un <b>quiz</b>.
-            </p>
+        <!-- Dropzone -->
+        <div id="dropzone" class="dropzone rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/50 p-6 mb-4 cursor-pointer text-center">
+          <input id="file-input" type="file" accept=".txt,.md,text/plain,text/markdown" class="hidden" />
+          <div class="flex flex-col items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4a5 5 0 0 0-5 5H5l3.5 3.5L12 9h-2a3 3 0 1 1 3 3v2a5 5 0 0 0-1-10Z"/><path d="M5 18h14v2H5z"/></svg>
+            <p><b>Arrastra tu archivo</b> o haz click para seleccionarlo</p>
+            <p class="text-xs text-slate-400">Acepta .txt, .md y otros <span class="mono">text/*</span>. PDF/DOCX próximamente.</p>
           </div>
         </div>
+
+        <form id="doc-form" class="space-y-4">
+          <div>
+            <label for="title" class="block text-sm text-slate-300 mb-1">Título *</label>
+            <input id="title" type="text" required maxlength="200"
+              class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 outline-none focus:border-brand-500" />
+          </div>
+
+          <div>
+            <label for="description" class="block text-sm text-slate-300 mb-1">Descripción</label>
+            <input id="description" type="text" maxlength="300"
+              class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 outline-none focus:border-brand-500" />
+          </div>
+
+          <div>
+            <label for="content" class="block text-sm text-slate-300 mb-1">Contenido *</label>
+            <textarea id="content" required rows="8"
+              class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 outline-none focus:border-brand-500 mono"></textarea>
+          </div>
+
+          <button type="submit" class="rounded-full bg-brand-500 px-5 py-2.5 font-semibold shadow hover:opacity-95">
+            Crear
+          </button>
+        </form>
       </section>
 
-      <!-- Columna derecha -->
-      <aside class="col-span-12 lg:col-span-3">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
-          <h3 class="font-semibold">Recomendaciones</h3>
-          <ul class="text-sm text-slate-600 list-disc pl-5 space-y-1">
-            <li>Usa archivos legibles (evita fotos borrosas de apuntes).</li>
-            <li>Divide PDFs muy grandes por capítulos.</li>
-            <li>Respeta derechos de autor de los materiales.</li>
-          </ul>
-        </div>
-      </aside>
+      <!-- lista -->
+      <section class="rounded-2xl bg-slate-900/70 border border-slate-800 p-6">
+        <h2 class="text-xl font-semibold mb-4">Tus documentos</h2>
+        <ul id="doc-list" class="space-y-3">
+          <li class="text-slate-400 text-sm">Cargando…</li>
+        </ul>
+      </section>
     </main>
 
-    <!-- Toast -->
-    <div id="toast" class="pointer-events-none fixed bottom-4 left-1/2 z-50 hidden -translate-x-1/2 rounded-xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg">
-      <span id="toastMsg"></span>
-    </div>
-
-    <script>
-      // ====== Ajusta estos endpoints a tu backend ======
-      const UPLOAD_URL    = "http://localhost:8000/files";
-      const SUMMARIZE_URL = "http://localhost:8000/ai/summarize";
-      const QUIZ_URL      = "http://localhost:8000/ai/quiz";
-      // Resultado final (SPA hash o ruta normal):
-      const RESULTS_URL   = "/src/pages/results.html"; // por ejemplo: "/#/results?doc=ID"  (cámbialo a "/src/pages/results.html" si usas archivos estáticos)
-      // =================================================
-
-      const ACCEPTED_EXT = ["pdf", "doc", "docx", "txt"];
-      const MAX_MB = 25;
-
-      const input = document.getElementById("fileUpload");
-      const dropzone = document.getElementById("dropzone");
-      const list = document.getElementById("files");
-      const fileList = document.getElementById("fileList");
-      const uploadBtn = document.getElementById("uploadBtn");
-      const btnText = document.getElementById("btnText");
-      const btnSpinner = document.getElementById("btnSpinner");
-      const clearBtn = document.getElementById("clearBtn");
-
-      const toast = document.getElementById("toast");
-      const toastMsg = document.getElementById("toastMsg");
-
-      const showToast = (msg, ms = 2400) => {
-        toastMsg.textContent = msg;
-        toast.classList.remove("hidden");
-        setTimeout(() => toast.classList.add("hidden"), ms);
-      };
-
-      // ====== Detectar tipo por extensión / MIME ======
-      function getExt(file) {
-        const name = file.name || "";
-        const ext = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
-        return ext;
-      }
-
-      function detectType(file) {
-        const ext = getExt(file);
-        if (ACCEPTED_EXT.includes(ext)) return ext;
-        // fallback por MIME
-        const t = (file.type || "").toLowerCase();
-        if (t.includes("pdf")) return "pdf";
-        if (t.includes("word") || t.includes("msword")) return "doc";
-        if (t.includes("officedocument.wordprocessingml.document")) return "docx";
-        if (t.includes("text/plain")) return "txt";
-        return "desconocido";
-      }
-
-      function readableSize(bytes) {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-        }
-
-      function validateFiles(files) {
-        const issues = [];
-        const valid = [];
-        for (const f of files) {
-          const ext = detectType(f);
-          const mb = f.size / (1024 * 1024);
-          if (!ACCEPTED_EXT.includes(ext)) {
-            issues.push(`❌ ${f.name}: tipo no permitido`);
-            continue;
-          }
-          if (mb > MAX_MB) {
-            issues.push(`❌ ${f.name}: excede ${MAX_MB} MB (${mb.toFixed(2)} MB)`);
-            continue;
-          }
-          valid.push(f);
-        }
-        return { valid, issues };
-      }
-
-      function renderList(files, issues) {
-        list.innerHTML = "";
-        for (const f of files) {
-          const ext = detectType(f).toUpperCase();
-          const li = document.createElement("li");
-          li.className = "flex items-center justify-between p-3";
-          li.innerHTML = `
-            <div class="flex items-center gap-3">
-              <div class="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center">
-                <span class="text-[10px] font-bold text-slate-600 uppercase">${ext}</span>
-              </div>
-              <div>
-                <div class="text-sm font-medium truncate max-w-[18rem]" title="${f.name}">${f.name}</div>
-                <div class="text-xs text-slate-500">${readableSize(f.size)}</div>
-              </div>
-            </div>
-            <span class="text-xs text-slate-500">${detectType(f)}</span>
-          `;
-          list.appendChild(li);
-        }
-        if (issues.length) {
-          const err = document.createElement("li");
-          err.className = "p-3 text-sm text-rose-600 bg-rose-50";
-          err.innerHTML = `<b>Archivos ignorados:</b><br>${issues.map(i => `• ${i}`).join("<br>")}`;
-          list.appendChild(err);
-        }
-        fileList.classList.toggle("hidden", files.length === 0 && issues.length === 0);
-        uploadBtn.disabled = files.length === 0;
-      }
-
-      // File input
-      input.addEventListener("change", () => {
-        const { valid, issues } = validateFiles(Array.from(input.files || []));
-        renderList(valid, issues);
-        // guardamos selección válida en el input: recrear FileList no es simple, así que almacenamos en memoria
-        input._validFiles = valid;
-      });
-
-      // Drag & drop
-      ["dragenter", "dragover"].forEach(evt =>
-        dropzone.addEventListener(evt, (e) => {
-          e.preventDefault(); e.stopPropagation();
-          dropzone.classList.add("border-indigo-400", "bg-indigo-50/50");
-        })
-      );
-      ["dragleave", "drop"].forEach(evt =>
-        dropzone.addEventListener(evt, (e) => {
-          e.preventDefault(); e.stopPropagation();
-          dropzone.classList.remove("border-indigo-400", "bg-indigo-50/50");
-        })
-      );
-      dropzone.addEventListener("drop", (e) => {
-        const dt = e.dataTransfer;
-        const files = Array.from(dt.files || []);
-        const { valid, issues } = validateFiles(files);
-        renderList(valid, issues);
-        input._validFiles = valid;
-      });
-
-      // Limpiar
-      clearBtn.addEventListener("click", () => {
-        input.value = "";
-        input._validFiles = [];
-        list.innerHTML = "";
-        fileList.classList.add("hidden");
-      });
-
-      async function uploadFiles(files) {
-        const token = localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
-        const formData = new FormData();
-        files.forEach((f) => formData.append("files", f, f.name));
-        const res = await fetch(UPLOAD_URL, {
-          method: "POST",
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          body: formData,
-        });
-        const ok = res.status === 201 || res.status === 200;
-        let data = null;
-        try { data = await res.json(); } catch {}
-        return { ok, status: res.status, data };
-      }
-
-      async function summarize(documentId) {
-        const token = localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
-        const res = await fetch(`${SUMMARIZE_URL}?level=tldr`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ documentId }),
-        });
-        const ok = res.status === 200;
-        let data = null;
-        try { data = await res.json(); } catch {}
-        return { ok, status: res.status, data };
-      }
-
-      async function makeQuiz(documentId, n = 5) {
-        const token = localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
-        const res = await fetch(`${QUIZ_URL}?n=${n}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ documentId }),
-        });
-        const ok = res.status === 200;
-        let data = null;
-        try { data = await res.json(); } catch {}
-        return { ok, status: res.status, data };
-      }
-
-      // Subir + procesar (resumen y quiz) + redirigir
-      uploadBtn.addEventListener("click", async () => {
-        const files = input._validFiles || [];
-        if (!files.length) return showToast("Selecciona al menos un archivo válido.");
-
-        // UI loading
-        uploadBtn.disabled = true;
-        btnText.textContent = "Subiendo y procesando…";
-        btnSpinner.classList.remove("hidden");
-
-        try {
-          const { ok, status, data } = await uploadFiles(files);
-          if (!ok) {
-            if (status === 401) return showToast("Sesión expirada. Inicia sesión nuevamente.");
-            if (status === 413) return showToast("Archivo demasiado grande.");
-            return showToast("No se pudo subir. Intenta de nuevo.");
-          }
-
-          // Suponemos que el backend retorna un array de documentos o un objeto con documentId
-          // Ejemplos aceptados: {documentId:"123"} o {items:[{documentId:"123"}, ...]}
-          const docId =
-            data?.documentId ||
-            data?.id ||
-            (Array.isArray(data) && data[0]?.documentId) ||
-            data?.items?.[0]?.documentId;
-
-          if (!docId) {
-            showToast("Subida exitosa, pero no recibimos el ID del documento.");
-            return;
-          }
-
-          showToast("Documento subido. Generando resumen…", 1800);
-          const sum = await summarize(docId);
-          if (!sum.ok) showToast("Resumen en cola. Se generará en segundo plano.");
-
-          showToast("Creando quiz…", 1600);
-          const qz = await makeQuiz(docId, 5);
-          if (!qz.ok) showToast("Quiz en cola. Se generará en segundo plano.");
-
-          // Redirigir a resultados con el ID
-          setTimeout(() => {
-            const target = `${RESULTS_URL}?doc=${encodeURIComponent(docId)}`;
-            window.location.href = target;
-          }, 900);
-        } catch (err) {
-          console.error(err);
-          showToast("Error de red o servidor no disponible.");
-        } finally {
-          uploadBtn.disabled = false;
-          btnText.textContent = "Subir y procesar";
-          btnSpinner.classList.add("hidden");
-        }
-      });
-    </script>
+    <!-- toast -->
+    <div id="toast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-2 text-sm"></div>
   </body>
 </html>
