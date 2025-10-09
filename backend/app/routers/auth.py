@@ -1,46 +1,74 @@
 # app/routers/auth.py
+from datetime import datetime
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from app.db import get_db
 from app.repositories.models import User
-from app.core.security import hash_password, verify_password, create_access_token
-from app.core.deps import get_current_user
-from app.schemas.users import UserCreate, UserOut
-from app.schemas.auth_schemas import TokenOut  # ← nuevo
+from app.core.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+)
+from app.core.deps import get_current_user  # devuelve User ORM
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter()
 
-@router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED, summary="Crear usuario")
-def signup(data: UserCreate, db: Session = Depends(get_db)):
-    email_l = data.email.lower()
-    exists = db.query(User).filter(func.lower(User.email) == email_l).first()
-    if exists:
+# ===== Schemas =====
+class SignupIn(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    created_at: Optional[datetime] = None
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+# ===== Helpers =====
+def _get_user_by_email(db: Session, email: str) -> Optional[User]:
+    return db.query(User).filter(User.email == email).first()
+
+
+# ===== Routes =====
+@router.post("/signup", response_model=UserOut, status_code=201, summary="Crear usuario (signup)")
+def signup(payload: SignupIn, db: Session = Depends(get_db)):
+    email = payload.email.strip().lower()
+    if _get_user_by_email(db, email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="email ya registrado")
-    user = User(email=email_l, password_hash=hash_password(data.password))
+
+    user = User(
+        email=email,
+        password_hash=hash_password(payload.password),
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    return UserOut(id=user.id, email=user.email, created_at=user.created_at)
 
-class LoginIn(UserCreate):
-    pass
 
-@router.post("/login", response_model=TokenOut, summary="Iniciar sesión y obtener JWT")
-def login(data: LoginIn, db: Session = Depends(get_db)):
-    email_l = data.email.lower()
-    user = db.query(User).filter(func.lower(User.email) == email_l).first()
-    if not user or not verify_password(user.password_hash, data.password):
-        # Header estándar para compatibilidad OAuth2/Bearer
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="credenciales inválidas",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    token = create_access_token(sub=user.id)
-    return {"access_token": token, "token_type": "bearer"}
+@router.post("/login", response_model=TokenOut, summary="Iniciar sesión")
+def login(payload: LoginIn, db: Session = Depends(get_db)):
+    email = payload.email.strip().lower()
+    user = _get_user_by_email(db, email)
+    if not user or not user.password_hash or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="credenciales inválidas")
 
-@router.get("/me", response_model=UserOut, summary="Datos del usuario autenticado")
+    token = create_access_token(user_id=user.id)
+    return TokenOut(access_token=token)
+
+
+@router.get("/me", response_model=UserOut, summary="Usuario autenticado")
 def me(current: User = Depends(get_current_user)):
-    return current
+    return UserOut(id=current.id, email=current.email, created_at=current.created_at)
