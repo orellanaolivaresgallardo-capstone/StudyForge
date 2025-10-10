@@ -1,329 +1,1055 @@
 <!doctype html>
-<html lang="es" class="h-full">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>StudyForge — Mis documentos</title>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Subir documentos — StudyForge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Fira+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    :root { color-scheme: light dark; }
+    html, body { height: 100%; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans"; }
 
-    <!-- Tailwind para prototipo -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: { brand: { 500: "#7C3AED" } },
-          },
-        },
-      };
-    </script>
+    /* ==== Fondo: gradiente + grano sutil ==== */
+    body {
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(99,102,241,.18), transparent 60%),
+        radial-gradient(900px 500px at 120% 10%, rgba(236,72,153,.14), transparent 60%),
+        #020617; /* slate-950 */
+      color: #f8fafc; /* slate-50 */
+    }
+    body::before {
+      content:""; position:fixed; inset:0; pointer-events:none;
+      background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 3px 3px; opacity:.25;
+    }
 
-    <style>
-      :root { color-scheme: dark; }
-      body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
-      .dropzone.dragover { border-color: #7C3AED; background-color: rgba(124,58,237,.08); }
-      .fade-in { animation: fade .18s ease-out; }
-      @keyframes fade { from{opacity:.0; transform:translateY(2px)} to{opacity:1; transform:none} }
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    </style>
+    /* ==== Header glass ==== */
+    .glass {
+      background: rgba(2,6,23,.6);
+      backdrop-filter: saturate(150%) blur(8px);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 2px 24px rgba(0,0,0,.25);
+    }
 
-    <script>
-      const API_BASE = "http://localhost:8000";
+    .mono { font-family: "Fira Mono", monospace; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-      function getToken() {
-        return localStorage.getItem("sf_token") || sessionStorage.getItem("sf_token");
-      }
-      function logout() {
-        localStorage.removeItem("sf_token");
-        sessionStorage.removeItem("sf_token");
-        window.location.href = "/index.html";  // ✅ volver al landing
-      }
-      function toast(msg) {
-        const el = document.getElementById("toast");
-        el.textContent = msg;
-        el.classList.remove("hidden");
-        setTimeout(() => el.classList.add("hidden"), 2300);
-      }
-      function escapeHtml(str) {
-        return String(str ?? "")
-          .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-      }
+    .drop-accept { border-color: rgb(34 197 94); background-color: rgb(34 197 94 / 0.06); }
+    .drop-reject { border-color: rgb(239 68 68); background-color: rgb(239 68 68 / 0.06); }
 
-      async function fetchMe(token) {
-        try {
-          const res = await fetch(`${API_BASE}/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.status === 401) throw new Error("unauthorized");
-          if (!res.ok) return null;
-          return await res.json();
-        } catch { return null; }
-      }
-      async function fetchDocuments(token) {
-        const res = await fetch(`${API_BASE}/documents`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.status === 401) throw new Error("unauthorized");
-        if (!res.ok) throw new Error("fetch_error");
-        return await res.json();
-      }
-      async function createDocument(token, payload) {
-        const res = await fetch(`${API_BASE}/documents`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
-        if (res.status === 401) throw new Error("unauthorized");
-        if (res.status === 422) throw new Error("validation");
-        if (!res.ok) throw new Error("create_error");
-        return await res.json();
-      }
+    /* ==== Dropzone: glow/aurora + dashed anim + tilt ==== */
+    .glow {
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,.08) inset,
+        0 10px 40px rgba(139, 92, 246, .25),
+        0 0 120px 20px rgba(236, 72, 153, .15);
+      position: relative;
+      border-color: rgba(255,255,255,.25) !important;
+    }
+    .glow::after {
+      content: ""; position: absolute; inset: -2px; border-radius: 1.5rem;
+      background: radial-gradient(1200px 1200px at var(--mx,50%) var(--my,50%),
+        rgba(236,72,153,.08), rgba(99,102,241,.08) 35%, transparent 60%);
+      pointer-events: none; filter: blur(6px); transition: opacity .4s ease; opacity: .9;
+    }
 
-      function renderList(data) {
-        const list = document.getElementById("doc-list");
-        list.innerHTML = "";
-        const items = (data && data.items) || [];
-        if (!items.length) {
-          list.innerHTML = `<li class="text-slate-400 text-sm">No tienes documentos aún. Crea el primero 👇</li>`;
-          return;
-        }
-        for (const d of items) {
-          const li = document.createElement("li");
-          li.className = "rounded-xl bg-slate-800/60 border border-slate-700 px-4 py-3 fade-in";
-          li.innerHTML = `
-            <div class="font-semibold text-white">${escapeHtml(d.title ?? "(Sin título)")}</div>
-            <div class="text-sm text-slate-400">${escapeHtml(d.description ?? "")}</div>
-          `;
-          list.appendChild(li);
-        }
-      }
+    .dashed-anim { --bd: 2px; position: relative; isolation:isolate; }
+    .dashed-anim::before {
+      content:""; position:absolute; inset:0; border-radius:1.5rem; padding: var(--bd);
+      background:
+        repeating-linear-gradient(90deg, #94a3b8 0 10px, transparent 10px 20px),
+        repeating-linear-gradient(0deg, #94a3b8 0 10px, transparent 10px 20px),
+        repeating-linear-gradient(90deg, #94a3b8 0 10px, transparent 10px 20px),
+        repeating-linear-gradient(0deg, #94a3b8 0 10px, transparent 10px 20px);
+      background-repeat: no-repeat;
+      background-size: 100% var(--bd), var(--bd) 100%, 100% var(--bd), var(--bd) 100%;
+      background-position: 0 0, 0 0, 0 100%, 100% 0;
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      animation: dash 18s linear infinite; opacity:.35;
+    }
+    @keyframes dash {
+      0% { background-position: 0 0, 0 0, 0 100%, 100% 0; }
+      100% { background-position: 200% 0, 0 200%, -200% 100%, 100% -200%; }
+    }
 
-      // ------- Drag & Drop helpers ---------
-      function hookDropzone() {
-        const dz = document.getElementById("dropzone");
-        const fileInput = document.getElementById("file-input");
-        const titleEl = document.getElementById("title");
-        const descEl  = document.getElementById("description");
-        const contentEl = document.getElementById("content");
+    .tilt:hover { transform: perspective(900px) rotateX(1deg) rotateY(-1deg); }
+    .tilt { transition: transform .35s ease; }
 
-        /**
-         * Lee un File como texto de la forma más compatible posible.
-         * Intenta por extensión, luego por MIME text/* y finalmente un fallback.
-         */
-        function readFileAsTextSmart(file) {
-          return new Promise((resolve, reject) => {
-            const ext = (file.name.split(".").pop() || "").toLowerCase();
-            const isTxtExt = ["txt","md","csv","log"].includes(ext);
-            const isTextMime = (file.type || "").startsWith("text/");
+    /* Panel de acciones */
+    .reveal { opacity: 0; transform: translateY(-6px); transition: opacity .25s ease, transform .25s ease; }
+    .reveal.show { opacity: 1; transform: translateY(0); }
 
-            const reader = new FileReader();
-            reader.onload = () => {
-              let text = String(reader.result ?? "");
-              // Normaliza saltos de línea y quita BOM si existe
-              if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-              text = text.replace(/\r\n/g, "\n");
-              resolve(text);
-            };
-            reader.onerror = () => reject(new Error("read_error"));
+    /* Check de éxito */
+    .success-pop { animation: successPop .42s cubic-bezier(.2, .8, .2, 1) both; }
+    @keyframes successPop { 0% { transform: scale(.96); opacity: 0; } 60% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(1); } }
 
-            // Heurística: si ext o MIME sugiere texto -> readAsText
-            if (isTxtExt || isTextMime) {
-              reader.readAsText(file, "utf-8");
-              return;
-            }
+    /* Botón ripple */
+    .ripple { position: relative; overflow: hidden; }
+    .ripple::after {
+      content:""; position:absolute; inset:auto; border-radius:9999px; pointer-events:none;
+      width:0; height:0; background: rgba(255,255,255,.25); transform: translate(-50%, -50%);
+      opacity:0; transition: width .45s ease, height .45s ease, opacity .6s ease;
+      left: var(--rx,50%); top: var(--ry,50%);
+    }
+    .ripple:active::after, .ripple.rippling::after { width: 240px; height: 240px; opacity: .25; }
 
-            // Algunos navegadores no informan MIME; intentamos igual:
-            // si el archivo no es enorme, probamos readAsText.
-            if (!file.type) {
-              // límite de 5MB para evitar bloquear la UI con binarios grandes
-              if (file.size <= 5 * 1024 * 1024) {
-                reader.readAsText(file, "utf-8");
-                return;
-              }
-            }
+    /* Skeleton */
+    .skeleton { position: relative; overflow: hidden; background: rgba(148,163,184,.15); }
+    .skeleton::after { content:""; position:absolute; inset:0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent); transform: translateX(-100%); animation: shimmer 1.2s ease-in-out infinite; }
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
 
-            // Caso no soportado (PDF/DOCX): rechazamos, para mostrar toast
-            reject(new Error("unsupported_format"));
-          });
-        }
+    /* ==== DECOR LATERALES ==== */
+    .decor { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .rail { position: absolute; top: 0; bottom: 0; width: 240px; opacity: .75; filter: drop-shadow(0 10px 30px rgba(0,0,0,.35)); }
+    .rail.left { left: max(0px, calc((100vw - 1200px)/2 - 260px)); }
+    .rail.right { right: max(0px, calc((100vw - 1200px)/2 - 260px)); }
+    .hex { background-image:
+      radial-gradient(circle at 50% 14.43%, rgba(148,163,184,.12) 12%, transparent 13%),
+      radial-gradient(circle at 0 50%, rgba(148,163,184,.12) 12%, transparent 13%),
+      radial-gradient(circle at 100% 50%, rgba(148,163,184,.12) 12%, transparent 13%),
+      radial-gradient(circle at 50% 85.57%, rgba(148,163,184,.12) 12%, transparent 13%);
+      background-size: 46px 80px; height: 100%; opacity: .35; mask-image: linear-gradient(180deg, transparent, #000 8%, #000 92%, transparent);
+    }
+    .orbs { position: absolute; inset: 0; mix-blend-mode: screen; opacity: .6; }
+    .orb { position: absolute; width: 220px; height: 220px; border-radius: 9999px;
+      background: radial-gradient(closest-side, rgba(168,85,247,.35), transparent 70%),
+                  radial-gradient(closest-side, rgba(14,165,233,.25), transparent 70%);
+      filter: blur(12px); animation: float 14s ease-in-out infinite;
+    }
+    .orb.small { width: 150px; height: 150px; animation-duration: 18s; }
+    .orb.tiny  { width: 100px; height: 100px; animation-duration: 20s; }
+    .rail.left .orb:nth-child(1) { top: 8%; left: 20%; }
+    .rail.left .orb:nth-child(2) { top: 40%; left: 55%; }
+    .rail.left .orb:nth-child(3) { top: 78%; left: 15%; }
+    .rail.right .orb:nth-child(1) { top: 18%; right: 15%; }
+    .rail.right .orb:nth-child(2) { top: 52%; right: 50%; }
+    .rail.right .orb:nth-child(3) { top: 82%; right: 10%; }
+    @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-18px) } }
+    .circuit { position: absolute; inset: 0; opacity: .55; }
+    .code-rain { position: absolute; inset: 0; overflow: hidden; opacity:.35; }
+    .rain-col { position:absolute; top:-120%; width: 1px; height: 320%; background: linear-gradient(to bottom, transparent, rgba(56,189,248,.55), transparent); animation: rain 8s linear infinite; }
+    .rain-col:nth-child(odd){ background: linear-gradient(to bottom, transparent, rgba(167,139,250,.45), transparent); }
+    @keyframes rain { 100% { transform: translateY(120%); } }
+    @media (max-width: 1100px) { .rail { display: none; } }
 
-        async function handleFiles(fileList) {
-          if (!fileList || !fileList.length) return;
-          const file = fileList[0];
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce) {
+      .tilt, .reveal, .glow::after, .skeleton::after, .dashed-anim::before,
+      .orb, .rain-col { animation: none !important; transition: none !important; }
+    }
 
-          // Sugerir título/desc si faltan
-          const base = file.name.replace(/\.[^/.]+$/, "");
-          if (!titleEl.value.trim()) titleEl.value = base;
-          if (!descEl.value.trim())  descEl.value  = `Importado desde archivo (${file.name})`;
+    /* ==== Dropdown (menú 3 puntos) ==== */
+    .menu {
+      position: absolute; right: 0; top: 100%; margin-top: .5rem;
+      min-width: 220px; border-radius: .75rem;
+      background: rgba(2,6,23,.92);
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+      padding: .35rem;
+      z-index: 30;
+      opacity: 0; transform: translateY(-4px) scale(.98);
+      pointer-events: none;
+      transition: opacity .12s ease, transform .12s ease;
+    }
+    .menu.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .menu button {
+      width: 100%; text-align: left; border-radius: .5rem;
+      padding: .55rem .65rem; font-size: .9rem;
+    }
+    .menu .primary {
+      background: linear-gradient(90deg, rgba(217,70,239,.18), rgba(99,102,241,.18));
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .menu .primary:hover { background: linear-gradient(90deg, rgba(217,70,239,.28), rgba(99,102,241,.28)); }
+    .menu .danger { color: #fca5a5; }
+    .menu .danger:hover { background: rgba(239,68,68,.12); }
+    .menu .item:hover { background: rgba(148,163,184,.15); }
+     /* ====== PRO POLISH (solo estilos, cero lógica) ====== */
 
-          try {
-            const text = await readFileAsTextSmart(file);
-            contentEl.value = text;
-            toast("Archivo importado ✅ (texto)");
-          } catch (err) {
-            if (String(err.message) === "unsupported_format") {
-              toast("Formato no soportado para extracción. Usa .txt/.md por ahora.");
-            } else {
-              console.error(err);
-              toast("No se pudo leer el archivo.");
-            }
-          }
-        }
+/* Paleta base y tokens */
+:root{
+  --bg: #0b1220;           /* fondo oscuro elegante */
+  --tx: #e5e7eb;           /* texto principal (slate-200) */
+  --tx-dim: #cbd5e1;       /* texto suave */
+  --muted: #94a3b8;        /* gris descriptivo */
+  --card: rgba(255,255,255,.045);
+  --card-strong: rgba(255,255,255,.06);
+  --border: rgba(255,255,255,.10);
+  --ring: rgba(139,92,246,.45); /* violeta */
+  --brand: #8b5cf6;        /* violeta */
+  --brand-2: #22d3ee;      /* cyan */
+  --danger: #ef4444;       /* rojo */
+  --ok: #10b981;           /* verde */
+}
 
-        dz.addEventListener("click", () => fileInput.click());
-        ["dragenter","dragover"].forEach(ev =>
-          dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add("dragover"); })
-        );
-        ["dragleave","drop"].forEach(ev =>
-          dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove("dragover"); })
-        );
-        dz.addEventListener("drop", (e) => {
-          const files = e.dataTransfer?.files;
-          handleFiles(files);
-        });
+/* Fondo: más sobrio y nítido */
+body{
+  color: var(--tx);
+  background:
+    radial-gradient(1200px 600px at 20% -20%, rgba(139,92,246,.10), transparent 55%),
+    radial-gradient(900px 500px at 120% 10%, rgba(34,211,238,.10), transparent 55%),
+    var(--bg);
+}
 
-        fileInput.addEventListener("change", () => {
-          handleFiles(fileInput.files);
-          fileInput.value = "";
-        });
-      }
+/* Oculta decor “ruidosa” (hex, orbs, rainfall), limpio y pro */
+.decor{ display:none !important; }
 
-      async function init() {
-        const token = getToken();
-        if (!token) {
-          window.location.replace("/src/pages/login.html");
-          return;
-        }
+/* Header glass mejor definido */
+.glass{
+  background: rgba(2,6,23,.75) !important;
+  backdrop-filter: saturate(140%) blur(10px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 6px 24px rgba(0,0,0,.25);
+}
 
-        const me = await fetchMe(token);
-        if (me && me.email) {
-          const el = document.getElementById("user-email");
-          if (el) el.textContent = me.email;
-        }
+/* Tipografía y espaciado general */
+h1,h2,h3{ letter-spacing: -0.02em; }
+h1{ font-weight: 800; }
+h2{ font-weight: 700; }
+p, .text-slate-300, .text-slate-400{ color: var(--tx-dim) !important; }
 
-        try {
-          const data = await fetchDocuments(token);
-          renderList(data);
-        } catch (e) {
-          if (String(e.message) === "unauthorized") { logout(); return; }
-          toast("No se pudieron cargar tus documentos.");
-        }
+/* Tarjetas/contendedores */
+.bg-white\/5{ background: var(--card) !important; }
+.border-white\/10{ border-color: var(--border) !important; }
+.rounded-2xl, .rounded-xl{ box-shadow: 0 10px 30px rgba(0,0,0,.20); }
 
-        hookDropzone();
+/* Dropzone: menos “neón”, más producto */
+#dropZone{
+  border-color: rgba(255,255,255,.14) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.025)), var(--card) !important;
+}
+#dropZone:hover{
+  border-color: rgba(255,255,255,.22) !important;
+  box-shadow: 0 10px 30px rgba(139,92,246,.25), inset 0 0 0 2px rgba(255,255,255,.03);
+}
+.glow{ 
+  box-shadow: 0 12px 36px rgba(139,92,246,.25), 0 0 0 1px rgba(255,255,255,.06) inset !important;
+}
+.dashed-anim::before{ opacity:.22 !important; } /* más sutil */
 
-        const form = document.getElementById("doc-form");
-        form.addEventListener("submit", async (ev) => {
-          ev.preventDefault();
-          const title = document.getElementById("title").value.trim();
-          const description = document.getElementById("description").value.trim();
-          const content = document.getElementById("content").value.trim();
+/* Botones: consistentes y con foco accesible */
+.ripple{
+  border: 1px solid var(--border);
+  transition: transform .06s ease, background .12s ease, border-color .12s ease;
+}
+.ripple:hover{ background: var(--card-strong); border-color: rgba(255,255,255,.16); }
+.ripple:active{ transform: translateY(1px); }
+.ripple:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+  border-color: rgba(255,255,255,.22);
+}
 
-          if (!title || !content) {
-            toast("Título y contenido son obligatorios.");
-            return;
-          }
+/* Botón primario consistente */
+#btnCreate{
+  background: linear-gradient(90deg, rgba(139,92,246,.9), rgba(34,211,238,.9)) !important;
+  border: none !important;
+}
+#btnCreate:hover{
+  filter: saturate(1.06) brightness(1.02);
+  transform: translateY(-1px);
+}
+#btnCreate:active{ transform: translateY(0); }
 
-          try {
-            const created = await createDocument(token, { title, description, content });
-            toast("Documento creado ✅");
-            const li = document.createElement("li");
-            li.className = "rounded-xl bg-slate-800/60 border border-slate-700 px-4 py-3 fade-in";
-            li.innerHTML = `
-              <div class="font-semibold text-white">${escapeHtml(created.title ?? title)}</div>
-              <div class="text-sm text-slate-400">${escapeHtml(created.description ?? description)}</div>
-            `;
-            const list = document.getElementById("doc-list");
-            if (list.firstChild && list.firstChild.textContent?.includes("No tienes documentos")) {
-              list.innerHTML = "";
-            }
-            list.prepend(li);
-            form.reset();
-          } catch (e) {
-            if (String(e.message) === "unauthorized") { logout(); return; }
-            if (String(e.message) === "validation") { toast("Revisa los datos (no se permiten vacíos)."); return; }
-            toast("No se pudo crear el documento.");
-          }
-        });
-      }
+/* Menú 3 puntos: más claro y preciso */
+.menu{
+  background: rgba(2,6,23,.96) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 16px 40px rgba(0,0,0,.45) !important;
+}
+.menu .primary{
+  background: linear-gradient(90deg, rgba(139,92,246,.18), rgba(34,211,238,.18)) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+}
+.menu .primary:hover{
+  background: linear-gradient(90deg, rgba(139,92,246,.28), rgba(34,211,238,.28)) !important;
+}
+.menu .item:hover{ background: rgba(148,163,184,.14) !important; }
+.menu .danger{ color: #fca5a5 !important; }
+.menu .danger:hover{ background: rgba(239,68,68,.12) !important; }
 
-      document.addEventListener("DOMContentLoaded", init);
-    </script>
-  </head>
+/* Lista de documentos: jerarquía visual */
+#myDocsList > li{
+  transition: border-color .12s ease, background .12s ease, transform .08s ease;
+}
+#myDocsList > li:hover{
+  background: var(--card-strong);
+  border-color: rgba(255,255,255,.16);
+}
+#myDocsList h3{ color:#fff; font-weight:600; }
+#myDocsList p{ color: var(--tx-dim); }
 
-  <body class="min-h-screen bg-slate-950 text-white">
-    <!-- barra -->
-    <header class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur border-b border-slate-800">
-      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span class="inline-flex h-8 w-8 rounded-full bg-brand-500 ring-8 ring-brand-500/20"></span>
-          <span class="font-bold">StudyForge</span>
-          <span class="text-slate-400 text-sm hidden sm:inline">Mis documentos</span>
-        </div>
-        <div class="flex items-center gap-4">
-          <span id="user-email" class="text-slate-300 text-sm"></span>
-          <button onclick="logout()" class="rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-sm">
-            Cerrar sesión
-          </button>
+/* Skeleton: menos brillo, más “producto” */
+.skeleton{ background: rgba(148,163,184,.12) !important; }
+.skeleton::after{ background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent) !important; }
+
+/* Resúmenes: cajita elegante */
+[data-summaries]{
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02)) !important;
+}
+
+/* Toast más visible y consistente */
+#toast{
+  background: rgba(2,6,23,.92) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.40) !important;
+}
+
+/* Scrollbar sutil (Chromium/WebKit) */
+*::-webkit-scrollbar{ height: 10px; width: 10px; }
+*::-webkit-scrollbar-thumb{
+  background: rgba(148,163,184,.35);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0);
+}
+*::-webkit-scrollbar-thumb:hover{ background: rgba(148,163,184,.55); }
+*::-webkit-scrollbar-track{ background: transparent; }
+
+/* Estados de foco accesibles para inputs */
+input[type="search"], input[type="text"], textarea{
+  outline: none;
+  box-shadow: none;
+}
+input[type="search"]:focus, input[type="text"]:focus, textarea:focus{
+  box-shadow: 0 0 0 3px var(--ring);
+  border-color: rgba(255,255,255,.22) !important;
+}
+
+/* Pequeños ajustes responsive */
+@media (max-width: 640px){
+  .px-4{ padding-left: 1rem !important; padding-right: 1rem !important; }
+  #myDocsList > li{ padding: 1rem !important; }
+  #dropZone{ padding: 1.25rem !important; }
+}
+/* ====== Fondo dinámico "Aurora" (solo CSS) ====== */
+/* No toca JS ni HTML. Se dibuja detrás de todo con body::after */
+:root{
+  --aurora-a: rgba(139, 92, 246, .22);  /* violeta */
+  --aurora-b: rgba(34, 211, 238, .20);  /* cian */
+  --aurora-c: rgba(236, 72, 153, .18);  /* fucsia */
+  --aurora-blur: 46px;                  /* difuminado general */
+  --aurora-opacity: .55;                /* intensidad global */
+}
+
+/* Mantén el grano que ya tenías en body::before. El "Aurora" va en ::after */
+body::after{
+  content:"";
+  position: fixed;
+  inset: -12%;                 /* se extiende un poco más allá para que al mover no se corte */
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;      /* mezcla luminosa agradable sobre el fondo */
+  filter: blur(var(--aurora-blur)) saturate(120%);
+  opacity: var(--aurora-opacity);
+  background:
+    radial-gradient(42% 36% at 18% 28%, var(--aurora-a), transparent 60%),
+    radial-gradient(38% 30% at 80% 20%, var(--aurora-b), transparent 60%),
+    radial-gradient(48% 42% at 50% 82%, var(--aurora-c), transparent 60%);
+  animation: aurora-drift-1 22s ease-in-out infinite alternate,
+             aurora-drift-2 38s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+/* Sutil respiración de opacidad + deriva lenta de transform */
+@keyframes aurora-drift-1 {
+  0%   { transform: translate3d(-1.5%, -1%, 0) rotate(-2deg) scale(1.04); }
+  50%  { transform: translate3d( 1.2%,  1.5%,0) rotate( 3deg)  scale(1.07); }
+  100% { transform: translate3d( 2%,   -1%,  0) rotate(-3deg) scale(1.03); }
+}
+@keyframes aurora-drift-2 {
+  0%   { opacity: .50; }
+  35%  { opacity: .62; }
+  70%  { opacity: .54; }
+  100% { opacity: .58; }
+}
+
+/* Si prefieres aún más sutil, baja la opacidad global aquí */
+@media (max-width: 640px){
+  :root{ --aurora-opacity: .48; --aurora-blur: 40px; }
+}
+
+/* Respeto a accesibilidad: sin animación si el usuario lo pide */
+@media (prefers-reduced-motion: reduce){
+  body::after{ animation: none; opacity: .45; }
+}
+
+.pulse-new{ animation: pulseNew 1.1s ease-out 1; }
+@keyframes pulseNew { 0%{ box-shadow:0 0 0 0 rgba(34,211,238,.45); } 100%{ box-shadow:0 0 0 16px rgba(34,211,238,0);} }
+
+
+  </style>
+</head>
+<body class="min-h-screen text-slate-50 relative">
+  <!-- DECOR LATERALES -->
+  <div class="decor" aria-hidden="true">
+    <div class="rail left">
+      <div class="hex"></div>
+      <div class="orbs"><div class="orb"></div><div class="orb small"></div><div class="orb tiny"></div></div>
+      <svg class="circuit" viewBox="0 0 240 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#38bdf8" stop-opacity=".65"/><stop offset="100%" stop-color="#a78bfa" stop-opacity=".35"/>
+          </linearGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <path d="M20 40 h60 v80 h50 v120 h30" stroke="url(#g1)" stroke-width="1.5" filter="url(#glow)"/>
+        <path d="M30 220 h80 v-60 h40 v90 h30 v150" stroke="url(#g1)" stroke-width="1.5" filter="url(#glow)"/>
+        <path d="M10 420 h110 v-40 h50 v80 h30 v200" stroke="url(#g1)" stroke-width="1.5" filter="url(#glow)"/>
+        <circle cx="20" cy="40" r="3" fill="#22d3ee"/><circle cx="80" cy="120" r="3" fill="#a78bfa"/>
+        <circle cx="180" cy="140" r="3" fill="#22d3ee"/><circle cx="210" cy="260" r="3" fill="#a78bfa"/>
+        <circle cx="140" cy="380" r="3" fill="#22d3ee"/><circle cx="210" cy="600" r="3" fill="#a78bfa"/>
+      </svg>
+      <div class="code-rain">
+        <div class="rain-col" style="left:15%; animation-delay:-1s;"></div>
+        <div class="rain-col" style="left:35%; animation-delay:-3s;"></div>
+        <div class="rain-col" style="left:55%; animation-delay:-2s;"></div>
+        <div class="rain-col" style="left:75%; animation-delay:-4s;"></div>
+      </div>
+    </div>
+    <div class="rail right">
+      <div class="hex"></div>
+      <div class="orbs"><div class="orb"></div><div class="orb small"></div><div class="orb tiny"></div></div>
+      <svg class="circuit" viewBox="0 0 240 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f472b6" stop-opacity=".55"/><stop offset="100%" stop-color="#38bdf8" stop-opacity=".35"/></linearGradient></defs>
+        <path d="M220 60 h-60 v120 h-40 v80 h-30 v100" stroke="url(#g2)" stroke-width="1.5" filter="url(#glow)"/>
+        <path d="M200 260 h-80 v-60 h-50 v110 h-30 v140" stroke="url(#g2)" stroke-width="1.5" filter="url(#glow)"/>
+        <path d="M230 480 h-110 v-40 h-50 v80 h-30 v160" stroke="url(#g2)" stroke-width="1.5" filter="url(#glow)"/>
+        <circle cx="220" cy="60" r="3" fill="#f472b6"/><circle cx="160" cy="180" r="3" fill="#22d3ee"/>
+        <circle cx="120" cy="260" r="3" fill="#f472b6"/><circle cx="90" cy="370" r="3" fill="#38bdf8"/>
+        <circle cx="60" cy="520" r="3" fill="#f472b6"/><circle cx="30" cy="700" r="3" fill="#38bdf8"/>
+      </svg>
+      <div class="code-rain">
+        <div class="rain-col" style="right:15%; animation-delay:-2s;"></div>
+        <div class="rain-col" style="right:35%; animation-delay:-1s;"></div>
+        <div class="rain-col" style="right:55%; animation-delay:-3.2s;"></div>
+        <div class="rain-col" style="right:75%; animation-delay:-4.4s;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header minimalista glass -->
+  <header class="glass sticky top-0 z-20">
+    <div class="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+      <a href="/index.html" class="text-xl font-extrabold">StudyForge</a>
+      <nav id="userBar" class="flex items-center gap-3 text-sm"></nav>
+    </div>
+  </header>
+
+  <main class="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-10">
+    <!-- Bloque 1: Carga/Preparación -->
+    <section class="mx-auto max-w-3xl">
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-6">Sube tu documento</h1>
+
+      <!-- Zona de arrastre -->
+      <div id="dropZone"
+           class="tilt dashed-anim relative rounded-3xl border-2 border-dashed border-white/15 bg-white/5 p-8 transition text-center overflow-hidden">
+        <p class="text-slate-300">Arrastra un <strong>.txt</strong> o haz click para seleccionar</p>
+        <p class="text-xs text-slate-400 mt-1">Detectaremos título, descripción y contenido automáticamente.</p>
+        <input id="fileInput" type="file" accept=".txt,text/plain" class="hidden" />
+        <!-- badge de éxito -->
+        <div id="successBadge" class="pointer-events-none hidden absolute inset-0 grid place-items-center">
+          <div class="success-pop rounded-full bg-emerald-500/90 px-5 py-2 font-semibold shadow-2xl">
+            ¡Listo! Creado ✅
+          </div>
         </div>
       </div>
-    </header>
 
-    <!-- contenido -->
-    <main class="max-w-6xl mx-auto px-4 py-8 grid lg:grid-cols-2 gap-8">
-      <!-- formulario / drop -->
-      <section class="rounded-2xl bg-slate-900/70 border border-slate-800 p-6">
-        <h2 class="text-xl font-semibold">Crear documento</h2>
-        <p class="text-slate-400 text-sm mb-4">Puedes arrastrar un <span class="mono">.txt</span> o <span class="mono">.md</span>, o pegar el contenido abajo. <br/>Para <span class="mono">PDF/DOCX</span> agregaremos extracción en el paso 8.</p>
+      <!-- Panel de acciones -->
+      <div id="prepActions" class="reveal hidden mt-4 flex items-center gap-3">
+        <button id="btnCreate" class="ripple rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-2.5 font-semibold disabled:opacity-40">
+          Crear
+        </button>
+        <button id="btnReset" class="ripple rounded-full border border-white/10 px-5 py-2.5 hover:bg-white/10">
+          Deshacer
+        </button>
+        <span id="createSpinner" class="hidden text-sm text-slate-400">Creando…</span>
+        <span id="hintEnter" class="text-xs text-slate-400 ml-2 hidden">Pulsa <kbd class="px-1 rounded bg-white/10">Enter</kbd> para crear</span>
+      </div>
+    </section>
 
-        <!-- Dropzone -->
-        <div id="dropzone" class="dropzone rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/50 p-6 mb-4 cursor-pointer text-center">
-          <!-- ampliamos accept para que el selector deje elegir text/* -->
-          <input id="file-input" type="file" accept=".txt,.md,text/plain,text/markdown" class="hidden" />
-          <div class="flex flex-col items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4a5 5 0 0 0-5 5H5l3.5 3.5L12 9h-2a3 3 0 1 1 3 3v2a5 5 0 0 0-1-10Z"/><path d="M5 18h14v2H5z"/></svg>
-            <p><b>Arrastra tu archivo</b> o haz click para seleccionarlo</p>
-            <p class="text-xs text-slate-400">Acepta .txt, .md y otros <span class="mono">text/*</span>. PDF/DOCX próximamente.</p>
+    <!-- Bloque 2: Mis documentos -->
+    <section class="mx-auto max-w-3xl">
+      <div class="flex items-end justify-between mb-4">
+        <h2 class="text-2xl font-bold tracking-tight">Mis documentos</h2>
+        <div class="text-sm text-slate-400">Total: <span id="docCount">0</span></div>
+      </div>
+
+      <!-- Estado vacío -->
+      <div id="docsEmpty" class="hidden text-slate-400 text-sm">
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5l8.485-4.243a2 2 0 011.03-.257L21 3.75M3 7.5V18a2.25 2.25 0 002.25 2.25H18A2.25 2.25 0 0020.25 18V6M3 7.5l9 4.5 8.25-4.125" />
+          </svg>
+          <div>
+            <div class="font-medium text-slate-200">Aún no tienes documentos</div>
+            <div class="text-slate-400 text-xs">Sube uno arriba para comenzar ✨</div>
           </div>
         </div>
+      </div>
 
-        <form id="doc-form" class="space-y-4">
-          <div>
-            <label for="title" class="block text-sm text-slate-300 mb-1">Título *</label>
-            <input id="title" type="text" required maxlength="200"
-              class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 outline-none focus:border-brand-500" />
+      <!-- Lista -->
+      <ul id="myDocsList" class="space-y-3"></ul>
+
+      <!-- Skeletons -->
+      <template id="skeletonItemTpl">
+        <li class="rounded-2xl bg-white/5 border border-white/10 p-4">
+          <div class="space-y-2">
+            <div class="skeleton h-5 w-1/3 rounded"></div>
+            <div class="skeleton h-4 w-2/3 rounded"></div>
+            <div class="skeleton h-8 w-40 rounded mt-2"></div>
           </div>
+        </li>
+      </template>
 
-          <div>
-            <label for="description" class="block text-sm text-slate-300 mb-1">Descripción</label>
-            <input id="description" type="text" maxlength="300"
-              class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 outline-none focus:border-brand-500" />
+      <!-- plantilla para items (con menú 3 puntos) -->
+      <template id="docItemTpl">
+        <li class="rounded-2xl bg-white/5 border border-white/10 p-4 relative">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 pr-10">
+              <h3 class="font-semibold text-white"></h3>
+              <p class="text-slate-300 text-sm mt-1 line-clamp-2"></p>
+            </div>
+            <div class="shrink-0 relative">
+              <button data-action="menu" aria-haspopup="menu" aria-expanded="false"
+                      class="ripple rounded-full border border-white/10 px-2.5 py-1.5 hover:bg-white/10">
+                <span aria-hidden="true" class="inline-flex gap-1 text-lg leading-none select-none">• • •</span>
+                <span class="sr-only">Abrir menú</span>
+              </button>
+              <div class="menu hidden" role="menu">
+                <button class="primary" data-menu="auto-summary">✨ Crear resumen</button>
+                <button class="primary" data-menu="create-quiz">🧠 Crear quiz</button>
+                <button class="item" data-menu="toggle-summaries">Ver/Ocultar resúmenes</button>
+                <button class="danger" data-menu="delete">Borrar</button>
+              </div>
+            </div>
           </div>
-
-          <div>
-            <label for="content" class="block text-sm text-slate-300 mb-1">Contenido *</label>
-            <textarea id="content" required rows="8"
-              class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 outline-none focus:border-brand-500 mono"></textarea>
+          <div data-summaries class="hidden mt-3 rounded-xl bg-white/5 border border-white/10 p-3">
+            <div class="text-xs text-slate-400 mb-2">Resúmenes</div>
+            <ul class="space-y-2"></ul>
           </div>
+        </li>
+      </template>
 
-          <button type="submit" class="rounded-full bg-brand-500 px-5 py-2.5 font-semibold shadow hover:opacity-95">
-            Crear
-          </button>
-        </form>
-      </section>
+      <template id="summaryItemTpl">
+        <li class="rounded-lg bg-white/5 border border-white/10 p-3">
+          <div class="text-sm font-medium text-white"></div>
+          <p class="text-sm text-slate-300 mt-1"></p>
+        </li>
+      </template>
+    </section>
+  </main>
 
-      <!-- lista -->
-      <section class="rounded-2xl bg-slate-900/70 border border-slate-800 p-6">
-        <h2 class="text-xl font-semibold mb-4">Tus documentos</h2>
-        <ul id="doc-list" class="space-y-3">
-          <li class="text-slate-400 text-sm">Cargando…</li>
-        </ul>
-      </section>
-    </main>
+  <!-- Toast -->
+  <div id="toast" class="pointer-events-none fixed bottom-4 left-1/2 z-50 hidden -translate-x-1/2 rounded-xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg">
+    <span id="toastMsg"></span>
+  </div>
 
-    <!-- toast -->
-    <div id="toast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-2 text-sm"></div>
-  </body>
+  <!-- Canvas de micro-confetti -->
+  <canvas id="confettiCanvas" class="pointer-events-none fixed inset-0 z-[60]" style="display:none;"></canvas>
+
+  <script>
+  // ==== Config (auto-detecta localhost/127) ====
+  const API_HOST = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+    ? location.hostname
+    : "localhost";
+  const API_BASE = `${location.protocol}//${API_HOST}:8000`; // <- unificado
+  const TOKEN_KEY = "sf_token";
+  const LOGIN_URL = "/src/pages/login.html";
+  const LANDING_URL = "/index.html";
+
+  // ==== Utils ====
+  const $ = sel => document.querySelector(sel);
+  function showToast(msg, ms = 2200) {
+    const toast = $("#toast");
+    $("#toastMsg").textContent = msg;
+    toast.classList.remove("hidden");
+    setTimeout(() => toast.classList.add("hidden"), ms);
+  }
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+  function authHeaders() {
+    const t = getToken();
+    return t ? { "Authorization": "Bearer " + t } : {};
+  }
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(API_BASE + path, {
+      ...options,
+      headers: { "Content-Type": "application/json", ...authHeaders(), ...(options.headers || {}) }
+    });
+    if (res.status === 401) {
+      showToast("Sesión caducada. Inicia sesión de nuevo.");
+      setTimeout(() => { window.location.href = LOGIN_URL; }, 700);
+      throw new Error("unauthorized");
+    }
+    return res;
+  }
+
+  // ==== Auth guard ====
+  (function guard() { if (!getToken()) window.location.replace(LOGIN_URL); })();
+
+  // ==== Header: user bar ====
+  const userBar = $("#userBar");
+  async function fetchMe() {
+    try {
+      const res = await apiFetch("/auth/me");
+      if (!res.ok) throw new Error("me_not_ok");
+      return await res.json();
+    } catch {
+      const t = getToken();
+      if (!t) return null;
+      try {
+        const payload = JSON.parse(atob(t.split(".")[1] || ""));
+        return { email: payload?.email || payload?.sub || "(usuario)" };
+      } catch { return null; }
+    }
+  }
+  function mountLogoutHandler(root = document) {
+    const btn = root.querySelector("#btnLogout");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.href = LANDING_URL;
+    }, { once: true });
+  }
+  async function renderUserBar() {
+    const me = await fetchMe();
+    const email = me?.email ? String(me.email) : "(usuario)";
+    userBar.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0" />
+        </svg>
+        <span class="mono text-slate-300 truncate max-w-[40ch]" title="${email}">${email}</span>
+      </div>
+      <button id="btnLogout" class="ripple rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/10">Cerrar sesión</button>
+    `;
+    mountLogoutHandler(userBar);
+  }
+
+  // ==== UI refs ====
+  const dropZone = $("#dropZone"), fileInput = $("#fileInput");
+  const prepActions = $("#prepActions"), btnCreate = $("#btnCreate"), btnReset = $("#btnReset"), createSpinner = $("#createSpinner"), hintEnter = $("#hintEnter");
+  const successBadge = $("#successBadge");
+  const myDocsList = $("#myDocsList"), docsEmpty = $("#docsEmpty"), docCount = $("#docCount");
+  const docItemTpl = $("#docItemTpl"), skeletonItemTpl = $("#skeletonItemTpl"), summaryItemTpl = $("#summaryItemTpl");
+
+  // ==== Estado ====
+  let prepared = null;
+
+  // ==== File reading ====
+  function readFileAsTextSmart(file) { return new Promise((resolve, reject) => {
+    if (!file || !file.size) return reject(new Error("Archivo vacío"));
+    const reader = new FileReader(); reader.onerror = () => reject(new Error("unreadable_text"));
+    reader.onload = () => resolve(reader.result); reader.readAsText(file, "utf-8");
+  });}
+  function extractMetaFromFile(file, txt) {
+    const baseName = (file?.name || "Documento").replace(/\.[^/.]+$/, '').trim() || "Documento";
+    const desc = (txt || "").replace(/\s+/g, " ").slice(0, 160) || null;
+    return { title: baseName.slice(0, 200), description: desc };
+  }
+
+  function showActions(){ prepActions.classList.remove("hidden"); void prepActions.offsetWidth; prepActions.classList.add("show"); hintEnter.classList.remove("hidden"); }
+  function hideActions(){ prepActions.classList.remove("show"); setTimeout(()=>prepActions.classList.add("hidden"),200); hintEnter.classList.add("hidden"); }
+  function armGlow(enable){ dropZone.classList.toggle("glow", enable); }
+  function resetPrepared(){ prepared=null; hideActions(); armGlow(false); dropZone.classList.remove("drop-accept","drop-reject"); fileInput.value=""; }
+
+  // Ripple coords
+  document.body.addEventListener("click", (e) => {
+    const el = e.target.closest(".ripple"); if (!el) return;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty("--rx", (e.clientX - rect.left) + "px");
+    el.style.setProperty("--ry", (e.clientY - rect.top) + "px");
+    el.classList.add("rippling"); setTimeout(()=>el.classList.remove("rippling"), 350);
+  }, true);
+
+  // Drop handlers
+  dropZone.addEventListener("click", () => fileInput.click());
+  dropZone.addEventListener("mousemove", (e) => {
+    const rect = dropZone.getBoundingClientRect();
+    dropZone.style.setProperty("--mx", ((e.clientX - rect.left) / rect.width) * 100 + "%");
+    dropZone.style.setProperty("--my", ((e.clientY - rect.top) / rect.height) * 100 + "%");
+  });
+  dropZone.addEventListener("dragover", (e)=>{ e.preventDefault(); dropZone.classList.add("drop-accept"); });
+  dropZone.addEventListener("dragleave", ()=> dropZone.classList.remove("drop-accept"));
+  dropZone.addEventListener("drop", async (e)=>{ e.preventDefault(); dropZone.classList.remove("drop-accept"); const file = e.dataTransfer.files?.[0]; if (!file) return; await handleFile(file); });
+  fileInput.addEventListener("change", async (e)=>{ const file = e.target.files?.[0]; if (!file) return; await handleFile(file); });
+
+  async function handleFile(file){
+    try {
+      if (!(file?.name?.toLowerCase().endsWith(".txt") || file?.type?.startsWith("text/"))) { showToast("Solo aceptamos .txt por ahora."); return; }
+      const text = await readFileAsTextSmart(file);
+      const meta = extractMetaFromFile(file, text);
+      prepared = { ...meta, content: text };
+      armGlow(true); showActions(); btnCreate.disabled = false;
+    } catch (err) { console.error("lectura falló:", err); showToast("No se pudo leer el archivo (¿vacío?)."); }
+  }
+
+  // ==== API (CRUD) ====
+  async function listDocuments(){ const r = await apiFetch("/documents"); if(!r.ok) throw new Error("list"); return r.json(); }
+  async function createDocument(d){ const r = await apiFetch("/documents",{method:"POST",body:JSON.stringify(d)}); if(r.status===201||r.status===200) return r.json(); throw new Error("create"); }
+  async function listSummaries(id){ const r = await apiFetch(`/summaries?document_id=${encodeURIComponent(id)}`); if(!r.ok) throw new Error("listsum"); return r.json(); }
+  async function createAutoSummary(id,m=5){ const r = await apiFetch(`/summaries/auto?document_id=${encodeURIComponent(id)}&max_sentences=${m}`,{method:"POST"}); if(r.status===201||r.status===200) return r.json(); throw new Error("autosum"); }
+
+  // ✅ DELETE robusto: intenta primero REST canónico y cae a variantes
+  async function deleteDocument(id){
+    const paths = [
+      { method: "DELETE", path: `/documents/${encodeURIComponent(id)}` },              // ← el bueno
+      { method: "DELETE", path: `/documents?id=${encodeURIComponent(id)}` },
+      { method: "POST",   path: `/documents/${encodeURIComponent(id)}/delete` },
+      { method: "POST",   path: `/documents/delete`, body: JSON.stringify({ id }) }
+    ];
+    let lastErr = null, lastStatus = null, lastText = "";
+    for (const opt of paths) {
+      try {
+        const res = await apiFetch(opt.path, { method: opt.method, body: opt.body });
+        if (res.ok || res.status === 204) return true;
+        lastStatus = res.status;
+        try { lastText = await res.text(); } catch {}
+      } catch (e) { lastErr = e; }
+    }
+    console.error("delete failed:", { lastErr, lastStatus, lastText });
+    const statusMsg = lastStatus ? ` (status ${lastStatus}${lastText ? `: ${lastText}` : ""})` : "";
+    throw new Error("delete" + statusMsg);
+  }
+
+  // ==== Render docs (con menú) ====
+  function closeAllMenus(except=null){
+    document.querySelectorAll(".menu.show").forEach(m => {
+      if (m!==except) {
+        m.classList.remove("show");
+        m.classList.add("hidden");
+        const btn = m.parentElement.querySelector('[data-action="menu"]');
+        if(btn) btn.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
+  function renderDocItem(doc){
+    const li = docItemTpl.content.firstElementChild.cloneNode(true);
+    const h3 = li.querySelector("h3"), p = li.querySelector("p");
+    const summariesBox = li.querySelector("[data-summaries]"), summariesList = summariesBox.querySelector("ul");
+    const menuBtn = li.querySelector('[data-action="menu"]');
+    const menu = li.querySelector(".menu");
+
+    h3.textContent = doc.title;
+    p.textContent = doc.description || "(sin descripción)";
+    li.dataset.id = String(doc.id);
+    li.id = "doc-" + doc.id;
+
+    // Toggle menú
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = menu.classList.contains("show");
+      closeAllMenus();
+      if (!isOpen) {
+        menu.classList.remove("hidden");
+        const rect = menu.getBoundingClientRect();
+        if (rect.right > window.innerWidth - 8) menu.style.right = "0";
+        menu.classList.add("show");
+        menuBtn.setAttribute("aria-expanded", "true");
+      } else {
+        menu.classList.remove("show"); menu.classList.add("hidden");
+        menuBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    // Acciones del menú
+    menu.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const btn = e.target.closest("button"); if (!btn) return;
+      const which = btn.dataset.menu;
+
+      if (which === "toggle-summaries") {
+        if (summariesBox.classList.contains("hidden")) {
+          try {
+            const data = await listSummaries(doc.id);
+            summariesList.innerHTML = "";
+            if (!data.items.length) {
+              const empty = document.createElement("div");
+              empty.className = "text-sm text-slate-400";
+              empty.textContent = "Aún no hay resúmenes. Crea uno automático.";
+              summariesList.appendChild(empty);
+            } else {
+              for (const s of data.items) {
+                const sLi = summaryItemTpl.content.firstElementChild.cloneNode(true);
+                sLi.querySelector("div").textContent = s.title;
+                sLi.querySelector("p").textContent = s.content;
+                summariesList.appendChild(sLi);
+              }
+            }
+            summariesBox.classList.remove("hidden");
+          } catch (err) { console.error(err); showToast("No se pudieron cargar resúmenes."); }
+        } else {
+          summariesBox.classList.add("hidden");
+        }
+        closeAllMenus();
+      }
+
+      if (which === "auto-summary") {
+        try {
+          btn.disabled = true;
+          const original = btn.textContent;
+          btn.textContent = "Generando…";
+          await createAutoSummary(doc.id, 5);
+          // 🔔 feedback resumen creado (animación distinta)
+          sfxChime();
+          fxAtEl('spark', menuBtn, 90); // “chispas” suaves cerca del botón
+
+          showToast("Resumen automático creado ✅");
+          if (!summariesBox.classList.contains("hidden")) {
+            const data = await listSummaries(doc.id);
+            summariesList.innerHTML = "";
+            for (const s of data.items) {
+              const sLi = summaryItemTpl.content.firstElementChild.cloneNode(true);
+              sLi.querySelector("div").textContent = s.title;
+              sLi.querySelector("p").textContent = s.content;
+              summariesList.appendChild(sLi);
+            }
+          }
+          btn.textContent = original;
+        } catch (err) { console.error(err); showToast("No se pudo generar el resumen."); }
+        finally { btn.disabled = false; closeAllMenus(); }
+      }
+
+      if (which === "delete") {
+        const dangerBtn = btn;
+        const ok = confirm(`¿Borrar "${doc.title}"? Esta acción no se puede deshacer.`);
+        if (!ok) return;
+        try {
+          // Estado "Borrando…"
+          const original = dangerBtn.textContent;
+          dangerBtn.textContent = "Borrando…";
+          dangerBtn.disabled = true;
+
+          await deleteDocument(doc.id);
+          // 🔔 feedback borrado (tiritas + sonido)
+          sfxTrash();
+          fxAtEl('shred', li, 120); // papelitos cayendo sobre la card
+
+          showToast("Documento eliminado 🗑️");
+          const el = document.getElementById("doc-" + doc.id);
+          if (el){ el.classList.add("pulse-new"); setTimeout(()=>el.classList.remove("pulse-new"), 1100); }
+
+          await refreshMyDocs();
+        } catch (err) {
+          console.error(err);
+          showToast(`No se pudo borrar el documento${err?.message ? `: ${err.message}` : ""}`);
+        } finally {
+          dangerBtn.disabled = false;
+          dangerBtn.textContent = "Borrar";
+          closeAllMenus();
+        }
+      }
+    });
+
+    return li;
+  }
+
+  function showDocsSkeleton(n = 3) {
+    myDocsList.innerHTML = "";
+    for (let i = 0; i < n; i++) {
+      myDocsList.appendChild(skeletonItemTpl.content.firstElementChild.cloneNode(true));
+    }
+  }
+
+  async function refreshMyDocs(){
+    try {
+      showDocsSkeleton(3);
+      const data = await listDocuments();
+      myDocsList.innerHTML = "";
+      const items = data.items || [];
+      docCount.textContent = String(items.length);
+      if (!items.length) { docsEmpty.classList.remove("hidden"); return; }
+      docsEmpty.classList.add("hidden");
+      for (const doc of items) myDocsList.appendChild(renderDocItem(doc));
+    } catch (err) { console.error(err); showToast("No se pudieron cargar tus documentos."); }
+  }
+
+  // Cerrar menús al hacer click fuera o con Escape
+  function closeAllOnDoc(e){ if (!e.target.closest(".menu") && !e.target.closest('[data-action="menu"]')) closeAllMenus(); }
+  document.addEventListener("click", closeAllOnDoc);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAllMenus(); });
+
+  // ==== Micro-confetti ====
+  const confettiCanvas = $("#confettiCanvas");
+  const ctx = confettiCanvas.getContext("2d");
+  let confettiParticles = [], confettiRaf = null;
+  function resizeConfetti(){ const dpr = Math.max(window.devicePixelRatio || 1, 1);
+    confettiCanvas.width = Math.floor(innerWidth * dpr); confettiCanvas.height = Math.floor(innerHeight * dpr);
+    confettiCanvas.style.width = innerWidth + "px"; confettiCanvas.style.height = innerHeight + "px"; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  window.addEventListener("resize", () => { if (confettiCanvas.style.display !== "none") resizeConfetti(); });
+  function confettiBurst({ x, y, n = 120 } = {}) {
+    if (x == null || y == null) { const r = dropZone.getBoundingClientRect(); x = r.left + r.width/2; y = r.top + r.height/2; }
+    confettiCanvas.style.display = "block"; resizeConfetti();
+    const colors = ["#22d3ee","#38bdf8","#a78bfa","#f472b6","#34d399","#facc15"];
+    for (let i=0;i<n;i++){ const ang=Math.random()*Math.PI*2, sp=3+Math.random()*6;
+      confettiParticles.push({ x,y, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp-2, size:2+Math.random()*3, color:colors[(Math.random()*colors.length)|0], life:60+(Math.random()*30)|0, rot:Math.random()*Math.PI, vr:(Math.random()-0.5)*0.3 }); }
+    if (!confettiRaf) confettiLoop();
+  }
+  function confettiLoop(){ confettiRaf = requestAnimationFrame(confettiLoop); ctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    let alive=0; for(const p of confettiParticles){ p.vy+=0.15; p.vx*=0.985; p.vy*=0.985; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life--;
+      if(p.life>0 && p.y<innerHeight+20){ alive++; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.color; ctx.fillRect(-p.size,-p.size*0.6,p.size*2,p.size*1.2); ctx.restore(); } }
+    confettiParticles = confettiParticles.filter(p=>p.life>0 && p.y<innerHeight+20);
+    if(alive===0){ cancelAnimationFrame(confettiRaf); confettiRaf=null; confettiCanvas.style.display="none"; }
+  }
+
+  // ==== Sonido "pop" ====
+  let audioCtx;
+  function playPop(){ try{ audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.type = "triangle"; osc.frequency.setValueAtTime(700,t0); osc.frequency.exponentialRampToValueAtTime(220,t0+0.12);
+    gain.gain.setValueAtTime(0.0001,t0); gain.gain.exponentialRampToValueAtTime(0.3,t0+0.008); gain.gain.exponentialRampToValueAtTime(0.0001,t0+0.18);
+    osc.connect(gain).connect(audioCtx.destination); osc.start(t0); osc.stop(t0+0.2); } catch(_){} }
+
+  // ==== Accesos rápidos ====
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !btnCreate.disabled && !prepActions.classList.contains("hidden")) btnCreate.click();
+  });
+
+  // ==== Flujo principal ====
+  document.addEventListener("DOMContentLoaded", async () => {
+    await renderUserBar();
+    await refreshMyDocs();
+  });
+
+  // Crear doc
+  btnCreate.addEventListener("click", async () => {
+    if (!prepared) return;
+    try {
+    btnCreate.disabled = true; btnReset.disabled = true; createSpinner.classList.remove("hidden");
+    const payload = { title: prepared.title, description: prepared.description, content: prepared.content };
+    const doc = await createDocument(payload);
+    // 👇 ya NO generamos resumen automático aquí
+    // await createAutoSummary(doc.id, 5);
+
+    // feedback visual (puedes mantener confetti si quieres)
+    // playPop(); confettiBurst();
+    sfxPop();
+    fxAtEl('confetti', dropZone, 140); // confeti centrado en la dropzone
+    successBadge.classList.remove("hidden"); showToast("Documento creado ✅");
+    setTimeout(()=>successBadge.classList.add("hidden"), 900);
+    resetPrepared(); await refreshMyDocs();
+    } catch (err) { console.error(err); showToast("No se pudo crear el documento."); }
+    finally { btnCreate.disabled=false; btnReset.disabled=false; createSpinner.classList.add("hidden"); }
+  });
+
+
+  btnReset.addEventListener("click", () => resetPrepared());
+
+  const fxCanvas = document.getElementById('confettiCanvas');
+const fxCtx = fxCanvas.getContext('2d');
+let fxRAF = null, fxParticles = [];
+
+function fxResize(){
+  const dpr = Math.max(window.devicePixelRatio || 1, 1);
+  fxCanvas.width = Math.floor(innerWidth * dpr);
+  fxCanvas.height = Math.floor(innerHeight * dpr);
+  fxCanvas.style.width = innerWidth + "px";
+  fxCanvas.style.height = innerHeight + "px";
+  fxCtx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize", () => { if (fxCanvas.style.display !== "none") fxResize(); });
+
+function fxLoop(){
+  fxRAF = requestAnimationFrame(fxLoop);
+  fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+  let alive = 0;
+  for (const p of fxParticles){
+    p.life--; if (p.life <= 0) continue;
+    alive++;
+    p.vx *= p.friction ?? 0.99;
+    p.vy = (p.vy + (p.gravity ?? 0.15)) * (p.air ?? 0.99);
+    p.x += p.vx; p.y += p.vy; p.rot += p.vr || 0;
+
+    fxCtx.save();
+    fxCtx.translate(p.x, p.y);
+    if (p.rot) fxCtx.rotate(p.rot);
+    fxCtx.globalAlpha = Math.max(0, p.life / (p.maxLife || 60));
+
+    if (p.kind === "confetti") {
+      fxCtx.fillStyle = p.color;
+      fxCtx.fillRect(-p.size, -p.size*0.6, p.size*2, p.size*1.2);
+    } else if (p.kind === "spark") {
+      fxCtx.fillStyle = p.color;
+      fxCtx.beginPath(); fxCtx.arc(0,0,p.size,0,Math.PI*2); fxCtx.fill();
+    } else if (p.kind === "shred") {
+      fxCtx.fillStyle = p.color;
+      fxCtx.fillRect(-p.size*0.6, -p.size*0.9, p.size*1.2, p.size*1.8);
+    }
+
+    fxCtx.restore();
+  }
+  fxParticles = fxParticles.filter(p => p.life>0 && p.y<innerHeight+60 && p.x>-60 && p.x<innerWidth+60);
+  if (alive === 0) { cancelAnimationFrame(fxRAF); fxRAF=null; fxCanvas.style.display="none"; }
+}
+
+function fxEmit(kind, x, y, n=100){
+  fxCanvas.style.display = "block"; fxResize();
+  const paletteConfetti = ["#22d3ee","#38bdf8","#a78bfa","#f472b6","#34d399","#facc15"];
+  const paletteSpark    = ["#fef3c7","#fde68a","#a78bfa","#60a5fa"];
+  const paletteShred    = ["#94a3b8","#cbd5e1","#e5e7eb"];
+
+  for (let i=0;i<n;i++){
+    const ang = Math.random()*Math.PI*2;
+    const spd = kind==="spark" ? 2+Math.random()*3 : 3+Math.random()*6;
+    const base = {
+      kind, x, y,
+      vx: Math.cos(ang)*spd,
+      vy: Math.sin(ang)*spd + (kind==="shred" ? -1 : -2),
+      size: kind==="spark" ? (1.5+Math.random()*2.5) : (2+Math.random()*4),
+      rot: Math.random()*Math.PI, vr:(Math.random()-0.5)*0.3,
+      gravity: kind==="spark" ? 0.08 : (kind==="shred" ? 0.22 : 0.15),
+      friction: 0.992, air: 0.992,
+      life: (kind==="spark" ? 45 : kind==="shred" ? 55 : 60) + (Math.random()*20|0),
+    };
+    base.maxLife = base.life;
+    if (kind==="confetti") base.color = paletteConfetti[(Math.random()*paletteConfetti.length)|0];
+    if (kind==="spark")    base.color = paletteSpark[(Math.random()*paletteSpark.length)|0];
+    if (kind==="shred")    base.color = paletteShred[(Math.random()*paletteShred.length)|0];
+    fxParticles.push(base);
+  }
+  if (!fxRAF) fxLoop();
+}
+function fxAtEl(kind, el, n){
+  const r = el.getBoundingClientRect();
+  fxEmit(kind, r.left + r.width/2, r.top + r.height/2, n);
+}
+
+/* ==== SFX (audios WebAudio) ==== */
+let sfxCtx;
+function sfxCtxGet(){ return sfxCtx ||= new (window.AudioContext||window.webkitAudioContext)(); }
+
+function sfxPop(){ // doc creado
+  try{ const ctx=sfxCtxGet(), t=ctx.currentTime;
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type="triangle"; o.frequency.setValueAtTime(800,t); o.frequency.exponentialRampToValueAtTime(250,t+0.12);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.35,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.20);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+0.22);
+  }catch{}
+}
+function sfxChime(){ // resumen creado
+  try{ const ctx=sfxCtxGet(), t=ctx.currentTime;
+    const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.25,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.6); g.connect(ctx.destination);
+    const notes=[880,1174,1568]; // A5-D6-G6
+    notes.forEach((f,i)=>{ const o=ctx.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(f,t+i*0.03); o.connect(g); o.start(t+i*0.03); o.stop(t+0.4+i*0.03); });
+  }catch{}
+}
+function sfxTrash(){ // borrado
+  try{ const ctx=sfxCtxGet(), t=ctx.currentTime;
+    // ruido corto + golpe
+    const noise=ctx.createBufferSource(); const buffer=ctx.createBuffer(1, ctx.sampleRate*0.2, ctx.sampleRate);
+    const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2); }
+    noise.buffer=buffer;
+    const g1=ctx.createGain(); g1.gain.setValueAtTime(0.0001,t); g1.gain.exponentialRampToValueAtTime(0.4,t+0.01); g1.gain.exponentialRampToValueAtTime(0.0001,t+0.25);
+    const b=ctx.createOscillator(); b.type="square"; b.frequency.setValueAtTime(150,t); b.frequency.exponentialRampToValueAtTime(60,t+0.18);
+    const g2=ctx.createGain(); g2.gain.setValueAtTime(0.12,t); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.22);
+    noise.connect(g1).connect(ctx.destination); b.connect(g2).connect(ctx.destination);
+    noise.start(t); b.start(t); noise.stop(t+0.25); b.stop(t+0.24);
+  }catch{}
+}
+</script>
+</body>
 </html>
