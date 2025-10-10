@@ -13,6 +13,7 @@ class SummaryIn(BaseModel):
 
 
 class SummaryOut(BaseModel):
+    # Permite construir el modelo desde objetos ORM (SQLAlchemy)
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -24,3 +25,10 @@ class SummaryOut(BaseModel):
 
 class SummaryListOut(BaseModel):
     items: List[SummaryOut]
+
+
+# NUEVO: payload para el endpoint de auto-resumen
+class AutoSummaryIn(BaseModel):
+    document_id: int
+    max_sentences: int = Field(5, ge=1, le=15)
+

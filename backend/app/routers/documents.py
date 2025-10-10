@@ -8,7 +8,7 @@ from app.services.document_service import DocumentService
 from app.core.deps import get_current_user
 from app.repositories.models import User
 
-router = APIRouter()
+router = APIRouter(prefix="/documents", tags=["documents"])
 service = DocumentService()
 
 @router.get("", response_model=DocumentListOut, summary="List documents (only mine)")
@@ -33,3 +33,15 @@ def create_document(
     Crea un documento asignándolo SIEMPRE al usuario autenticado (ignora cualquier user_id del cliente).
     """
     return service.create(db, payload, owner_id=current.id)
+
+@router.delete("/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document(
+    doc_id: int,
+    db: Session = Depends(get_db),
+    current = Depends(get_current_user),
+):
+    svc = DocumentService()
+    ok = svc.delete(db, owner_id=current.id, doc_id=doc_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return

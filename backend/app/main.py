@@ -11,16 +11,20 @@ app = FastAPI(title="StudyForge API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_methods=["GET", "POST", "DELETE", "PUT", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,  # cachea la respuesta al preflight (menos latencia)
 )
 
 # Rutas
 app.include_router(health_router, prefix="/health", tags=["health"])
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
-app.include_router(documents_router, prefix="/documents", tags=["documents"])
+app.include_router(documents_router)
 
 # 👇 OJO: el router de summaries YA trae prefix="/summaries"
 # Así que NO le pongas otro prefix aquí.
