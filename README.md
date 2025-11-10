@@ -45,6 +45,8 @@
 ```ini
 DATABASE_URL=postgresql+psycopg://<user_app>:<pass_app>@localhost:5432/studyforge?options=-csearch_path=studyforge,public
 ENV=dev
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+DATABASE_SCHEMA=studyforge
 ```
 
 **`backend/.env.alembic`** (migraciones — usado por Alembic):
@@ -52,9 +54,10 @@ ENV=dev
 ALEMBIC_URL=postgresql+psycopg://<user_owner>:<pass_owner>@localhost:5432/studyforge?options=-csearch_path=studyforge,public
 ```
 
-**Ejemplos de referencia:**  
-- `backend/.env.example`  
+**Ejemplos de referencia:**
+- `backend/.env.example`
 - `backend/.env.alembic.example` (añadir si no existe)
+- `frontend/.env.example`
 
 ### 4.2. Preparación de base de datos (una vez por entorno)
 
@@ -165,17 +168,38 @@ Content-Type: application/json
 
 ## 8. Solución de problemas
 
-- **CORS en frontend:** añadir `CORSMiddleware` en `app.main` con orígenes `http://localhost:5173` y `http://127.0.0.1:5173`.  
-- **`relation ... does not exist`:** ejecutar `alembic upgrade head` (con rol owner).  
-- **Conexión fallida:** verificar `DATABASE_URL` y que PostgreSQL esté en ejecución.  
+- **CORS en frontend:** añadir `CORSMiddleware` en `app.main` con orígenes `http://localhost:5173` y `http://127.0.0.1:5173`.
+- **`relation ... does not exist`:** ejecutar `alembic upgrade head` (con rol owner).
+- **Conexión fallida:** verificar `DATABASE_URL` y que PostgreSQL esté en ejecución.
 - **Caché de Vite:** la carpeta `frontend/.vite/` debe estar en `.gitignore`; si causa problemas, eliminarla y reiniciar `pnpm dev`.
+
+---
+
+## 8 bis. Despliegue en Render.com (servicios gratuitos)
+
+1. **Conectar el repositorio** a Render y seleccionar el archivo `render.yaml` (auto-detección por defecto).
+2. Render creará:
+   - Un servicio **Web (Python)** para la API (`studyforge-api`).
+   - Un **Static Site** para el frontend (`studyforge-frontend`).
+   - Una base de datos **PostgreSQL** gratuita (`studyforge-db`).
+3. Durante el build:
+   - La API instala `backend/requirements.txt` y levanta Uvicorn en `0.0.0.0:10000`.
+   - El frontend usa `pnpm` (via `corepack`) para compilar `frontend/dist`.
+4. Las variables se propagan automáticamente:
+   - `DATABASE_URL` toma la cadena gestionada por Render y se normaliza a `postgresql+psycopg://` automáticamente.
+   - `DATABASE_SCHEMA` fija el `search_path` a `studyforge` sin tener que modificar la URL.
+   - `ALLOWED_ORIGINS` obtiene la URL pública del frontend para que CORS funcione.
+   - `VITE_API_BASE` y derivados apuntan al backend publicado.
+5. Tras el primer despliegue, ejecutar las migraciones desde el dashboard de Render (`Shell` → `alembic upgrade head`) o añadiendo un job manual.
+
+> **Nota:** Si necesitas dominios adicionales en CORS, agrega la URL a `ALLOWED_ORIGINS` separándola con comas en el panel de variables de Render.
 
 ---
 
 ## 9. Checklist E2E (rápido)
 
-1. `\dt studyforge.*` y `SELECT * FROM studyforge.alembic_version;`  
-2. `GET /health`  
+1. `\dt studyforge.*` y `SELECT * FROM studyforge.alembic_version;`
+2. `GET /health`
 3. `GET /documents`  
 4. `POST /documents` válido → aparece en la lista  
 5. `POST /documents` inválido → **422**  
