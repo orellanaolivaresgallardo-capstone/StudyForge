@@ -34,13 +34,14 @@ services:
   # Frontend Vite (Static Site)
   - type: web
     name: studyforge-frontend
-    runtime: node
+    runtime: static
     plan: free
     rootDir: frontend
     buildCommand: |
       corepack enable pnpm
       pnpm install --frozen-lockfile
       pnpm build
+    staticPublishDir: ./dist
     envVars:
       - key: VITE_API_BASE
         fromService:
