@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-
-import { health } from "./services/api";
+import axios from "axios";
 
 function App() {
   const [status, setStatus] = useState("cargando...");
 
   useEffect(() => {
-    health()
-      .then((r) => setStatus(r.status))
+    axios.get(import.meta.env.VITE_API_URL + "/api/health/")
+      .then(r => setStatus(r.data.status))
       .catch(() => setStatus("error"));
   }, []);
 

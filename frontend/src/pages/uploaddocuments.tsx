@@ -19,17 +19,12 @@ type ApiUploadResp =
 /* =========================
    Config (sin any)
 ========================= */
-const API_BASE =
-  (import.meta.env.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
-
-const buildApiUrl = (path: string): string => `${API_BASE}${path}`;
-
 const UPLOAD_URL =
-  import.meta.env.VITE_UPLOAD_URL ?? buildApiUrl("/files");
+  import.meta.env.VITE_UPLOAD_URL ?? "http://localhost:8000/files";
 const SUMMARIZE_URL =
-  import.meta.env.VITE_SUMMARIZE_URL ?? buildApiUrl("/ai/summarize");
+  import.meta.env.VITE_SUMMARIZE_URL ?? "http://localhost:8000/ai/summarize";
 const QUIZ_URL =
-  import.meta.env.VITE_QUIZ_URL ?? buildApiUrl("/ai/quiz");
+  import.meta.env.VITE_QUIZ_URL ?? "http://localhost:8000/ai/quiz";
 // Hash routing por defecto; cambia a "/results" si usas router normal
 const RESULTS_URL =
   import.meta.env.VITE_RESULTS_URL ?? "/src/pages/results.tsx";
