@@ -23,7 +23,7 @@ services:
         value: production
       - key: PYTHON_VERSION
         value: "3.11"
-  - type: web
+  - type: static_site
     name: studyforge-frontend
     plan: free
     region: oregon
