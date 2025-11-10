@@ -34,7 +34,7 @@ services:
   # Frontend Vite (Static Site)
   - type: web
     name: studyforge-frontend
-    runtime: static
+    runtime: node
     plan: free
     rootDir: frontend
     buildCommand: |
