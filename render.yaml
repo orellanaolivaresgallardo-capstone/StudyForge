@@ -41,7 +41,7 @@ services:
       corepack enable pnpm
       pnpm install --frozen-lockfile
       pnpm build
-    staticPublishDir: ./dist
+    staticPublishPath: ./dist
     envVars:
       - key: VITE_API_BASE
         fromService:
