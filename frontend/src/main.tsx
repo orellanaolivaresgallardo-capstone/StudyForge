@@ -26,6 +26,11 @@ const router = createBrowserRouter([
 ]);
 
 if (rootEl) {
+  const landingEl = document.getElementById("landing");
+  if (landingEl) {
+    landingEl.style.display = "none";
+  }
+  rootEl.style.display = "block";
   createRoot(rootEl).render(
     <StrictMode>
       <RouterProvider router={router} />
