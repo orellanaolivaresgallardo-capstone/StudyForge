@@ -103,7 +103,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-extrabold text-slate-900">Iniciar sesión</h1>
         <p className="mt-2 text-slate-600">
           Accede a tu cuenta o{" "}
-          <a href="./signup.html" className="text-fuchsia-600 hover:underline">
+          <a href="/src/pages/signup.html" className="text-fuchsia-600 hover:underline">
             crea una nueva
           </a>
           .
