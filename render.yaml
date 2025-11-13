@@ -1,26 +1,58 @@
-databases:
-  - name: studyforge-db
-    plan: free            # 1 GB, expira a los 30 días (para pruebas)
-    region: oregon
+projects:
+- name: StudyForge
+  environments:
+  - name: Production
+    services:
+    # Frontend Vite (Static Site)
+    - type: web
+      name: studyforge-frontend
+      runtime: static
+      plan: free
+      rootDir: frontend
+      buildCommand: corepack enable pnpm; pnpm install --frozen-lockfile; pnpm build
+      staticPublishPath: dist
+      routes:
+        - type: rewrite
+          source: /*
+          destination: /index.html
+      envVars:
+        - key: VITE_API_BASE
+          fromService:
+            name: studyforge-api
+            type: web
+            property: host
+        - key: VITE_RESULTS_URL
+          value: /results
 
-services:
-  # Backend FastAPI
-  - type: web
-    name: studyforge-api
-    runtime: python
-    plan: free
-    region: oregon
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: studyforge-db
-          property: connectionString
-      - key: DATABASE_SCHEMA
-        value: studyforge
-      - key: ENV
-        value: production
-      - key: PYTHON_VERSION
-        value: "3.11"
+    # Backend FastAPI
+    - type: web
+      name: studyforge-api
+      runtime: python
+      plan: free
+      region: oregon
+      rootDir: backend
+      buildCommand: pip install -r requirements.txt
+      startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+      envVars:
+        - key: DATABASE_URL
+          fromDatabase:
+            name: studyforge-db
+            property: connectionString
+        - key: DATABASE_SCHEMA
+          value: studyforge
+        - key: ALLOWED_ORIGINS
+          fromService:
+            name: studyforge-frontend
+            type: web
+            property: host
+        - key: ENV
+          value: production
+        - key: PYTHON_VERSION
+          value: "3.11.14"
+
+    databases:
+      - name: studyforge-db
+        databaseName: studyforge_db
+        plan: free            # 1 GB, expira a los 30 días (para pruebas)
+        region: oregon
+        postgresMajorVersion: "17"
