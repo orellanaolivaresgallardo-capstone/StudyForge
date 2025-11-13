@@ -1,29 +1,32 @@
-// src/main.tsx
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-} from "react-router-dom";
+import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+
 import "./index.css";
 
-// Si usas estas páginas en rutas SPA:
+import AboutPage from "./pages/aboutus";
+import ErrorPage from "./pages/ErrorPage";
+import FeaturesPage from "./pages/features";
+import ForgotPassword from "./pages/forgot-password";
 import Home from "./pages/home";
 import Login from "./pages/login";
+import Results from "./pages/results";
 import SignUp from "./pages/signup";
-import ErrorPage from "./pages/ErrorPage";
+import UploadPage from "./pages/uploaddocuments";
 
-// NO tocamos #landing. Solo montamos si existe #root y si esta página fue diseñada para SPA.
-const rootEl = document.getElementById("root");
-
-// Puedes ajustar las rutas si usas SPA en otras páginas.
 const router = createBrowserRouter([
   { path: "/", element: <Home />, errorElement: <ErrorPage /> },
-  { path: "/login", element: <Login /> },
-  { path: "/signup", element: <SignUp /> },
+  { path: "/upload", element: <UploadPage />, errorElement: <ErrorPage /> },
+  { path: "/results", element: <Results />, errorElement: <ErrorPage /> },
+  { path: "/features", element: <FeaturesPage />, errorElement: <ErrorPage /> },
+  { path: "/about", element: <AboutPage />, errorElement: <ErrorPage /> },
+  { path: "/login", element: <Login />, errorElement: <ErrorPage /> },
+  { path: "/signup", element: <SignUp />, errorElement: <ErrorPage /> },
+  { path: "/forgot-password", element: <ForgotPassword />, errorElement: <ErrorPage /> },
   { path: "*", element: <Navigate to="/" replace /> },
 ]);
+
+const rootEl = document.getElementById("root");
 
 if (rootEl) {
   createRoot(rootEl).render(

@@ -15,19 +15,19 @@ export default function AboutUsPage() {
               </span>
             </div>
             <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
-              <a href="index.html" className="hover:text-white">Inicio</a>
-              <a href="aboutus.html" className="text-white font-semibold">Sobre nosotros</a>
-              <a href="features.html" className="hover:text-white">Características</a>
+              <a href="/" className="hover:text-white">Inicio</a>
+              <a href="/about" className="text-white font-semibold">Sobre nosotros</a>
+              <a href="/features" className="hover:text-white">Características</a>
             </nav>
             <div className="flex items-center gap-2">
               <a
-                href="signup.html"
+                href="/signup"
                 className="hidden sm:inline rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 px-3 py-1.5 text-sm"
               >
                 Crear cuenta
               </a>
               <a
-                href="login.html"
+                href="/login"
                 className="rounded-xl btn-primary px-3.5 py-1.5 text-sm font-medium"
               >
                 Ingresar

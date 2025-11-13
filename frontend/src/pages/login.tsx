@@ -9,7 +9,7 @@ const AUTH_URL = `${API_BASE}/auth/login`;
 
 // Para páginas sueltas (no router SPA), redirigimos a la HTML real:
 const REDIRECT_URL =
-  (import.meta as ImportMeta).env?.VITE_UPLOAD_REDIRECT_PATH ?? "/src/pages/uploaddocuments.html";
+  (import.meta as ImportMeta).env?.VITE_UPLOAD_REDIRECT_PATH ?? "/upload";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -103,7 +103,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-extrabold text-slate-900">Iniciar sesión</h1>
         <p className="mt-2 text-slate-600">
           Accede a tu cuenta o{" "}
-          <a href="/src/pages/signup.html" className="text-fuchsia-600 hover:underline">
+          <a href="/signup" className="text-fuchsia-600 hover:underline">
             crea una nueva
           </a>
           .

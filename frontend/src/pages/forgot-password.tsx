@@ -68,10 +68,10 @@ export default function ForgotPasswordPage() {
 
         {/* Links secundarios */}
         <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-slate-600 gap-3">
-          <a href="/src/pages/login.html" className="text-fuchsia-600 hover:underline">
+          <a href="/login" className="text-fuchsia-600 hover:underline">
             Volver al login
           </a>
-          <a href="/src/pages/signup.html" className="hover:underline">
+          <a href="/signup" className="hover:underline">
             ¿No tienes cuenta? Crear una nueva
           </a>
         </div>

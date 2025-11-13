@@ -131,7 +131,15 @@ def create_summary(
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
-    return service.create(db, me.id, payload)
+    result = service.create(db, me.id, payload)
+    if result is None:
+        doc = db.query(Document).filter(Document.id == payload.document_id).first()
+        if not doc:
+            raise HTTPException(status_code=404, detail="documento no encontrado")
+        if getattr(doc, "user_id", None) is not None and doc.user_id != me.id:
+            raise HTTPException(status_code=403, detail="no tienes acceso a este documento")
+        raise HTTPException(status_code=400, detail="no se pudo crear el resumen")
+    return result
 
 
 @router.get("/{summary_id}", response_model=SummaryOut)
@@ -140,7 +148,10 @@ def get_summary(
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
-    return service.get(db, me.id, summary_id)
+    result = service.get(db, me.id, summary_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="resumen no encontrado")
+    return result
 
 
 @router.delete("/{summary_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -149,7 +160,9 @@ def delete_summary(
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user),
 ):
-    service.delete(db, me.id, summary_id)
+    deleted = service.delete(db, me.id, summary_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="resumen no encontrado")
     return
 
 
@@ -163,10 +176,15 @@ def create_auto_summary(
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="documento no encontrado")
+    if getattr(doc, "user_id", None) is not None and doc.user_id != me.id:
+        raise HTTPException(status_code=403, detail="no tienes acceso a este documento")
 
     # Resumen por reglas (mejor que cortar oraciones)
     content = summarize_text_rulebased(doc.content or "", max_sentences=max_sentences)
 
     # TÍTULO DEL RESUMEN = TÍTULO DEL DOCUMENTO (sin “Resumen de:”)
     payload = SummaryIn(title=doc.title, content=content, document_id=doc.id)
-    return service.create(db, me.id, payload)
+    result = service.create(db, me.id, payload)
+    if result is None:
+        raise HTTPException(status_code=400, detail="no se pudo crear el resumen")
+    return result

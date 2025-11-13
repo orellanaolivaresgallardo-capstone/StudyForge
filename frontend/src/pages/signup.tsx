@@ -13,7 +13,7 @@ const LOGIN_URL  = `${API_BASE}/auth/login`;
 // Redirección a la página HTML real de documentos
 const REDIRECT_URL =
   (import.meta.env?.VITE_UPLOAD_REDIRECT_PATH as string | undefined) ??
-  "/src/pages/uploaddocuments.html";
+  "/upload";
 
 export default function SignupPage() {
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -137,7 +137,7 @@ export default function SignupPage() {
               <p className="mt-2 text-slate-600">
                 ¿Ya tienes cuenta?{" "}
                 <a
-                  href="/src/pages/login.html"
+                  href="/login"
                   className="font-semibold text-violet-600 hover:text-violet-700"
                 >
                   Inicia sesión

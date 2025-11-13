@@ -32,7 +32,7 @@ const QUIZ_URL =
   import.meta.env.VITE_QUIZ_URL ?? buildApiUrl("/ai/quiz");
 // Hash routing por defecto; cambia a "/results" si usas router normal
 const RESULTS_URL =
-  import.meta.env.VITE_RESULTS_URL ?? "/src/pages/results.tsx";
+  import.meta.env.VITE_RESULTS_URL ?? "/results";
 
 /* =========================
    Constantes y helpers

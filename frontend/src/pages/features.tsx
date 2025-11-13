@@ -13,13 +13,13 @@ export default function FeaturesPage() {
               <span className="hidden sm:inline text-xs text-slate-300/80 ml-2 pill px-2 py-0.5 rounded-full bg-white/10">Características</span>
             </div>
             <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
-              <a href="index.html" className="hover:text-white">Inicio</a>
-              <a href="aboutus.html" className="hover:text-white">Sobre nosotros</a>
-              <a href="features.html" className="text-white font-semibold">Características</a>
+              <a href="/" className="hover:text-white">Inicio</a>
+              <a href="/about" className="hover:text-white">Sobre nosotros</a>
+              <a href="/features" className="text-white font-semibold">Características</a>
             </nav>
             <div className="flex items-center gap-2">
-              <a href="signup.html" className="hidden sm:inline rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 px-3 py-1.5 text-sm">Crear cuenta</a>
-              <a href="login.html" className="rounded-xl btn px-3.5 py-1.5 text-sm font-medium">Ingresar</a>
+              <a href="/signup" className="hidden sm:inline rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 px-3 py-1.5 text-sm">Crear cuenta</a>
+              <a href="/login" className="rounded-xl btn px-3.5 py-1.5 text-sm font-medium">Ingresar</a>
             </div>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function FeaturesPage() {
             <h2 className="text-xl md:text-2xl font-extrabold">¿Listo para probar StudyForge?</h2>
             <p className="text-slate-300 mt-1">Únete a la beta y recibe noticias de lanzamiento.</p>
           </div>
-          <a href="signup.html" className="btn rounded-xl px-5 py-3 font-semibold">Crear cuenta</a>
+          <a href="/signup" className="btn rounded-xl px-5 py-3 font-semibold">Crear cuenta</a>
         </div>
       </section>
 
