@@ -7,7 +7,6 @@ projects:
     - type: web
       name: studyforge-frontend
       runtime: static
-      plan: free
       rootDir: frontend
       buildCommand: corepack enable pnpm; pnpm install --frozen-lockfile; pnpm build
       staticPublishPath: dist
