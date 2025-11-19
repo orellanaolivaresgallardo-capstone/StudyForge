@@ -24,6 +24,12 @@ class SummaryCreate(BaseModel):
     expertise_level: ExpertiseLevelEnum = Field(..., description="Nivel de expertise del resumen")
 
 
+class SummaryFromDocumentsRequest(BaseModel):
+    """Schema para crear resumen desde documentos existentes."""
+    document_ids: List[UUID] = Field(..., min_length=1, description="Lista de IDs de documentos a usar")
+    expertise_level: ExpertiseLevelEnum = Field(..., description="Nivel de expertise del resumen")
+
+
 class SummaryResponse(BaseModel):
     """Schema para respuesta de resumen."""
     model_config = ConfigDict(from_attributes=True)
@@ -35,8 +41,6 @@ class SummaryResponse(BaseModel):
     expertise_level: str
     topics: List[str]
     key_concepts: List[str]
-    original_file_name: str
-    original_file_type: str
     created_at: datetime
     updated_at: datetime
 

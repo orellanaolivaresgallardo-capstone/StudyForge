@@ -6,7 +6,12 @@ Sistema de apoyo al aprendizaje con IA.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
+from app.core.logging import setup_logging, get_logger
 from app.routers import auth, documents, summaries, quizzes, quiz_attempts, stats
+
+# Inicializar logging
+setup_logging()
+logger = get_logger(__name__)
 
 app = FastAPI(
     title="StudyForge API",
@@ -24,6 +29,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Evento ejecutado al iniciar la aplicación."""
+    logger.info(f"Starting StudyForge API v2.0.0 in {settings.ENV} mode")
+    logger.info(f"Logging level: {settings.LOG_LEVEL}")
 
 
 @app.get("/health", tags=["health"])
@@ -46,5 +58,5 @@ app.include_router(stats.router, prefix="/stats", tags=["stats"])
 
 
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn   
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

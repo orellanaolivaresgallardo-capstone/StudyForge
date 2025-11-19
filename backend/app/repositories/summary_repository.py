@@ -20,8 +20,6 @@ class SummaryRepository:
         expertise_level: ExpertiseLevel,
         topics: List[str],
         key_concepts: List[str],
-        original_file_name: str,
-        original_file_type: str,
     ) -> Summary:
         """
         Crea un nuevo resumen en la base de datos.
@@ -34,8 +32,6 @@ class SummaryRepository:
             expertise_level: Nivel de expertise
             topics: Lista de temas identificados
             key_concepts: Lista de conceptos clave
-            original_file_name: Nombre del archivo original
-            original_file_type: Tipo del archivo original
 
         Returns:
             Resumen creado
@@ -47,13 +43,33 @@ class SummaryRepository:
             expertise_level=expertise_level,
             topics=topics,
             key_concepts=key_concepts,
-            original_file_name=original_file_name,
-            original_file_type=original_file_type,
         )
         db.add(summary)
         db.commit()
         db.refresh(summary)
         return summary
+
+    @staticmethod
+    def add_document_to_summary(db: Session, summary_id: UUID, document_id: UUID) -> None:
+        """
+        Asocia un documento con un resumen (relación many-to-many).
+
+        Args:
+            db: Sesión de base de datos
+            summary_id: ID del resumen
+            document_id: ID del documento
+
+        Raises:
+            Exception: Si la relación ya existe o hay error en BD
+        """
+        from app.models.summary_document import summary_documents
+
+        stmt = summary_documents.insert().values(
+            summary_id=summary_id,
+            document_id=document_id
+        )
+        db.execute(stmt)
+        db.commit()
 
     @staticmethod
     def get_by_id(db: Session, summary_id: UUID) -> Optional[Summary]:

@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # Entorno
     ENV: str = "development"
     DEBUG: bool = True
+    LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
     # CORS
     CORS_ORIGINS: list[str] = [

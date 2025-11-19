@@ -10,6 +10,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.security import decode_access_token
+from app.core.logging import log_ownership_validation
 from app.models import User, Document, Summary, Quiz, QuizAttempt
 
 # Esquema de autenticación Bearer
@@ -96,6 +97,13 @@ def verify_document_ownership(document: Document | None, user: User) -> Document
         )
 
     if document.user_id != user.id:  # type: ignore[comparison-overlap]
+        log_ownership_validation(
+            resource_type="document",
+            resource_id=str(document.id),
+            user_id=str(user.id),
+            owner_id=str(document.user_id),
+            status="denied"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para acceder a este documento"
@@ -126,6 +134,13 @@ def verify_summary_ownership(summary: Summary | None, user: User) -> Summary:
         )
 
     if summary.user_id != user.id:  # type: ignore[comparison-overlap]
+        log_ownership_validation(
+            resource_type="summary",
+            resource_id=str(summary.id),
+            user_id=str(user.id),
+            owner_id=str(summary.user_id),
+            status="denied"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para acceder a este resumen"
@@ -156,6 +171,13 @@ def verify_quiz_ownership(quiz: Quiz | None, user: User) -> Quiz:
         )
 
     if quiz.user_id != user.id:  # type: ignore[comparison-overlap]
+        log_ownership_validation(
+            resource_type="quiz",
+            resource_id=str(quiz.id),
+            user_id=str(user.id),
+            owner_id=str(quiz.user_id),
+            status="denied"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para acceder a este quiz"
@@ -186,6 +208,13 @@ def verify_quiz_attempt_ownership(attempt: QuizAttempt | None, user: User) -> Qu
         )
 
     if attempt.user_id != user.id:  # type: ignore[comparison-overlap]
+        log_ownership_validation(
+            resource_type="quiz_attempt",
+            resource_id=str(attempt.id),
+            user_id=str(user.id),
+            owner_id=str(attempt.user_id),
+            status="denied"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para acceder a este intento de quiz"

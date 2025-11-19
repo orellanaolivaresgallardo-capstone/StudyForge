@@ -8,7 +8,12 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.dependencies import get_current_user
 from app.services.summary_service import SummaryService
-from app.schemas.summary import SummaryResponse, SummaryListResponse, ExpertiseLevelEnum
+from app.schemas.summary import (
+    SummaryResponse,
+    SummaryListResponse,
+    SummaryFromDocumentsRequest,
+    ExpertiseLevelEnum
+)
 from app.models.user import User
 
 router = APIRouter()
@@ -23,24 +28,64 @@ async def upload_and_generate_summary(
     db: Session = Depends(get_db),
 ):
     """
-    Sube un documento y genera un resumen con IA.
+    Sube un documento, lo almacena y genera un resumen con IA.
 
-    **El documento NO se almacena**, solo se procesa para generar el resumen.
+    El documento se guarda en la base de datos y se asocia con el resumen generado.
+    Consume espacio de la cuota de almacenamiento del usuario.
 
     Args:
-        file: Archivo a procesar
+        file: Archivo a procesar (PDF, PPTX, DOCX, TXT)
         expertise_level: Nivel de expertise (basico, medio, avanzado)
         current_user: Usuario autenticado
         db: Sesión de base de datos
 
     Returns:
         Resumen generado con temas y conceptos clave
+
+    Raises:
+        HTTPException 413: Si el archivo excede el tamaño máximo permitido
+        HTTPException 507: Si no hay suficiente espacio de almacenamiento
+        HTTPException 500: Si falla la generación del resumen con OpenAI
     """
     summary = await summary_service.create_summary_from_file(
         db=db,
         user_id=current_user.id,
         file=file,
         expertise_level=expertise_level,
+    )
+    return summary
+
+
+@router.post("/from-documents", response_model=SummaryResponse, status_code=status.HTTP_201_CREATED)
+def generate_summary_from_documents(
+    request: SummaryFromDocumentsRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Genera un resumen a partir de documentos ya almacenados.
+
+    Permite combinar múltiples documentos previamente subidos en un solo resumen.
+    No consume espacio adicional de almacenamiento.
+
+    Args:
+        request: IDs de documentos y nivel de expertise
+        current_user: Usuario autenticado
+        db: Sesión de base de datos
+
+    Returns:
+        Resumen generado
+
+    Raises:
+        HTTPException 400: Si se excede el número máximo de documentos
+        HTTPException 403: Si algún documento no pertenece al usuario
+        HTTPException 404: Si algún documento no existe
+    """
+    summary = summary_service.create_summary_from_documents(
+        db=db,
+        user=current_user,
+        document_ids=request.document_ids,
+        expertise_level=request.expertise_level,
     )
     return summary
 

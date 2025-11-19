@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
 from app.core.security import hash_password, verify_password, create_access_token
+from app.core.logging import log_auth_event, log_error
 from app.models.user import User
 
 
@@ -33,6 +34,7 @@ class AuthService:
         # Verificar si el email ya existe
         existing_user = UserRepository.get_by_email(db, email)
         if existing_user:
+            log_auth_event("register", email=email, status="failed", message="Email already registered")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El email ya está registrado"
@@ -41,6 +43,7 @@ class AuthService:
         # Verificar si el username ya existe
         existing_user = UserRepository.get_by_username(db, username)
         if existing_user:
+            log_auth_event("register", email=email, status="failed", message="Username already taken")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El nombre de usuario ya está en uso"
@@ -49,6 +52,9 @@ class AuthService:
         # Hashear contraseña y crear usuario
         hashed_password = hash_password(password)
         user = UserRepository.create(db, email, username, hashed_password)
+
+        # Log successful registration
+        log_auth_event("register", email=user.email, user_id=str(user.id), status="success")
 
         return user
 
@@ -71,6 +77,7 @@ class AuthService:
         # Buscar usuario por email
         user = UserRepository.get_by_email(db, email)
         if not user:
+            log_auth_event("login", email=email, status="failed", message="User not found")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Credenciales inválidas",
@@ -79,6 +86,7 @@ class AuthService:
 
         # Verificar contraseña
         if not verify_password(password, user.hashed_password):
+            log_auth_event("login", email=email, user_id=str(user.id), status="failed", message="Invalid password")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Credenciales inválidas",
@@ -87,6 +95,7 @@ class AuthService:
 
         # Verificar que el usuario esté activo
         if not user.is_active:  # type: ignore[truthy-bool]
+            log_auth_event("login", email=email, user_id=str(user.id), status="failed", message="Inactive user")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Usuario inactivo"
@@ -94,6 +103,9 @@ class AuthService:
 
         # Generar token JWT
         access_token = create_access_token(data={"sub": str(user.id)})
+
+        # Log successful login
+        log_auth_event("login", email=user.email, user_id=str(user.id), status="success")
 
         return access_token
 
