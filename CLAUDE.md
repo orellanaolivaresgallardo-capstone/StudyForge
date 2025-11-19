@@ -1347,35 +1347,50 @@ def client(db_session):
 
 #### Backend
 
+**IMPORTANTE**: El entorno virtual de Python está en la **raíz del proyecto** (`.venv`), no dentro de `backend/`.
+
 ```bash
-# 1. Configurar entorno
-cd backend
+# 1. Configurar entorno virtual (desde la raíz del proyecto)
 python -m venv .venv
 
-# Windows
+# 2. Activar entorno virtual (Windows)
 .venv\Scripts\activate
 
-# Linux/Mac
-source .venv/bin/activate
+# 3. Instalar dependencias del backend
+pip install -r backend/requirements.txt
 
-# 2. Instalar dependencias
-pip install -r requirements.txt
-
-# 3. Configurar variables de entorno
+# 4. Configurar variables de entorno
+cd backend
 cp .env.example .env
 # Editar .env con valores reales
 
-# 4. Configurar base de datos
+# 5. Configurar base de datos
 psql -U postgres -f setup_database.sql
 
-# 5. Aplicar migraciones
+# 6. Aplicar migraciones
 alembic upgrade head
 
-# 6. Ejecutar servidor
+# 7. Ejecutar servidor (desde backend/)
 uvicorn app.main:app --reload
 
 # Servidor corriendo en http://localhost:8000
 # Swagger docs en http://localhost:8000/docs
+```
+
+**Estructura del entorno virtual:**
+```
+StudyForge/
+├── .venv/                    # ← Entorno virtual (raíz del proyecto)
+│   ├── Scripts/
+│   │   ├── activate.bat     # Activar en Windows
+│   │   ├── python.exe       # Python del venv
+│   │   └── pip.exe          # pip del venv
+│   └── Lib/
+├── backend/
+│   ├── app/
+│   ├── requirements.txt     # ← Dependencias Python
+│   └── ...
+└── frontend/
 ```
 
 #### Frontend
@@ -1437,37 +1452,65 @@ dist/
 
 ### Backend (Python)
 
+**NOTA**: El entorno virtual está en la raíz del proyecto (`.venv`).
+
 ```bash
-# Entorno virtual
-python -m venv .venv
-.venv\Scripts\activate              # Windows
-source .venv/bin/activate           # Linux/Mac
+# ============================================
+# Entorno virtual (ejecutar desde la RAÍZ)
+# ============================================
+python -m venv .venv                # Crear venv en raíz
+.venv\Scripts\activate              # Activar (Windows)
 deactivate                          # Salir del venv
 
+# Usar Python del venv directamente (sin activar)
+.venv\Scripts\python.exe --version
+.venv\Scripts\pip.exe list
+
+# ============================================
 # Dependencias
-pip install -r requirements.txt
-pip freeze > requirements.txt
+# ============================================
+pip install -r backend/requirements.txt    # Desde raíz con venv activado
+.venv\Scripts\pip.exe install -r backend/requirements.txt  # Sin activar
+
+pip freeze > backend/requirements.txt
 pip install <package>
 
-# Servidor de desarrollo
+# ============================================
+# Servidor de desarrollo (desde backend/)
+# ============================================
+cd backend
 uvicorn app.main:app --reload
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-# Migraciones
+# O desde raíz:
+.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload
+
+# ============================================
+# Migraciones (desde backend/)
+# ============================================
+cd backend
 alembic revision --autogenerate -m "mensaje"
 alembic upgrade head
 alembic downgrade -1
 alembic current
 alembic history
 
-# Testing
+# ============================================
+# Testing (desde backend/)
+# ============================================
+cd backend
 pytest
 pytest -v
 pytest --cov=app
 pytest tests/test_auth.py
 
+# O desde raíz:
+.venv\Scripts\pytest.exe backend/tests/
+
+# ============================================
 # Base de datos
-psql -U postgres -f setup_database.sql
+# ============================================
+psql -U postgres -f backend/setup_database.sql
 psql -U studyforge_app -d studyforge
 ```
 
@@ -1995,6 +2038,59 @@ app.add_middleware(
 - **Config**: `app/config.py` - Settings
 - **BD**: `app/db.py` - Database session
 - **Auth**: `app/core/dependencies.py` - get_current_user
+
+### Uso del Entorno Virtual (CRÍTICO)
+
+**IMPORTANTE**: El entorno virtual de Python está en `.venv` en la **raíz del proyecto**, NO en `backend/.venv`.
+
+#### Forma recomendada de ejecutar comandos Python:
+
+```bash
+# 1. Activar el entorno virtual primero (desde la raíz)
+.venv\Scripts\activate
+
+# 2. Ejecutar comandos normalmente
+cd backend
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+pytest
+
+# 3. Desactivar cuando termines
+deactivate
+```
+
+#### Alternativa sin activar (rutas explícitas):
+
+```bash
+# Desde la raíz del proyecto
+.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
+.venv\Scripts\alembic.exe upgrade head
+.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload
+.venv\Scripts\pytest.exe backend/tests/
+```
+
+#### ❌ NO hacer:
+
+```bash
+# NO crear entorno virtual en backend/
+cd backend
+python -m venv .venv  # ¡INCORRECTO!
+
+# NO asumir que el venv está en backend/
+backend\.venv\Scripts\activate  # ¡INCORRECTO!
+```
+
+#### ✅ SÍ hacer:
+
+```bash
+# Activar desde la raíz
+.venv\Scripts\activate
+
+# O usar rutas explícitas desde cualquier ubicación
+.venv\Scripts\python.exe --version
+.venv\Scripts\pip.exe list
+```
 
 ---
 
