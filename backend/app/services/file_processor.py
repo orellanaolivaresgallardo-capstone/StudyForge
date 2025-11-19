@@ -119,9 +119,9 @@ class FileProcessor:
                 text = FileProcessor._extract_from_txt(content)
             elif extension == "pdf":
                 text = FileProcessor._extract_from_pdf(content)
-            elif extension in ["pptx", "ppt"]:
+            elif extension == "pptx":
                 text = FileProcessor._extract_from_pptx(content)
-            elif extension in ["docx", "doc"]:
+            elif extension == "docx":
                 text = FileProcessor._extract_from_docx(content)
             else:
                 raise HTTPException(

@@ -16,8 +16,8 @@ StudyForge es una aplicación web de acompañamiento y apoyo para el aprendizaje
 - **IA**: OpenAI API (GPT-4)
 - **Procesamiento de archivos**:
   - PDF: PyPDF2, pdfplumber
-  - PPTX: python-pptx
   - DOCX: python-docx
+  - PPTX: python-pptx
   - TXT: nativo Python
 
 ### Frontend

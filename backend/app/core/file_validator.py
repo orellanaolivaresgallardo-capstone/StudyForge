@@ -24,9 +24,6 @@ class FileValidator:
         # Microsoft Office (ZIP-based: DOCX, PPTX)
         b'PK\x03\x04': ('zip_office', 'ZIP-based Office Document'),
         
-        # Older Microsoft Office formats
-        b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1': ('office_old', 'Legacy Office Document'),
-        
         # Plain text (UTF-8 BOM)
         b'\xEF\xBB\xBF': ('txt', 'UTF-8 Text with BOM'),
     }
@@ -35,7 +32,6 @@ class FileValidator:
     ALLOWED_EXTENSIONS = {
         'pdf': ['pdf'],
         'zip_office': ['docx', 'pptx'],
-        'office_old': ['doc', 'ppt'],
         'txt': ['txt'],
     }
     

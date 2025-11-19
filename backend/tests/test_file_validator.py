@@ -11,7 +11,6 @@ from app.core.file_validator import FileValidator
 # Magic bytes de muestra para diferentes tipos de archivo
 SAMPLE_PDF_HEADER = b'%PDF-1.4\n'
 SAMPLE_ZIP_HEADER = b'PK\x03\x04'
-SAMPLE_OLD_OFFICE_HEADER = b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1'
 SAMPLE_TEXT = b'This is a plain text file\nwith multiple lines'
 SAMPLE_UTF8_BOM = b'\xEF\xBB\xBFThis is UTF-8 with BOM'
 
@@ -41,15 +40,6 @@ async def test_detect_zip_office():
     file_type, description = FileValidator._detect_file_type(content)
     
     assert file_type == 'zip_office'
-
-
-@pytest.mark.asyncio
-async def test_detect_old_office():
-    """Test detección de archivos Office antiguos."""
-    content = SAMPLE_OLD_OFFICE_HEADER + b'Some old Office content'
-    file_type, description = FileValidator._detect_file_type(content)
-    
-    assert file_type == 'office_old'
 
 
 @pytest.mark.asyncio
@@ -208,12 +198,9 @@ def test_allowed_extensions_mapping():
     """Test que todas las extensiones tienen tipo de archivo asociado."""
     assert 'pdf' in FileValidator.ALLOWED_EXTENSIONS
     assert 'zip_office' in FileValidator.ALLOWED_EXTENSIONS
-    assert 'office_old' in FileValidator.ALLOWED_EXTENSIONS
     assert 'txt' in FileValidator.ALLOWED_EXTENSIONS
     
     # Verificar que las extensiones soportadas están correctamente mapeadas
     assert 'pdf' in FileValidator.ALLOWED_EXTENSIONS['pdf']
     assert 'docx' in FileValidator.ALLOWED_EXTENSIONS['zip_office']
     assert 'pptx' in FileValidator.ALLOWED_EXTENSIONS['zip_office']
-    assert 'doc' in FileValidator.ALLOWED_EXTENSIONS['office_old']
-    assert 'ppt' in FileValidator.ALLOWED_EXTENSIONS['office_old']

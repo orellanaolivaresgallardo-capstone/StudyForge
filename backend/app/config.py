@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # Upload de archivos
     MAX_FILE_SIZE_MB: int = 10
-    ALLOWED_EXTENSIONS: list[str] = ["pdf", "pptx", "ppt", "docx", "doc", "txt"]
+    ALLOWED_EXTENSIONS: list[str] = ["pdf", "pptx", "docx", "txt"]
 
     # Cuestionarios
     MAX_QUESTIONS_PER_QUIZ: int = 30

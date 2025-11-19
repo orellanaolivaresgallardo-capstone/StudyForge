@@ -73,7 +73,7 @@ Lógica de negocio:
   - Hash con Argon2 (más seguro que bcrypt)
 
 - ✅ [file_processor.py](../backend/app/services/file_processor.py)
-  - Extracción de texto de: **PDF, PPTX, PPT, DOCX, DOC, TXT**
+  - Extracción de texto de: **PDF, DOCX, PPTX, TXT**
   - Validación de tamaño (máx 10MB) y formato
   - PyPDF2 + pdfplumber para PDFs robustos
   - python-pptx para presentaciones

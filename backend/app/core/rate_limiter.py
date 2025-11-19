@@ -98,7 +98,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         app,
         max_requests: int = 100,
         window_seconds: int = 60,
-        exempt_paths: List[str] = None
+        exempt_paths: List[str] = None # type: ignore
     ):
         """
         Inicializa el middleware.

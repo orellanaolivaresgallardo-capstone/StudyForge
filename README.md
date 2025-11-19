@@ -9,7 +9,7 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 ## 🎯 Características Principales
 
 ### 1. **Generación de Resúmenes Inteligentes**
-- Carga de documentos en múltiples formatos: **PDF, PPTX, PPT, DOCX, DOC, TXT**
+- Carga de documentos en múltiples formatos: **PDF, DOCX, PPTX, TXT**
 - Resúmenes adaptados a 3 niveles de expertise:
   - **Básico**: Vocabulario simple y conceptos fundamentales
   - **Medio**: Balance entre detalle y claridad
@@ -41,7 +41,10 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 - **Migraciones**: Alembic
 - **Autenticación**: JWT (python-jose + Argon2)
 - **IA**: OpenAI API (GPT-4)
-- **Procesamiento de archivos**: PyPDF2, pdfplumber, python-pptx, python-docx
+- **Procesamiento de archivos**: 
+  - PDF: PyPDF2, pdfplumber
+  - Office (DOCX, PPTX): python-docx, python-pptx
+  - Texto: Nativo Python
 
 ### Frontend
 - **Node**: 24
