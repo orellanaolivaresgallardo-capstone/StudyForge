@@ -1,6 +1,6 @@
 # app/schemas/__init__.py
 """
-Schemas de Pydantic para validación de datos.
+Schemas de Pydantic para validaciÃ³n de datos.
 """
 from app.schemas.user import UserCreate, UserResponse, UserLogin
 from app.schemas.auth import Token, TokenPayload

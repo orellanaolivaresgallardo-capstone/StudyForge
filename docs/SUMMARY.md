@@ -1,64 +1,288 @@
-# StudyForge — Resumen de contexto (conversaciones consolidadas)
+# StudyForge — Resumen de contexto
 
-**Fecha de corte:** 2025-10-07
+**Última actualización:** 2025-11-19
 
-Este documento resume lo esencial acordado y verificado en las conversaciones integradas.
+**Branch actual:** `remake`
 
----
-
-## 1) Alcance actual (E2E)
-- **Backend:** FastAPI (Python 3.11), SQLAlchemy, Alembic, Uvicorn.
-- **DB:** PostgreSQL con **schema por defecto `studyforge`** (no `public`) y `search_path=studyforge,public`.
-- **Frontend:** React + Vite + pnpm.
-- **Validación:** Pydantic v2 (rechaza `title`/`content` vacíos).
-- **Tablas:** `users`, `documents`, `summaries`, `quizzes`.
-- **Endpoints expuestos:**
-  - `GET /health` → `{"status":"ok"}`
-  - `GET /documents` → `{"items":[...]}`
-  - `POST /documents` → Crea documento (valida `title`/`content` no vacíos).
+Este documento resume el estado actual del proyecto StudyForge, una aplicación web de apoyo al aprendizaje con IA que genera resúmenes adaptativos y quizzes inteligentes a partir de documentos.
 
 ---
 
-## 2) Conexión y configuración
-- **Runtime (app):** `DATABASE_URL` con rol `studyforge_app` (DML).
-- **Migraciones (Alembic):** `ALEMBIC_URL` con rol `studyforge_owner` (DDL).
-- Alembic configurado para:
-  - `include_schemas=True`
-  - `version_table="alembic_version"` y `version_table_schema="studyforge"`
-  - Forzado de `search_path` a `studyforge, public` al migrar.
+## 1) Visión del producto
+
+StudyForge es una plataforma educativa que utiliza inteligencia artificial para:
+- Generar resúmenes personalizados de documentos en 3 niveles de expertise (básico, medio, avanzado)
+- Identificar automáticamente temas y conceptos clave
+- Crear quizzes adaptativos con feedback inmediato
+- Ajustar dificultad basándose en el desempeño del usuario
+- Proteger la privacidad (no almacena documentos originales)
 
 ---
 
-## 3) Calidad e integridad de datos
-- **Validación API:** Pydantic v2 impide strings vacíos/espacios para `title`/`content` en `POST /documents`.
-- **Defensa en base:** CHECKs en `documents`:
-  - `CHECK (char_length(btrim(title)) > 0)`
-  - `CHECK (char_length(btrim(content)) > 0)`
-- **Migración asociada:** normaliza filas antiguas y añade los CHECKs.
+## 2) Stack tecnológico
+
+### Backend
+- **Framework:** FastAPI 0.115.12 (Python 3.14)
+- **Base de datos:** PostgreSQL 18 con schema `studyforge`
+- **ORM:** SQLAlchemy 2.0.36
+- **Migraciones:** Alembic 1.17.2
+- **Autenticación:** JWT (python-jose) + Argon2 hashing
+- **IA:** OpenAI API (GPT-4o-mini)
+- **Procesamiento:** PyPDF2, pdfplumber, python-pptx, python-docx
+
+### Frontend
+- **Framework:** React 19 + TypeScript 5.8
+- **Build:** Vite
+- **Estilos:** Tailwind CSS
+- **Package manager:** pnpm
+
+### Infraestructura
+- **Target:** Render o GCP
+- **SO:** Windows (encoding UTF-8 CRLF)
 
 ---
 
-## 4) Flujo de ejecución local (orden lógico)
-1) **DB** arriba (PostgreSQL 15.x en `localhost:5432`).  
-2) **Backend**:
-   - Activar venv → `.\.venv\Scripts\Activate.ps1`
-   - `alembic upgrade head`
-   - `uvicorn app.main:app --reload`
-3) **Frontend**:
-   - `pnpm install`
-   - `pnpm dev` → http://localhost:5173
+## 3) Arquitectura del backend
+
+### Capas (Layered Architecture)
+1. **Models** (`app/models/`) - Definición de tablas SQLAlchemy
+2. **Repositories** (`app/repositories/`) - Acceso a datos (CRUD)
+3. **Services** (`app/services/`) - Lógica de negocio
+4. **Routers** (`app/routers/`) - Endpoints HTTP
+
+### Modelos de datos
+- **users** - Información de usuarios (UUID PK, email único, password hash)
+- **summaries** - Resúmenes generados por IA (JSONB content)
+- **quizzes** - Cuestionarios generados
+- **questions** - Preguntas de opción múltiple (A/B/C/D)
+- **quiz_attempts** - Intentos de usuario
+- **answers** - Respuestas individuales con feedback
+
+### Roles de base de datos
+- **studyforge_owner** - Para migraciones (DDL permissions)
+- **studyforge_app** - Para aplicación (DML permissions)
 
 ---
 
-## 5) Repositorio y ramas
-- Ramas de trabajo: `feat/walking-skeleton`, `feat/db-sqlalchemy`.
-- `main` consolidada con README mejorado y alcance de la milestone.
-- Convención de commits simple (`feat:`, `fix:`, `chore:`) y PRs hacia `main`.
+## 4) Funcionalidades implementadas
+
+### ✅ Autenticación y usuarios
+- Registro de usuarios con validación
+- Login con JWT (expiración 24h)
+- Hashing con Argon2id
+- Protección de endpoints con dependencias
+
+### ✅ Gestión de resúmenes
+- Upload de archivos (PDF, DOCX, PPTX, TXT, max 50MB)
+- Extracción de texto de múltiples formatos
+- Generación de resúmenes con OpenAI
+- 3 niveles de expertise (básico, medio, avanzado)
+- Identificación automática de temas y conceptos clave
+- CRUD completo de resúmenes
+- Privacidad: documentos NO se almacenan
+
+### ✅ Sistema de quizzes
+- Generación desde archivo o resumen existente
+- Dificultad adaptativa (1-5) basada en últimos 5 intentos
+- Máximo 30 preguntas por quiz
+- Feedback inmediato por pregunta
+  - Indica si es correcta/incorrecta
+  - Muestra respuesta correcta
+  - Proporciona explicación
+- Resultados detallados con score y desglose
+- Historial de intentos por usuario
+
+### ✅ Estadísticas y progreso
+- Progreso por tema
+- Historial de desempeño
+- Métricas de usuario (total summaries, quizzes, scores)
 
 ---
 
-## 6) Cosas por definir (se cubren en NEXT_STEPS.md)
-- Autenticación (login, JWT, hashing).
-- Asociar `documents.user_id` y políticas.
-- Observabilidad (logging/errores) y RUNBOOK operativo.
-- Reglas de CORS, seguridad y versión de release (tags).
+## 5) API Endpoints
+
+### Autenticación (`/auth`)
+- `POST /auth/register` - Registrar nuevo usuario
+- `POST /auth/login` - Autenticar y obtener token
+- `GET /auth/me` - Información del usuario actual
+
+### Resúmenes (`/summaries`)
+- `POST /summaries/upload` - Subir archivo y generar resumen
+- `GET /summaries` - Listar resúmenes del usuario
+- `GET /summaries/{id}` - Obtener resumen específico
+- `DELETE /summaries/{id}` - Eliminar resumen
+
+### Quizzes (`/quizzes`)
+- `POST /quizzes/generate-from-file` - Generar desde archivo
+- `POST /quizzes/generate-from-summary/{id}` - Generar desde resumen
+- `GET /quizzes` - Listar quizzes del usuario
+- `GET /quizzes/{id}` - Obtener quiz (sin respuestas correctas)
+
+### Intentos de quiz (`/quiz-attempts`)
+- `POST /quiz-attempts` - Iniciar nuevo intento
+- `POST /quiz-attempts/{id}/answer` - Responder pregunta (feedback inmediato)
+- `POST /quiz-attempts/{id}/complete` - Completar intento y calcular score
+- `GET /quiz-attempts/{id}/results` - Ver resultados detallados
+
+### Estadísticas (`/stats`)
+- `GET /stats/progress` - Progreso por tema
+- `GET /stats/performance` - Historial de desempeño
+- `GET /stats/summary` - Resumen general de estadísticas
+
+### Sistema
+- `GET /health` - Health check
+
+**Documentación interactiva:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## 6) Estado actual
+
+### ✅ Completado
+- [x] Backend 100% funcional
+- [x] Base de datos configurada con migraciones
+- [x] Todos los endpoints implementados y probados
+- [x] Autenticación JWT funcionando
+- [x] Integración con OpenAI configurada
+- [x] Procesamiento de archivos múltiples formatos
+- [x] Sistema adaptativo de dificultad
+- [x] API documentada con Swagger/OpenAPI
+- [x] Encoding UTF-8 CRLF para Windows
+- [x] Permisos de base de datos configurados
+
+### ⏳ En progreso
+- [ ] Frontend React (pendiente)
+- [ ] Tests unitarios y de integración
+- [ ] Deployment en staging
+
+### 📋 Pendiente
+- [ ] Frontend completo
+- [ ] Testing comprehensivo
+- [ ] CI/CD pipeline
+- [ ] Deployment en producción
+- [ ] Optimizaciones de performance
+- [ ] Features avanzadas (spaced repetition, gamification, etc.)
+
+---
+
+## 7) Configuración local
+
+### Prerrequisitos
+- Python 3.14
+- PostgreSQL 18
+- Node.js + pnpm
+- Cuenta de OpenAI con créditos
+
+### Backend
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### Variables de entorno (`.env`)
+```env
+# Database
+DATABASE_URL=postgresql+psycopg://studyforge_app:password@localhost:5432/studyforge?options=-csearch_path=studyforge,public
+
+# JWT
+SECRET_KEY=your-secret-key-change-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+
+# OpenAI
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+
+# Uploads
+MAX_FILE_SIZE_MB=50
+```
+
+### Inicializar base de datos
+```bash
+# Como usuario postgres
+psql -U postgres -f setup_database.sql
+
+# Aplicar migraciones (como studyforge_owner)
+alembic upgrade head
+
+# Otorgar permisos a studyforge_app
+python -c "from sqlalchemy import create_engine, text; ..."
+```
+
+### Ejecutar backend
+```bash
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### Frontend (cuando esté implementado)
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+---
+
+## 8) Decisiones técnicas clave
+
+Consultar [docs/DECISIONS.md](DECISIONS.md) para detalles completos:
+
+- UUID v4 como primary keys (seguridad, escalabilidad)
+- Arquitectura en capas para separación de responsabilidades
+- No almacenar documentos originales (privacidad)
+- Argon2 sobre bcrypt (seguridad)
+- OpenAI GPT-4o-mini (costo/calidad)
+- Dificultad adaptativa basada en últimos 5 intentos
+- JSONB para contenido flexible
+- UTF-8 CRLF para compatibilidad Windows
+
+---
+
+## 9) Próximos pasos
+
+### Inmediatos (1-2 semanas)
+1. Implementar frontend MVP (auth + summaries + quizzes)
+2. Escribir tests básicos del backend
+3. Deploy en ambiente de staging
+
+### Corto plazo (1 mes)
+1. Testing completo (unit + integration + E2E)
+2. CI/CD pipeline (GitHub Actions)
+3. Optimizaciones de performance
+4. Deployment en producción
+
+### Mediano plazo (3 meses)
+1. Features avanzadas (spaced repetition, exportación PDF)
+2. Gamification (badges, streaks, leaderboards)
+3. Compartir resúmenes y quizzes
+4. Mobile responsiveness
+
+Ver [docs/ROADMAP.md](ROADMAP.md) para plan completo.
+
+---
+
+## 10) Recursos y documentación
+
+- **Arquitectura detallada:** [docs/ARCHITECTURE.md](ARCHITECTURE.md)
+- **Plan de implementación:** [docs/IMPLEMENTATION.md](IMPLEMENTATION.md)
+- **Próximos pasos:** [docs/NEXT_STEPS.md](NEXT_STEPS.md)
+- **Decisiones técnicas:** [docs/DECISIONS.md](DECISIONS.md)
+- **Roadmap completo:** [docs/ROADMAP.md](ROADMAP.md)
+- **API docs (Swagger):** http://localhost:8000/docs
+- **OpenAPI schema:** http://localhost:8000/openapi.json
+
+---
+
+## 11) Contacto y contribución
+
+**Estado del proyecto:** Activo, en desarrollo
+**Licencia:** (Pendiente definir)
+**Contribuciones:** (Pendiente guía de contribución)
+
+---
+
+**Última compilación:** 2025-11-19
+**Branch:** remake
+**Versión:** 2.0.0 (reimplementación completa)

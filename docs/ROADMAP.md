@@ -1,198 +1,337 @@
 # ROADMAP — StudyForge
 
-**Estado actual (punto de partida):** Backend FastAPI + PostgreSQL (schema `studyforge`) + Alembic + Frontend Vite/React funcionando de punta a punta. Validación Pydantic v2, constraints CHECK en BD, endpoints `/health` y `/documents` (GET/POST), y README actualizado.
+**Última actualización:** 2025-11-19
+
+**Estado actual:** Backend completamente implementado con autenticación, resúmenes con IA, quizzes adaptativos, y todas las funcionalidades core. Base de datos PostgreSQL configurada con migraciones. Proyecto en branch `remake` con reimplementación desde cero.
+
+**Completado:**
+- ✅ Autenticación con JWT y Argon2
+- ✅ CRUD completo de resúmenes
+- ✅ Sistema de quizzes con dificultad adaptativa
+- ✅ Integración con OpenAI (GPT-4o-mini)
+- ✅ Procesamiento de archivos (PDF, DOCX, PPTX, TXT)
+- ✅ Base de datos con schema aislado y roles separados
+- ✅ API documentada con Swagger/OpenAPI
 
 ---
 
-## Fase 1 — Autenticación y control de acceso
-**Objetivo:** multiusuario real y datos aislados.
+## Fase 1 — Frontend MVP ⏳ *EN PROGRESO*
 
-**Backend**
-- Sign-up / Login con Argon2 (hash) y JWT (expiración, `HS256`).
-- Endpoints: `POST /auth/signup`, `POST /auth/login`, `GET /auth/me`.
-- Dependencia `get_current_user` para proteger rutas.
+**Objetivo:** Interfaz básica funcional para usar todas las features del backend
 
-**Base de datos (migraciones)**
-- Índice único para `lower(email)` en `users`.
-- `users.password_hash` NOT NULL.
-- `documents.user_id` FK a `users` y, posteriormente, NOT NULL.
-- `summaries/quizzes` con ON DELETE CASCADE desde `documents`.
+### 1.1 Setup y configuración
+- [ ] Actualizar dependencias de frontend (React 19, Vite, Tailwind)
+- [ ] Configurar cliente API (axios/fetch) con interceptors
+- [ ] Implementar Context API para autenticación
+- [ ] Configurar rutas con React Router
 
-**Frontend**
-- Pantalla de login (email/contraseña), almacenamiento del token, logout.
-- Enviar `Authorization: Bearer <token>` en las peticiones.
+### 1.2 Autenticación
+- [ ] Página de registro
+- [ ] Página de login
+- [ ] Persistencia de token (localStorage)
+- [ ] Protección de rutas privadas
+- [ ] Página de perfil con logout
 
-**Criterios de aceptación**
-- Sin token → `401` en `/documents`.
-- Con token válido → listar únicamente los documentos del usuario y poder crear.
-- Sin documentos huérfanos (todas las filas con `user_id`).
+### 1.3 Resúmenes
+- [ ] Upload de documentos con drag & drop
+- [ ] Selector de nivel de expertise
+- [ ] Lista de resúmenes (grid/list view)
+- [ ] Vista detallada de resumen
+- [ ] Filtros y búsqueda
 
----
+### 1.4 Quizzes
+- [ ] Generar quiz desde archivo o resumen
+- [ ] Interface para tomar quiz
+- [ ] Feedback inmediato por pregunta
+- [ ] Resultados detallados
+- [ ] Historial de intentos
 
-## Fase 2 — Documentos: CRUD sólido y UX básica
-**Objetivo:** flujo completo, usable y robusto.
+### 1.5 Dashboard y estadísticas
+- [ ] Dashboard con resumen de actividad
+- [ ] Gráficas de progreso
+- [ ] Estadísticas por tema
+- [ ] Evolución de dificultad adaptativa
 
-**Backend**
-- `GET /documents` con paginación (`limit`, `offset`) y orden.
-- `POST /documents` (existente).
-- Nuevos: `GET /documents/{id}`, `PUT/PATCH /documents/{id}`, `DELETE /documents/{id}` (solo dueño).
-- Búsqueda simple: `?q=` por `title/description`.
-
-**Base de datos**
-- Índices: `(user_id, created_at DESC)`; opcional GIN por `title` para búsqueda parcial.
-- Límites: longitudes en `title/description`, tamaño Máx. de `content`.
-
-**Frontend**
-- Lista paginada, estados de carga/vacío.
-- Vista detalle y edición.
-- Confirmación de borrado.
-
-**Criterios de aceptación**
-- CRUD completo con permisos correctos.
-- Paginación estable tras crear/borrar.
-- Validaciones de UI alineadas con 422 del backend.
+**Criterios de aceptación:**
+- Flujo completo funcional: registro → login → upload → resumen → quiz → resultados
+- Responsive design (mobile-first)
+- Manejo de errores y estados de carga
+- UX intuitiva y consistente
 
 ---
 
-## Fase 3 — Summaries y Quizzes (pipeline asíncrono)
-**Objetivo:** valor central del producto.
+## Fase 2 — Testing y calidad
 
-**Backend**
-- Modelos/estados: `pending|running|done|failed`, `error`, `created_at/updated_at`.
-- Workers: cola con Redis + RQ/Celery (o `BackgroundTasks` si se parte simple).
-- Endpoints:
-  - `POST /documents/{id}/summaries` → encola trabajo.
-  - `GET /summaries?document_id=…` → lista/estado.
-  - `POST /documents/{id}/quizzes`, `GET /quizzes?...`.
-- Idempotencia (no duplicar trabajos en curso).
+**Objetivo:** Asegurar confiabilidad y prevenir regresiones
 
-**Base de datos**
-- FKs a `documents` (ON DELETE CASCADE).
-- Índices por `document_id` y `status`.
+### 2.1 Backend testing
+- [ ] Tests unitarios de repositories
+- [ ] Tests unitarios de services
+- [ ] Tests de integración de API endpoints
+- [ ] Mocking de OpenAI para tests
+- [ ] Coverage > 80%
 
-**Frontend**
-- Botón “Generar resumen/quiz”.
-- Indicadores de progreso/estado y refresco automático.
-- Vistas de resumen y quiz.
+### 2.2 Frontend testing
+- [ ] Tests de componentes (React Testing Library)
+- [ ] Tests E2E críticos (Playwright/Cypress)
+- [ ] Visual regression tests (opcional)
 
-**Criterios de aceptación**
-- Trabajo encolado → `running → done/failed`.
-- Reintentos controlados y errores visibles.
-- Datos persistidos y visibles solo para el dueño.
+### 2.3 CI/CD
+- [ ] GitHub Actions para tests de backend
+- [ ] GitHub Actions para build y tests de frontend
+- [ ] Linting automático (ruff, eslint)
+- [ ] Formateo automático (black, prettier)
 
----
-
-## Fase 4 — Ingesta de contenidos (archivos)
-**Objetivo:** subir PDF/DOCX/TXT y extraer texto.
-
-**Backend**
-- Carga a S3/MinIO (o disco local en dev).
-- Extracción de texto (pdfminer, python-docx, etc.).
-- Límite de tamaño, tipos permitidos, antivirus (opcional).
-
-**Base de datos**
-- Tabla `files` (metadatos) y vínculo con `documents`.
-
-**Frontend**
-- Form de upload con barra de progreso.
-- Asociar archivo ⇄ documento.
-
-**Criterios de aceptación**
-- Subida controlada (errores claros, tamaños/tipos).
-- Texto extraído disponible para summary/quiz.
+**Criterios de aceptación:**
+- Pipeline verde en cada PR
+- Tests cubren flujos críticos
+- No hay code smells críticos
 
 ---
 
-## Fase 5 — Observabilidad y manejo de errores
-**Objetivo:** saber qué pasa y por qué.
+## Fase 3 — Deployment y operaciones
 
-**Backend**
-- Logging estructurado (JSON) y trazas de errores homogéneas.
-- Health extendido: versión, RTT, estado de DB/cola.
-- Métricas (Prometheus/OpenTelemetry) si es viable.
+**Objetivo:** Aplicación accesible 24/7 en producción
 
-**Frontend**
-- Captura y despliegue de errores comprensibles para el usuario.
+### 3.1 Containerización
+- [ ] Dockerfile para backend
+- [ ] Dockerfile para frontend
+- [ ] docker-compose para stack completo
+- [ ] Multi-stage builds para optimización
 
-**Criterios de aceptación**
-- Logs útiles para reproducir fallos.
-- `/health` y métricas reflejan estado real (no “siempre verde”).
+### 3.2 Deployment
+- [ ] PostgreSQL en cloud (Render/GCP/Supabase)
+- [ ] Backend en Render/GCP Cloud Run
+- [ ] Frontend en Vercel/Netlify/GCP Storage
+- [ ] Variables de entorno por ambiente
+- [ ] Secrets management
 
----
+### 3.3 Infraestructura
+- [ ] Dominio y HTTPS
+- [ ] CDN para assets estáticos
+- [ ] CORS configurado correctamente
+- [ ] Health checks y monitoring
+- [ ] Backups automáticos de BD
 
-## Fase 6 — Testing y calidad
-**Objetivo:** evitar regresiones.
+### 3.4 Observabilidad
+- [ ] Logging estructurado
+- [ ] Error tracking (Sentry)
+- [ ] Métricas de uso
+- [ ] Alertas (uptime, errores críticos)
 
-**Backend**
-- Tests unitarios (servicios/validaciones) y de integración (DB).
-- Tests de contrato de API (401/403/422, schemata).
-- Cobertura mínima acordada.
-
-**Frontend**
-- E2E básicos (Playwright/Cypress): login, CRUD doc, generar summary/quiz.
-
-**CI (mínimo)**
-- GitHub Actions: `pytest` + build del frontend.
-
-**Criterios de aceptación**
-- Pipeline en verde en cada PR.
-- Suite cubre los flujos críticos.
-
----
-
-## Fase 7 — Seguridad y cumplimiento básico
-**Objetivo:** cerrar puertas obvias.
-
-**Backend**
-- CORS restrictivo en producción.
-- Rate limiting (reverse proxy o librería).
-- Headers de seguridad (HSTS, CSP básica).
-- Reset de contraseña y verificación de email (si aplica).
-- Gestión de secretos por entorno (no en repo).
-
-**Base de datos**
-- Backups automáticos y restore probado.
-
-**Criterios de aceptación**
-- Escaneo mínimo OWASP sin hallazgos críticos.
-- Restore de backup verificado.
+**Criterios de aceptación:**
+- Aplicación accessible públicamente con HTTPS
+- Tiempo de inactividad < 1%
+- Deployment automatizado
+- Rollback documentado y probado
 
 ---
 
-## Fase 8 — Despliegue y operación
-**Objetivo:** correr 24/7 de forma estable.
+## Fase 4 — Optimización y performance
 
-**Infra/DevOps**
-- Docker para backend, worker, frontend, DB y Redis (compose).
-- Entornos: dev / staging / prod con variables separadas.
-- CD: despliegue a proveedor (VPS/Cloud) con HTTPS.
-- Runbook: arranque/parada, logs, migraciones, rollback.
+**Objetivo:** Mejorar velocidad y eficiencia
 
-**Criterios de aceptación**
-- Deploy reproducible, con Alembic ejecutado automáticamente.
-- Rollback documentado y probado.
+### 4.1 Backend optimizations
+- [ ] Rate limiting por usuario/IP
+- [ ] Caché de queries frecuentes (Redis)
+- [ ] Compresión HTTP (gzip/brotli)
+- [ ] Background jobs para procesos pesados
+- [ ] Índices optimizados en BD
+
+### 4.2 Frontend optimizations
+- [ ] Code splitting por rutas
+- [ ] Lazy loading de componentes
+- [ ] Optimización de imágenes
+- [ ] Service Worker (PWA)
+- [ ] Caché de datos en cliente
+
+### 4.3 OpenAI optimizations
+- [ ] Caché de resúmenes idénticos
+- [ ] Streaming de respuestas largas
+- [ ] Fallback a modelo más barato si aplica
+- [ ] Límites de uso por usuario
+
+**Criterios de aceptación:**
+- Tiempo de carga inicial < 2s
+- Tiempo de respuesta API p95 < 500ms
+- Costos de OpenAI optimizados
 
 ---
 
-## Fase 9 — Pulido de producto
-**Objetivo:** experiencia fluida.
+## Fase 5 — Seguridad y cumplimiento
 
-**Frontend**
-- Estados vacíos, loaders, toasts, accesibilidad básica (a11y).
-- i18n (si corresponde), feedback in-app.
+**Objetivo:** Proteger datos y cumplir estándares
 
-**Producto**
-- Analítica “privacy-aware” (eventos mínimos).
-- Onboarding de primer uso.
+### 5.1 Seguridad backend
+- [ ] Input sanitization y validación exhaustiva
+- [ ] SQL injection prevention (validado con ORM)
+- [ ] XSS prevention
+- [ ] CSRF protection
+- [ ] Secure headers (HSTS, CSP, etc.)
 
-**Criterios de aceptación**
-- Flujos principales sin fricción y medidos.
+### 5.2 Autenticación avanzada
+- [ ] Reset de contraseña por email
+- [ ] Verificación de email
+- [ ] 2FA opcional
+- [ ] Rate limiting en login
+- [ ] Bloqueo de cuentas tras intentos fallidos
+
+### 5.3 Privacidad
+- [ ] Política de privacidad
+- [ ] Términos de servicio
+- [ ] GDPR compliance (si aplica)
+- [ ] Derecho al olvido (borrado de datos)
+- [ ] Auditoría de datos sensibles
+
+### 5.4 Auditoría y compliance
+- [ ] Scan de vulnerabilidades (OWASP ZAP)
+- [ ] Dependency scanning (Dependabot)
+- [ ] Penetration testing básico
+- [ ] Security headers scan
+
+**Criterios de aceptación:**
+- Sin vulnerabilidades críticas o altas
+- Autenticación robusta
+- Datos encriptados en tránsito y reposo
 
 ---
 
-## Orden recomendado
-1) Fase 1 + 2 (Auth + CRUD sólido) → convierte el esqueleto en app real.  
-2) Fase 3 (Summaries/Quizzes) → núcleo de StudyForge.  
-3) Fase 4 + 5 (Ingesta + Observabilidad) → entrada de contenido y visibilidad.  
-4) Fase 6 + 7 (Testing + Seguridad) → listo para escalar.  
-5) Fase 8 + 9 (Deploy + Pulido) → producto estable y presentable.
+## Fase 6 — Features avanzadas
+
+**Objetivo:** Diferenciación y valor agregado
+
+### 6.1 Aprendizaje mejorado
+- [ ] Spaced repetition system
+- [ ] Flashcards generados automáticamente
+- [ ] Recomendaciones personalizadas
+- [ ] Análisis de curva de aprendizaje
+- [ ] Predicción de retención
+
+### 6.2 Colaboración
+- [ ] Compartir resúmenes (públicos/privados)
+- [ ] Compartir quizzes
+- [ ] Leaderboards por tema
+- [ ] Grupos de estudio
+- [ ] Comentarios en resúmenes
+
+### 6.3 Exportación e integración
+- [ ] Exportar resúmenes a PDF
+- [ ] Exportar a Markdown
+- [ ] Integración con Notion/Obsidian
+- [ ] API pública para third-party apps
+- [ ] Webhooks para eventos
+
+### 6.4 Gamificación
+- [ ] Sistema de puntos (XP)
+- [ ] Badges y logros
+- [ ] Streaks diarios
+- [ ] Niveles de usuario
+- [ ] Challenges semanales
+
+**Criterios de aceptación:**
+- Features adoptadas por > 30% de usuarios activos
+- Engagement metrics mejoradas
+- NPS > 50
+
+---
+
+## Fase 7 — Escalabilidad
+
+**Objetivo:** Soportar crecimiento sin degradación
+
+### 7.1 Arquitectura
+- [ ] Microservicios (si justificado)
+- [ ] Message queue (RabbitMQ/SQS)
+- [ ] API Gateway
+- [ ] Load balancing
+- [ ] Auto-scaling
+
+### 7.2 Base de datos
+- [ ] Read replicas
+- [ ] Connection pooling
+- [ ] Partitioning por user_id
+- [ ] Archivado de datos antiguos
+- [ ] Optimización de índices
+
+### 7.3 Caché distribuido
+- [ ] Redis cluster
+- [ ] Caché de sesiones
+- [ ] Caché de datos frecuentes
+- [ ] Invalidación inteligente
+
+**Criterios de aceptación:**
+- Soportar 10,000+ usuarios concurrentes
+- Respuesta < 100ms para queries cacheados
+- 99.9% uptime
+
+---
+
+## Fase 8 — Internacionalización y accesibilidad
+
+**Objetivo:** Ampliar audiencia
+
+### 8.1 i18n
+- [ ] Multi-idioma (ES, EN, PT)
+- [ ] Detección automática de idioma
+- [ ] Traducción de UI
+- [ ] Soporte de contenido multiidioma
+
+### 8.2 Accesibilidad (a11y)
+- [ ] WCAG 2.1 AA compliance
+- [ ] Screen reader support
+- [ ] Navegación por teclado
+- [ ] Alto contraste
+- [ ] Text-to-speech para resúmenes
+
+**Criterios de aceptación:**
+- Lighthouse accessibility score > 90
+- Usuarios no angloparlantes activos
+
+---
+
+## Fase 9 — Monetización (opcional)
+
+**Objetivo:** Sostenibilidad del proyecto
+
+### 9.1 Modelo de negocio
+- [ ] Tier gratuito (límites)
+- [ ] Plan premium (sin límites, features extra)
+- [ ] Plan educativo (descuento para estudiantes)
+- [ ] Plan enterprise (soporte, SLA)
+
+### 9.2 Implementación
+- [ ] Integración con Stripe
+- [ ] Gestión de suscripciones
+- [ ] Facturación automática
+- [ ] Dashboard de admin
+
+**Criterios de aceptación:**
+- Conversión free→paid > 2%
+- Churn rate < 5% mensual
+
+---
+
+## Prioridades actuales (Noviembre 2025)
+
+1. **Frontend MVP** (Fase 1) - Hacer usable el backend existente
+2. **Testing básico** (Fase 2.1) - Prevenir regresiones
+3. **Deploy en staging** (Fase 3.2) - Validar con usuarios reales
+4. **Documentación** - README, guías de uso, API docs
+
+---
+
+## Hitos clave
+
+- **V1.0** (MVP): Backend + Frontend básico + Deploy
+- **V1.5**: Testing completo + Optimizaciones + Seguridad básica
+- **V2.0**: Features avanzadas + Escalabilidad
+- **V3.0**: i18n + Monetización + Ecosistema
+
+---
+
+## Referencias
+
+- Estado actual detallado: **[docs/IMPLEMENTATION.md](IMPLEMENTATION.md)**
+- Próximos pasos inmediatos: **[docs/NEXT_STEPS.md](NEXT_STEPS.md)**
+- Decisiones técnicas: **[docs/DECISIONS.md](DECISIONS.md)**
+- Arquitectura del sistema: **[docs/ARCHITECTURE.md](ARCHITECTURE.md)**

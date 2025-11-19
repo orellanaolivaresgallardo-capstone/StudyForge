@@ -1,6 +1,6 @@
 # app/services/__init__.py
 """
-Services - Lógica de negocio de la aplicación.
+Services - LÃ³gica de negocio de la aplicaciÃ³n.
 """
 from app.services.auth_service import AuthService
 from app.services.file_processor import FileProcessor

@@ -7,8 +7,9 @@ __pycache__/
 node_modules/
 dist/
 
-# VS Code
+# IDEs y editores
 .vscode/
+.claude/
 
 # Entornos
 .env
