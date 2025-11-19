@@ -47,6 +47,6 @@ class User(Base):
     @property
     def storage_usage_percentage(self) -> float:
         """Calcula el porcentaje de almacenamiento usado."""
-        if self.storage_quota_bytes == 0:
+        if self.storage_quota_bytes == 0:  # type: ignore[comparison-overlap]
             return 0.0
         return (self.storage_used_bytes / self.storage_quota_bytes) * 100

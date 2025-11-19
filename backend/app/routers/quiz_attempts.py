@@ -83,7 +83,7 @@ def answer_question(
     attempt = QuizAttemptRepository.get_attempt_by_id(db, attempt_id)
     attempt = verify_quiz_attempt_ownership(attempt, current_user)
 
-    if attempt.completed_at:
+    if attempt.completed_at:  # type: ignore[truthy-bool]
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Este intento ya ha sido completado"
@@ -92,13 +92,13 @@ def answer_question(
     # Verificar que la pregunta existe y pertenece al quiz
     question = QuizRepository.get_question_by_id(db, answer_data.question_id)
 
-    if not question:
+    if not question:  # type: ignore[truthy-bool]
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Pregunta no encontrada"
         )
 
-    if question.quiz_id != attempt.quiz_id:
+    if question.quiz_id != attempt.quiz_id:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La pregunta no pertenece a este cuestionario"
@@ -109,7 +109,7 @@ def answer_question(
         db, attempt_id, answer_data.question_id
     )
 
-    if existing_answer:
+    if existing_answer:  # type: ignore[truthy-bool]
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Esta pregunta ya ha sido respondida"
@@ -117,7 +117,7 @@ def answer_question(
 
     # Validar la respuesta
     selected_option = OptionEnum(answer_data.selected_option)
-    is_correct = (selected_option == question.correct_option)
+    is_correct = (selected_option == question.correct_option)  # type: ignore[comparison-overlap]
 
     # Guardar respuesta
     QuizAttemptRepository.create_answer(
@@ -161,7 +161,7 @@ def complete_quiz_attempt(
     attempt = QuizAttemptRepository.get_attempt_by_id(db, attempt_id)
     attempt = verify_quiz_attempt_ownership(attempt, current_user)
 
-    if attempt.completed_at:
+    if attempt.completed_at:  # type: ignore[truthy-bool]
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Este intento ya ha sido completado"
@@ -208,7 +208,7 @@ def get_quiz_results(
     attempt = QuizAttemptRepository.get_attempt_by_id(db, attempt_id)
     attempt = verify_quiz_attempt_ownership(attempt, current_user)
 
-    if not attempt.completed_at:
+    if not attempt.completed_at:  # type: ignore[truthy-bool]
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El intento aún no ha sido completado"

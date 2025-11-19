@@ -86,7 +86,7 @@ class AuthService:
             )
 
         # Verificar que el usuario esté activo
-        if not user.is_active:
+        if not user.is_active:  # type: ignore[truthy-bool]
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Usuario inactivo"

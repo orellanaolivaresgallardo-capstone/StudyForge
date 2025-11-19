@@ -29,5 +29,5 @@ class QuizAttempt(Base):
     answers = relationship("Answer", back_populates="attempt", cascade="all, delete-orphan")
 
     def __repr__(self):
-        status = "completado" if self.completed_at else "en progreso"
+        status = "completado" if self.completed_at else "en progreso"  # type: ignore[truthy-bool]
         return f"<QuizAttempt {status} - Score: {self.score}>"

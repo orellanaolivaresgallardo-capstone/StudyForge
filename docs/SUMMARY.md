@@ -1,6 +1,6 @@
 # StudyForge — Resumen de contexto
 
-**Última actualización:** 2025-11-19
+**Última actualización:** 2025-01-19
 
 **Branch actual:** `remake`
 
@@ -51,8 +51,10 @@ StudyForge es una plataforma educativa que utiliza inteligencia artificial para:
 4. **Routers** (`app/routers/`) - Endpoints HTTP
 
 ### Modelos de datos
-- **users** - Información de usuarios (UUID PK, email único, password hash)
+- **users** - Información de usuarios (UUID PK, email único, password hash, cuotas configurables)
+- **documents** - Documentos almacenados por usuario (file_content, extracted_text)
 - **summaries** - Resúmenes generados por IA (JSONB content)
+- **summary_documents** - Relación many-to-many entre summaries y documents
 - **quizzes** - Cuestionarios generados
 - **questions** - Preguntas de opción múltiple (A/B/C/D)
 - **quiz_attempts** - Intentos de usuario
@@ -72,14 +74,21 @@ StudyForge es una plataforma educativa que utiliza inteligencia artificial para:
 - Hashing con Argon2id
 - Protección de endpoints con dependencias
 
+### ✅ Gestión de documentos
+- Upload y almacenamiento de archivos (PDF, DOCX, PPTX, TXT)
+- Sistema de cuotas por usuario (5GB por defecto, configurable)
+- Validación de tamaño máximo por archivo (50MB por defecto, configurable)
+- Extracción y cache de texto para búsqueda
+- CRUD completo de documentos con validación de ownership
+- Tracking de uso de almacenamiento en tiempo real
+
 ### ✅ Gestión de resúmenes
-- Upload de archivos (PDF, DOCX, PPTX, TXT, max 50MB)
-- Extracción de texto de múltiples formatos
-- Generación de resúmenes con OpenAI
+- Generación de resúmenes con OpenAI desde documentos almacenados
+- Soporte para múltiples documentos por resumen (hasta 2 por defecto, configurable)
 - 3 niveles de expertise (básico, medio, avanzado)
 - Identificación automática de temas y conceptos clave
-- CRUD completo de resúmenes
-- Privacidad: documentos NO se almacenan
+- CRUD completo de resúmenes con validación de ownership
+- Relación many-to-many con documentos
 
 ### ✅ Sistema de quizzes
 - Generación desde archivo o resumen existente
@@ -104,7 +113,15 @@ StudyForge es una plataforma educativa que utiliza inteligencia artificial para:
 ### Autenticación (`/auth`)
 - `POST /auth/register` - Registrar nuevo usuario
 - `POST /auth/login` - Autenticar y obtener token
-- `GET /auth/me` - Información del usuario actual
+- `GET /auth/me` - Información del usuario actual (incluye cuotas)
+
+### Documentos (`/documents`)
+- `POST /documents` - Subir y almacenar documento (validación de cuota)
+- `GET /documents` - Listar documentos del usuario
+- `GET /documents/storage` - Información de uso de almacenamiento
+- `GET /documents/{id}` - Obtener documento específico
+- `PATCH /documents/{id}` - Actualizar título del documento
+- `DELETE /documents/{id}` - Eliminar documento (libera espacio)
 
 ### Resúmenes (`/summaries`)
 - `POST /summaries/upload` - Subir archivo y generar resumen
@@ -143,12 +160,16 @@ StudyForge es una plataforma educativa que utiliza inteligencia artificial para:
 - [x] Base de datos configurada con migraciones
 - [x] Todos los endpoints implementados y probados
 - [x] Autenticación JWT funcionando
+- [x] Sistema de almacenamiento de documentos
+- [x] Sistema de cuotas por usuario (storage, file size, documents per summary)
+- [x] Validaciones de ownership centralizadas para seguridad
 - [x] Integración con OpenAI configurada
 - [x] Procesamiento de archivos múltiples formatos
 - [x] Sistema adaptativo de dificultad
 - [x] API documentada con Swagger/OpenAPI
 - [x] Encoding UTF-8 CRLF para Windows
 - [x] Permisos de base de datos configurados
+- [x] Type hints corregidos para SQLAlchemy
 
 ### ⏳ En progreso
 - [ ] Frontend React (pendiente)
@@ -231,7 +252,10 @@ Consultar [docs/DECISIONS.md](DECISIONS.md) para detalles completos:
 
 - UUID v4 como primary keys (seguridad, escalabilidad)
 - Arquitectura en capas para separación de responsabilidades
-- No almacenar documentos originales (privacidad)
+- **Almacenamiento de documentos** con sistema de cuotas (cambio de política)
+- Sistema de cuotas configurable por usuario (storage, file size, documents per summary)
+- Validaciones de ownership centralizadas en dependencies.py
+- Type ignore comments para compatibilidad SQLAlchemy con type checkers
 - Argon2 sobre bcrypt (seguridad)
 - OpenAI GPT-4o-mini (costo/calidad)
 - Dificultad adaptativa basada en últimos 5 intentos
@@ -283,6 +307,6 @@ Ver [docs/ROADMAP.md](ROADMAP.md) para plan completo.
 
 ---
 
-**Última compilación:** 2025-11-19
+**Última compilación:** 2025-01-19
 **Branch:** remake
 **Versión:** 2.0.0 (reimplementación completa)
