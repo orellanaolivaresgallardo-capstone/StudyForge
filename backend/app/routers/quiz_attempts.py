@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, verify_quiz_ownership, verify_quiz_attempt_ownership
 from app.repositories.quiz_repository import QuizRepository
 from app.repositories.quiz_attempt_repository import QuizAttemptRepository
 from app.schemas.quiz_attempt import (
@@ -45,18 +45,7 @@ def start_quiz_attempt(
     """
     # Verificar que el quiz existe y pertenece al usuario
     quiz = QuizRepository.get_quiz_by_id(db, attempt_data.quiz_id)
-
-    if not quiz:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Cuestionario no encontrado"
-        )
-
-    if quiz.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permiso para realizar este cuestionario"
-        )
+    quiz = verify_quiz_ownership(quiz, current_user)
 
     # Crear intento
     attempt = QuizAttemptRepository.create_attempt(
@@ -92,18 +81,7 @@ def answer_question(
     """
     # Verificar que el intento existe y pertenece al usuario
     attempt = QuizAttemptRepository.get_attempt_by_id(db, attempt_id)
-
-    if not attempt:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Intento no encontrado"
-        )
-
-    if attempt.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permiso para acceder a este intento"
-        )
+    attempt = verify_quiz_attempt_ownership(attempt, current_user)
 
     if attempt.completed_at:
         raise HTTPException(
@@ -181,18 +159,7 @@ def complete_quiz_attempt(
     """
     # Verificar intento
     attempt = QuizAttemptRepository.get_attempt_by_id(db, attempt_id)
-
-    if not attempt:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Intento no encontrado"
-        )
-
-    if attempt.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permiso para acceder a este intento"
-        )
+    attempt = verify_quiz_attempt_ownership(attempt, current_user)
 
     if attempt.completed_at:
         raise HTTPException(
@@ -239,18 +206,7 @@ def get_quiz_results(
     """
     # Verificar intento
     attempt = QuizAttemptRepository.get_attempt_by_id(db, attempt_id)
-
-    if not attempt:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Intento no encontrado"
-        )
-
-    if attempt.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permiso para acceder a este intento"
-        )
+    attempt = verify_quiz_attempt_ownership(attempt, current_user)
 
     if not attempt.completed_at:
         raise HTTPException(

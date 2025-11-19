@@ -6,7 +6,7 @@ Sistema de apoyo al aprendizaje con IA.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import auth, summaries, quizzes, quiz_attempts, stats
+from app.routers import auth, documents, summaries, quizzes, quiz_attempts, stats
 
 app = FastAPI(
     title="StudyForge API",
@@ -38,6 +38,7 @@ async def health_check():
 
 # Incluir routers
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(documents.router, prefix="/documents", tags=["documents"])
 app.include_router(summaries.router, prefix="/summaries", tags=["summaries"])
 app.include_router(quizzes.router, prefix="/quizzes", tags=["quizzes"])
 app.include_router(quiz_attempts.router, prefix="/quiz-attempts", tags=["quiz-attempts"])

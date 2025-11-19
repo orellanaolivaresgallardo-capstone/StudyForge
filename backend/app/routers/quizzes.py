@@ -75,7 +75,7 @@ def generate_quiz_from_summary(
     """
     quiz = quiz_service.create_quiz_from_summary(
         db=db,
-        user_id=current_user.id,
+        user=current_user,
         summary_id=summary_id,
         topic=topic,
         max_questions=max_questions,
@@ -136,6 +136,6 @@ def get_quiz(
     quiz = quiz_service.get_quiz(
         db=db,
         quiz_id=quiz_id,
-        user_id=current_user.id,
+        user=current_user,
     )
     return quiz

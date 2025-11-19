@@ -10,6 +10,8 @@ from app.repositories.summary_repository import SummaryRepository
 from app.services.file_processor import FileProcessor
 from app.services.openai_service import OpenAIService
 from app.models.summary import Summary, ExpertiseLevel
+from app.models.user import User
+from app.core.dependencies import verify_summary_ownership
 
 
 class SummaryService:
@@ -88,14 +90,14 @@ class SummaryService:
         total = SummaryRepository.count_by_user(db, user_id)
         return summaries, total
 
-    def get_summary(self, db: Session, summary_id: UUID, user_id: UUID) -> Summary:
+    def get_summary(self, db: Session, summary_id: UUID, user: User) -> Summary:
         """
         Obtiene un resumen específico.
 
         Args:
             db: Sesión de base de datos
             summary_id: ID del resumen
-            user_id: ID del usuario
+            user: Usuario autenticado
 
         Returns:
             Resumen
@@ -104,32 +106,20 @@ class SummaryService:
             HTTPException: Si no existe o no pertenece al usuario
         """
         summary = SummaryRepository.get_by_id(db, summary_id)
-
-        if not summary:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Resumen no encontrado"
-            )
-
-        if summary.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permiso para acceder a este resumen"
-            )
-
+        summary = verify_summary_ownership(summary, user)
         return summary
 
-    def delete_summary(self, db: Session, summary_id: UUID, user_id: UUID) -> None:
+    def delete_summary(self, db: Session, summary_id: UUID, user: User) -> None:
         """
         Elimina un resumen.
 
         Args:
             db: Sesión de base de datos
             summary_id: ID del resumen
-            user_id: ID del usuario
+            user: Usuario autenticado
 
         Raises:
             HTTPException: Si no existe o no pertenece al usuario
         """
-        summary = self.get_summary(db, summary_id, user_id)
+        summary = self.get_summary(db, summary_id, user)
         SummaryRepository.delete(db, summary)

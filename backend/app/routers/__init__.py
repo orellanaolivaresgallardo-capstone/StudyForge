@@ -2,10 +2,11 @@
 """
 Routers - Endpoints de la API.
 """
-from app.routers import auth, summaries, quizzes, quiz_attempts, stats
+from app.routers import auth, documents, summaries, quizzes, quiz_attempts, stats
 
 __all__ = [
     "auth",
+    "documents",
     "summaries",
     "quizzes",
     "quiz_attempts",

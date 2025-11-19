@@ -14,6 +14,8 @@ from app.services.openai_service import OpenAIService
 from app.models.quiz import Quiz
 from app.models.quiz_attempt import QuizAttempt
 from app.models.question import OptionEnum
+from app.models.user import User
+from app.core.dependencies import verify_quiz_ownership, verify_summary_ownership
 from app.config import settings
 
 
@@ -141,7 +143,7 @@ class QuizService:
     def create_quiz_from_summary(
         self,
         db: Session,
-        user_id: UUID,
+        user: User,
         summary_id: UUID,
         topic: str = "general",
         max_questions: Optional[int] = None,
@@ -151,7 +153,7 @@ class QuizService:
 
         Args:
             db: Sesión de base de datos
-            user_id: ID del usuario
+            user: Usuario autenticado
             summary_id: ID del resumen
             topic: Tema específico o "general"
             max_questions: Número de preguntas (opcional)
@@ -164,18 +166,7 @@ class QuizService:
         """
         # 1. Verificar que el resumen existe y pertenece al usuario
         summary = SummaryRepository.get_by_id(db, summary_id)
-
-        if not summary:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Resumen no encontrado"
-            )
-
-        if summary.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permiso para usar este resumen"
-            )
+        summary = verify_summary_ownership(summary, user)
 
         # 2. Usar el contenido del resumen
         summary_text = summary.content.get("summary", "")
@@ -185,7 +176,7 @@ class QuizService:
         num_questions = min(num_questions, settings.MAX_QUESTIONS_PER_QUIZ)
 
         # 4. Calcular dificultad adaptativa
-        difficulty_level = self.calculate_adaptive_difficulty(db, user_id, topic)
+        difficulty_level = self.calculate_adaptive_difficulty(db, user.id, topic)
 
         # 5. Generar cuestionario con OpenAI
         questions_data = self.openai_service.generate_quiz(
@@ -198,7 +189,7 @@ class QuizService:
         # 6. Crear cuestionario en BD
         quiz = QuizRepository.create_quiz(
             db=db,
-            user_id=user_id,
+            user_id=user.id,
             summary_id=summary_id,
             title=f"Cuestionario: {summary.title}",
             topic=topic,
@@ -245,14 +236,14 @@ class QuizService:
         total = QuizRepository.count_quizzes_by_user(db, user_id)
         return quizzes, total
 
-    def get_quiz(self, db: Session, quiz_id: UUID, user_id: UUID) -> Quiz:
+    def get_quiz(self, db: Session, quiz_id: UUID, user: User) -> Quiz:
         """
         Obtiene un cuestionario específico.
 
         Args:
             db: Sesión de base de datos
             quiz_id: ID del cuestionario
-            user_id: ID del usuario
+            user: Usuario autenticado
 
         Returns:
             Cuestionario
@@ -261,17 +252,5 @@ class QuizService:
             HTTPException: Si no existe o no pertenece al usuario
         """
         quiz = QuizRepository.get_quiz_by_id(db, quiz_id)
-
-        if not quiz:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cuestionario no encontrado"
-            )
-
-        if quiz.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permiso para acceder a este cuestionario"
-            )
-
+        quiz = verify_quiz_ownership(quiz, user)
         return quiz

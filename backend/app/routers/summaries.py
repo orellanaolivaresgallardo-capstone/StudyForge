@@ -96,7 +96,7 @@ def get_summary(
     summary = summary_service.get_summary(
         db=db,
         summary_id=summary_id,
-        user_id=current_user.id,
+        user=current_user,
     )
     return summary
 
@@ -121,6 +121,6 @@ def delete_summary(
     summary_service.delete_summary(
         db=db,
         summary_id=summary_id,
-        user_id=current_user.id,
+        user=current_user,
     )
     return None

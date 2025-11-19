@@ -2,7 +2,7 @@
 """
 Schemas para Usuario.
 """
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, computed_field
 from datetime import datetime
 from uuid import UUID
 
@@ -39,11 +39,13 @@ class UserDetailResponse(UserResponse):
     max_documents_per_summary: int = Field(..., description="Máximo de documentos por resumen")
     max_file_size_bytes: int = Field(..., description="Tamaño máximo por archivo")
 
+    @computed_field
     @property
     def storage_available_bytes(self) -> int:
         """Calcula el espacio disponible."""
         return max(0, self.storage_quota_bytes - self.storage_used_bytes)
 
+    @computed_field
     @property
     def storage_usage_percentage(self) -> float:
         """Calcula el porcentaje de uso."""

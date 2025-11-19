@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.dependencies import get_current_user
 from app.services.auth_service import AuthService
-from app.schemas.user import UserCreate, UserLogin, UserResponse
+from app.schemas.user import UserCreate, UserLogin, UserResponse, UserDetailResponse
 from app.schemas.auth import Token
 from app.models.user import User
 
@@ -61,15 +61,15 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     return Token(access_token=access_token)
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=UserDetailResponse)
 def get_current_user_info(current_user: User = Depends(get_current_user)):
     """
-    Obtiene la información del usuario autenticado.
+    Obtiene la información del usuario autenticado incluyendo cuotas.
 
     Args:
         current_user: Usuario autenticado (inyectado por dependencia)
 
     Returns:
-        Información del usuario
+        Información detallada del usuario con cuotas de almacenamiento
     """
     return current_user
