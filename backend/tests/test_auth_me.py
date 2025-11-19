@@ -2,7 +2,7 @@
 import types
 from fastapi.testclient import TestClient
 from app.main import app
-from app.core.deps import get_current_user
+from app.core.dependencies import get_current_user
 
 def fake_user():
     # emula un objeto con las attrs mínimas

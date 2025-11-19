@@ -11,6 +11,7 @@ import pdfplumber
 from pptx import Presentation
 from docx import Document
 from app.config import settings
+from app.core.file_validator import FileValidator
 
 
 class FileProcessor:
@@ -48,6 +49,41 @@ class FileProcessor:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Formato de archivo no soportado. Formatos permitidos: {', '.join(FileProcessor.ALLOWED_EXTENSIONS)}"
             )
+
+        return file.filename, file_extension
+
+    @staticmethod
+    async def validate_file_security(file: UploadFile) -> Tuple[str, str]:
+        """
+        Valida el archivo usando magic numbers para seguridad.
+        
+        Args:
+            file: Archivo subido
+            
+        Returns:
+            Tupla (nombre_archivo, extensión)
+            
+        Raises:
+            HTTPException: Si el archivo no es válido o es peligroso
+        """
+        if not file.filename:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El archivo no tiene nombre"
+            )
+
+        # Obtener extensión
+        file_extension = file.filename.split(".")[-1].lower()
+
+        # Validar extensión
+        if file_extension not in FileProcessor.ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Formato de archivo no soportado. Formatos permitidos: {', '.join(FileProcessor.ALLOWED_EXTENSIONS)}"
+            )
+
+        # Validar contenido usando magic numbers
+        await FileValidator.validate_file_content(file, file_extension)
 
         return file.filename, file_extension
 

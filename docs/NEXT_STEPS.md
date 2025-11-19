@@ -2,7 +2,7 @@
 
 **Última actualización:** 2025-11-19
 
-**Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas. **Fase 0.1, 0.2 y 0.3 (logging) COMPLETADAS**. Sistema multi-documento funcionando con logging estructurado integrado.
+**Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas. **Fase 0.1, 0.2 y 0.3 COMPLETADAS**. Sistema multi-documento funcionando con logging estructurado integrado, rate limiting implementado, y validación de archivos con magic numbers para seguridad.
 
 ---
 
@@ -35,7 +35,7 @@
   - [x] NO eliminar documentos asociados (pueden estar en otros summaries)
   - [x] Solo eliminar relación en summary_documents (cascade automático)
 
-### 0.3 Seguridad y logging (PARCIALMENTE COMPLETADO)
+### 0.3 Seguridad y logging ✅ COMPLETADO
 - [x] **Implementar logging estructurado** ✅ COMPLETADO
   - [x] Logging de eventos de autenticación (login, register, failed attempts)
   - [x] Logging de operaciones de cuotas (upload, quota exceeded)
@@ -43,15 +43,22 @@
   - [x] Configurar niveles de log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   - [x] Sistema centralizado en `app/core/logging.py`
   - [x] Funciones especializadas: `log_auth_event`, `log_quota_event`, `log_ownership_validation`, `log_openai_request`, `log_error`
-- [ ] **Implementar rate limiting** ⏳ PENDIENTE
-  - [ ] Limitar requests por IP/usuario
-  - [ ] Diferentes límites por endpoint (más restrictivo en uploads)
-  - [ ] Usar slowapi o similar
-  - [ ] Headers informativos (X-RateLimit-*)
-- [ ] **Validación adicional de archivos** ⏳ PENDIENTE
-  - [ ] Verificar magic numbers además de extensión
-  - [ ] Usar python-magic o filetype
-  - [ ] Prevenir evasión con extensiones falsas
+- [x] **Implementar rate limiting** ✅ COMPLETADO
+  - [x] Middleware personalizado basado en ventanas deslizantes
+  - [x] Limitar requests por IP (100 requests / 60 segundos configurable)
+  - [x] Rutas exentas configurables (/health, /docs, /redoc, /openapi.json)
+  - [x] Headers informativos (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)
+  - [x] Respuesta 429 con Retry-After header
+  - [x] Implementado en `app/core/rate_limiter.py`
+  - [x] Tests completos (7 tests pasando)
+- [x] **Validación adicional de archivos** ✅ COMPLETADO
+  - [x] Verificar magic numbers (file signatures) además de extensión
+  - [x] Validación para PDF, Office (DOCX, PPTX), Office Legacy (DOC, PPT), y TXT
+  - [x] Prevenir evasión con extensiones falsas
+  - [x] Validación adicional para archivos ZIP-based Office (verifica estructura interna)
+  - [x] Implementado en `app/core/file_validator.py`
+  - [x] Integrado en `FileProcessor.validate_file_security()`
+  - [x] Tests completos (17 tests pasando)
 
 ### 0.4 Mejoras opcionales de seguridad
 - [ ] **Encriptación de datos sensibles** (opcional)

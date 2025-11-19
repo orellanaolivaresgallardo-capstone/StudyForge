@@ -41,6 +41,10 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
+    # Rate Limiting
+    RATE_LIMIT_REQUESTS: int = 100  # Requests por ventana
+    RATE_LIMIT_WINDOW: int = 60  # Ventana en segundos
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

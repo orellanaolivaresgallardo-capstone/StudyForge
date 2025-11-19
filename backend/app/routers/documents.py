@@ -52,8 +52,8 @@ async def upload_document(
         HTTPException 507: Si no hay suficiente espacio de almacenamiento
         HTTPException 415: Si el tipo de archivo no es soportado
     """
-    # 1. Validar tipo de archivo
-    filename, file_type = FileProcessor.validate_file(file)
+    # 1. Validar tipo de archivo con magic numbers (seguridad)
+    filename, file_type = await FileProcessor.validate_file_security(file)
 
     # 2. Leer contenido del archivo
     file_content = await file.read()

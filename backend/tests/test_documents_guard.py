@@ -1,8 +1,7 @@
 # tests/test_documents_guard.py
 from fastapi.testclient import TestClient
 from app.main import app
-from app.core.deps import get_current_user
-from app.services.document_service import DocumentService
+from app.core.dependencies import get_current_user
 import types
 
 # --- helpers ---

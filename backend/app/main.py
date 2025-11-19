@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.core.logging import setup_logging, get_logger
+from app.core.rate_limiter import RateLimitMiddleware
 from app.routers import auth, documents, summaries, quizzes, quiz_attempts, stats
 
 # Inicializar logging
@@ -28,6 +29,14 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Configurar Rate Limiting
+app.add_middleware(
+    RateLimitMiddleware,
+    max_requests=settings.RATE_LIMIT_REQUESTS,
+    window_seconds=settings.RATE_LIMIT_WINDOW,
+    exempt_paths=["/health", "/docs", "/redoc", "/openapi.json"]
 )
 
 

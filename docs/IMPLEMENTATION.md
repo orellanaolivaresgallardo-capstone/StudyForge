@@ -130,6 +130,9 @@ Endpoints de API completos:
 - ✅ [config.py](../backend/app/config.py) - Configuración centralizada con Pydantic Settings
 - ✅ [security.py](../backend/app/core/security.py) - Argon2 + JWT
 - ✅ [dependencies.py](../backend/app/core/dependencies.py) - Dependencia get_current_user
+- ✅ [logging.py](../backend/app/core/logging.py) - Sistema de logging estructurado
+- ✅ [rate_limiter.py](../backend/app/core/rate_limiter.py) - Rate limiting middleware
+- ✅ [file_validator.py](../backend/app/core/file_validator.py) - Validación de archivos con magic numbers
 - ✅ [db.py](../backend/app/db.py) - SQLAlchemy con pool_pre_ping
 
 ---
@@ -195,6 +198,22 @@ studyforge schema:
 4. **Validación**: Pydantic para todos los inputs
 5. **Privacidad**: Documentos no se almacenan
 6. **Límites**: Tamaño de archivo (10MB), preguntas por quiz (30)
+7. **Rate Limiting**: Middleware personalizado con ventanas deslizantes
+   - 100 requests por 60 segundos (configurable)
+   - Headers informativos (X-RateLimit-*)
+   - Rutas exentas (/health, /docs)
+   - Implementado en `app/core/rate_limiter.py`
+8. **Validación de Archivos**: Magic numbers (file signatures)
+   - Previene ataques con extensiones falsas
+   - Verifica contenido real del archivo
+   - Validación adicional para Office ZIP-based
+   - Implementado en `app/core/file_validator.py`
+9. **Logging Estructurado**: Sistema centralizado de logs
+   - Eventos de autenticación
+   - Operaciones de cuotas
+   - Validaciones de ownership
+   - Requests a OpenAI
+   - Implementado en `app/core/logging.py`
 
 ---
 
@@ -219,11 +238,16 @@ ALEMBIC_URL=postgresql+psycopg://studyforge_owner:password@localhost:5432/studyf
 ## 🚀 Próximos Pasos
 
 ### Backend
-- [ ] Tests unitarios (pytest)
+- [ ] Tests unitarios completos (pytest) - **EN PROGRESO**
+  - [x] Tests de rate limiter (7 tests)
+  - [x] Tests de file validator (17 tests)
+  - [ ] Tests de repositories
+  - [ ] Tests de services
 - [ ] Tests de integración
-- [ ] Rate limiting (slowapi)
+- [x] ~~Rate limiting (slowapi)~~ ✅ **Implementado con middleware personalizado**
+- [x] ~~Validación de archivos~~ ✅ **Implementado con magic numbers**
+- [x] ~~Logging estructurado~~ ✅ **Implementado**
 - [ ] Caché (Redis)
-- [ ] Logging estructurado
 - [ ] Monitoreo (Sentry)
 
 ### Frontend
