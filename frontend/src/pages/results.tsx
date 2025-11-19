@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import QuizRunner from "./QuizRunner";
 
 type QuizItem = { q: string; options: string[]; answer: string };
 type ResultsData = {
@@ -9,14 +10,12 @@ type ResultsData = {
   bullets?: string[];
   glossary?: [string, string][];
   quiz?: QuizItem[];
+  quizId?: number; // <--- AGREGADO: si backend envía quizId
 };
 
 type Props = {
-  /** Endpoint que devuelve ResultsData (GET). Si no se pasa, usa datos demo. */
   fetchUrl?: string;
-  /** Parámetros opcionales, p.ej. { id: "archivo-123" } */
   params?: Record<string, string | number | boolean | undefined>;
-  /** Cargar automáticamente al montar (default: true) */
   autoLoad?: boolean;
 };
 
@@ -29,6 +28,10 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
   const [view, setView] = useState<"loading" | "ready" | "empty" | "error">("loading");
   const [data, setData] = useState<ResultsData | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+
+  // 🔥 Extra: leer quizId desde la URL
+  const search = new URLSearchParams(window.location.search);
+  const urlQuizId = search.get("quiz") ? Number(search.get("quiz")) : null;
 
   const meta = useMemo(() => {
     if (!data) return "—";
@@ -56,7 +59,6 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         payload = (await res.json()) as ResultsData;
       } else {
-        // --- DEMO / MOCK ---
         await new Promise((r) => setTimeout(r, 600));
         payload = {
           source: "mi-archivo.pdf",
@@ -77,18 +79,7 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
             ["Regularización", "Penalización que reduce complejidad del modelo."],
             ["F1-Score", "Media armónica entre precisión y recall."],
           ],
-          quiz: [
-            {
-              q: "¿Qué métrica usarías en clases desbalanceadas?",
-              options: ["Accuracy", "F1", "MSE", "AUC-ROC"],
-              answer: "F1 o AUC-ROC",
-            },
-            {
-              q: "¿Qué técnica reduce el overfitting?",
-              options: ["Aumentar epochs", "Regularización", "Menos datos", "LR alto"],
-              answer: "Regularización",
-            },
-          ],
+          quizId: 1,
         };
       }
 
@@ -97,7 +88,8 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
         !!payload.summary ||
         (payload.bullets && payload.bullets.length > 0) ||
         (payload.glossary && payload.glossary.length > 0) ||
-        (payload.quiz && payload.quiz.length > 0);
+        payload.quizId;
+
       setView(hasAny ? "ready" : "empty");
     } catch {
       setView("error");
@@ -106,7 +98,6 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
 
   useEffect(() => {
     if (autoLoad) fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function copyCurrent() {
@@ -127,11 +118,7 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
             return `${term}: ${def}`;
           })
           .join("\n") || "";
-    if (active === "quiz")
-      text =
-        [...(contentRef.current.querySelectorAll("#quizList .q") ?? [])]
-          .map((q, i) => `${i + 1}. ${(q as HTMLElement).innerText}`)
-          .join("\n") || "";
+    if (active === "quiz") text = "Contenido interactivo, no exportable como texto.";
 
     navigator.clipboard.writeText(text).catch(() => {});
   }
@@ -147,10 +134,18 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
     URL.revokeObjectURL(url);
   }
 
+  // --------------------------------------------
+  // RENDER
+  // --------------------------------------------
   return (
     <section className="max-w-7xl mx-auto px-6 py-10">
-      <div className="rounded-2xl p-6 md:p-8"
-           style={{ background: "linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04))", boxShadow: "0 10px 30px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06)" }}>
+      <div
+        className="rounded-2xl p-6 md:p-8"
+        style={{
+          background: "linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04))",
+          boxShadow: "0 10px 30px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06)",
+        }}
+      >
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -161,8 +156,11 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
             <button onClick={fetchData} className="rounded-xl px-4 py-2 text-sm bg-white/10 hover:bg-white/15 border border-white/10">
               Actualizar
             </button>
-            <button onClick={downloadTxt} className="rounded-xl px-4 py-2 text-sm"
-              style={{ background: "linear-gradient(90deg,#7c3aed,#a855f7)" }}>
+            <button
+              onClick={downloadTxt}
+              className="rounded-xl px-4 py-2 text-sm"
+              style={{ background: "linear-gradient(90deg,#7c3aed,#a855f7)" }}
+            >
               Descargar .txt
             </button>
           </div>
@@ -194,7 +192,12 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
               Copiar
             </button>
             <label className="text-xs text-slate-300 flex items-center gap-2 select-none">
-              <input type="checkbox" checked={dense} onChange={(e) => setDense(e.target.checked)} className="rounded border-slate-400/50 bg-white/10" />
+              <input
+                type="checkbox"
+                checked={dense}
+                onChange={(e) => setDense(e.target.checked)}
+                className="rounded border-slate-400/50 bg-white/10"
+              />
               Densidad compacta
             </label>
           </div>
@@ -209,22 +212,24 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
             <div className="h-4 bg-white/10 rounded w-8/12" />
           </div>
         )}
+
         {view === "empty" && (
           <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-6 text-slate-300">
             No hay resultados aún. Sube un documento y presiona <span className="font-semibold">Actualizar</span>.
           </div>
         )}
+
         {view === "error" && (
           <div className="mt-6 rounded-xl border border-rose-300/20 bg-rose-500/10 p-6 text-rose-100">
-            Ocurrió un error al obtener los resultados.{" "}
-            <button onClick={fetchData} className="underline">Reintentar</button>
+            Ocurrió un error al obtener los resultados. <button onClick={fetchData} className="underline">Reintentar</button>
           </div>
         )}
 
         {/* Content */}
         {view === "ready" && (
           <div ref={contentRef} className={`mt-6 ${dense ? "text-sm leading-snug" : ""}`}>
-            {/* Resumen */}
+
+            {/* SUMMARY */}
             {active === "summary" && (
               <article>
                 <div id="summaryText" className="prose prose-invert max-w-none prose-p:my-3">
@@ -237,7 +242,7 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
               </article>
             )}
 
-            {/* Bullets */}
+            {/* BULLETS */}
             {active === "bullets" && (
               <article>
                 <ul id="bulletsList" className="list-disc pl-6 space-y-2 text-slate-200">
@@ -248,7 +253,7 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
               </article>
             )}
 
-            {/* Glosario */}
+            {/* GLOSSARY */}
             {active === "glossary" && (
               <article>
                 <div id="glossaryGrid" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -262,27 +267,11 @@ export default function ResultsPanel({ fetchUrl, params, autoLoad = true }: Prop
               </article>
             )}
 
-            {/* Preguntas */}
-            {active === "quiz" && (
-              <article>
-                <ol id="quizList" className="space-y-4 list-decimal pl-6">
-                  {(data?.quiz ?? []).map((q, i) => (
-                    <li key={i}>
-                      <div className="q font-medium">{q.q}</div>
-                      <ul className="mt-2 list-disc pl-6 text-slate-300 text-sm">
-                        {q.options.map((o) => (
-                          <li key={o}>{o}</li>
-                        ))}
-                      </ul>
-                      <details className="mt-2 text-xs text-slate-400">
-                        <summary>Mostrar respuesta</summary>
-                        <div className="mt-1">✅ {q.answer}</div>
-                      </details>
-                    </li>
-                  ))}
-                </ol>
-              </article>
+            {/* QUIZ — AHORA ES INTERACTIVO */}
+            {active === "quiz" && (data?.quizId || urlQuizId) && (
+              <QuizRunner quizId={(data?.quizId ?? urlQuizId)!} />
             )}
+
           </div>
         )}
       </div>

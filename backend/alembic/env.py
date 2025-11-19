@@ -10,7 +10,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# --- Importa metadata y registra modelos ---
+# --- Importa metadata y registra modelos (¡importa tus modelos aquí!) ---
 from app.db import Base  # declarative_base()
 import app.repositories.models  # asegura que las tablas estén registradas
 
@@ -33,20 +33,37 @@ if db_url:
     db_url = db_url.replace("%", "%%")
     config.set_main_option("sqlalchemy.url", db_url)
 
-# --- Opciones comunes de comparación (autogenerate coherente con schema) ---
+# --- Filtros/flags comunes de autogenerate ---
 def include_object(obj, name, type_, reflected, compare_to):
-    # No intentes crear/alterar la tabla de versión en ningún schema
+    """
+    - Ignora la tabla de versionado (alembic_version) en cualquier schema.
+    - Solo gestiona objetos del schema 'studyforge' (evita tocar 'public').
+    """
+    # Ignorar tabla de versionado
     if type_ == "table" and name == VERSION_TABLE:
         return False
+
+    # Resolver schema del objeto (tabla, índice, constraint, etc.)
+    obj_schema = None
+    if hasattr(obj, "schema"):
+        obj_schema = obj.schema
+    elif hasattr(obj, "table") and hasattr(obj.table, "schema"):
+        obj_schema = obj.table.schema
+
+    # Si el objeto no es de nuestro schema, no lo autogeneres
+    if obj_schema is not None and obj_schema != SCHEMA:
+        return False
+
     return True
 
 COMMON_KW = dict(
     target_metadata=target_metadata,
     compare_type=True,
     compare_server_default=True,
-    include_schemas=True,              # importantísimo al trabajar con schema personalizado
+    compare_index=True,
+    include_schemas=True,              # importante con schema personalizado
     version_table=VERSION_TABLE,
-    version_table_schema=SCHEMA,       # <-- clave para que lea/escriba en studyforge.alembic_version
+    version_table_schema=SCHEMA,       # <- clave: versionado en studyforge.alembic_version
     include_object=include_object,
 )
 
@@ -67,6 +84,7 @@ def run_migrations_online():
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+
     with connectable.connect() as connection:
         # Fija el search_path en la conexión
         connection.execute(text(f"SET search_path TO {SCHEMA}, public"))

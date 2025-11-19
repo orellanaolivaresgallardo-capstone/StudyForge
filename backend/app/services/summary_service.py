@@ -1,202 +1,158 @@
-# app/services/summary_service.py
 from __future__ import annotations
 
-from typing import Optional, List, Tuple
-import math
-import re
+import os
+from typing import List, Tuple, Optional
 
 from sqlalchemy.orm import Session
 
-from app.repositories.models import Document, Summary, User
-from app.schemas.summary_schemas import (
-    SummaryIn,
-    SummaryOut,
-    SummaryListOut,
-)
+from app.repositories.models import Summary, Document
+from app.schemas.summary_schemas import SummaryIn, SummaryOut, SummaryListOut
+from .llm_provider import LlmProvider
+from .openai_adapter import OpenAiAdapter
+
+# Máximo de caracteres por chunk antes de mandarlo a la IA
+MAX_CHUNK_CHARS = 2400
+
 
 class SummaryService:
-    #
-    # CRUD básico (ya lo tenías; lo dejamos completo para claridad)
-    #
-    def list(
-        self, db: Session, user_id: int, limit: int = 20, offset: int = 0, document_id: Optional[int] = None
+    """Operaciones CRUD sobre summaries (sin lógica de IA)."""
+
+    def list_for_user(
+        self,
+        db: Session,
+        user_id: int,
+        document_id: Optional[int] = None,
     ) -> SummaryListOut:
         q = db.query(Summary).filter(Summary.user_id == user_id)
         if document_id is not None:
             q = q.filter(Summary.document_id == document_id)
 
-        rows = (
-            q.order_by(Summary.id.asc())
-            .offset(offset)
-            .limit(min(max(limit, 1), 200))
-            .all()
-        )
-        items = [
-            SummaryOut(
-                id=r.id,
-                title=r.title,
-                content=r.content,
-                document_id=r.document_id,
-                created_at=r.created_at,
-            )
-            for r in rows
-        ]
+        rows = q.order_by(Summary.created_at.desc()).all()
+        items = [SummaryOut.model_validate(r) for r in rows]
         return SummaryListOut(items=items)
+    
+    def list(
+        self,
+        db: Session,
+        user_id: int,
+        document_id: Optional[int] = None,
+    ) -> SummaryListOut:
+        """Alias para mantener compatibilidad con el router existente."""
+        return self.list_for_user(db=db, user_id=user_id, document_id=document_id)
+    
 
-    def get(self, db: Session, user_id: int, summary_id: int) -> Optional[SummaryOut]:
-        r = (
-            db.query(Summary)
-            .filter(Summary.user_id == user_id, Summary.id == summary_id)
-            .first()
-        )
-        if not r:
-            return None
-        return SummaryOut(
-            id=r.id,
-            title=r.title,
-            content=r.content,
-            document_id=r.document_id,
-            created_at=r.created_at,
-        )
-
-    def delete(self, db: Session, user_id: int, summary_id: int) -> bool:
-        r = (
-            db.query(Summary)
-            .filter(Summary.user_id == user_id, Summary.id == summary_id)
-            .first()
-        )
-        if not r:
-            return False
-        db.delete(r)
-        db.commit()
-        return True
-
-    def create(self, db: Session, user_id: int, payload: SummaryIn) -> Optional[SummaryOut]:
-        # Verificamos que el documento exista y sea del usuario (si documents tiene user_id)
-        doc = db.query(Document).filter(Document.id == payload.document_id).first()
-        if not doc:
-            return None
-        # Si Document.owner está activo, valida ownership
-        if hasattr(doc, "user_id") and doc.user_id is not None and doc.user_id != user_id:
-            return None
-
-        obj = Summary(
-            title=payload.title.strip(),
-            content=payload.content.strip(),
+    def create(self, db: Session, user_id: int, payload: SummaryIn) -> SummaryOut:
+        # Opcional: podríamos validar que el documento pertenece al usuario aquí.
+        row = Summary(
+            title=payload.title,
+            content=payload.content,
             document_id=payload.document_id,
             user_id=user_id,
         )
-        db.add(obj)
+        db.add(row)
         db.commit()
-        db.refresh(obj)
+        db.refresh(row)
+        return SummaryOut.model_validate(row)
 
-        return SummaryOut(
-            id=obj.id,
-            title=obj.title,
-            content=obj.content,
-            document_id=obj.document_id,
-            created_at=obj.created_at,
+    def delete(self, db: Session, user_id: int, summary_id: int) -> bool:
+        row = (
+            db.query(Summary)
+            .filter(Summary.user_id == user_id, Summary.id == summary_id)
+            .first()
         )
+        if not row:
+            return False
 
-    #
-    # AUTO-RESUMEN (ligero, sin dependencias externas)
-    #
-    def generate_auto_summary(
-        self, db: Session, user_id: int, document_id: int, max_sentences: int = 5
-    ) -> Optional[SummaryOut]:
-        # 1) Carga documento + ownership
-        doc = db.query(Document).filter(Document.id == document_id).first()
-        if not doc:
-            return None
-        if hasattr(doc, "user_id") and doc.user_id is not None and doc.user_id != user_id:
-            return None
-
-        raw = (doc.content or "").strip()
-        if not raw:
-            return None
-
-        # 2) Resumen naive:
-        #    - Segmenta en oraciones
-        #    - Calcula score por TF simple (palabras frecuentes, ignora stopwords básicas)
-        #    - Ajuste por longitud (evitar oraciones extremadamente cortas/largas)
-        #    - Toma top-N y preserva el orden original
-        sentences = self._split_sentences(raw)
-        if not sentences:
-            return None
-
-        # Construye vocabulario y TF
-        tokenized = [self._tokenize(s) for s in sentences]
-        tf = {}
-        for toks in tokenized:
-            for t in toks:
-                tf[t] = tf.get(t, 0) + 1
-
-        # Normaliza TF
-        total = sum(tf.values()) or 1
-        for k in list(tf.keys()):
-            tf[k] = tf[k] / total
-
-        # Scoring de cada oración
-        scores: List[Tuple[int, float]] = []
-        for idx, toks in enumerate(tokenized):
-            # suma de TF, penaliza extremos de longitud
-            length = max(len(toks), 1)
-            base = sum(tf.get(t, 0.0) for t in toks)
-            length_penalty = 1.0
-            if length < 6:
-                length_penalty = 0.6
-            elif length > 40:
-                length_penalty = 0.7
-            score = base * length_penalty
-            scores.append((idx, score))
-
-        # Ordena por score desc y elige top-N índices
-        scores.sort(key=lambda x: x[1], reverse=True)
-        chosen = sorted([idx for idx, _ in scores[:max(1, max_sentences)]])
-        summary_text = " ".join(sentences[i] for i in chosen).strip()
-
-        # 3) Persiste como Summary
-        title = f"Resumen de: {doc.title[:150]}"
-        obj = Summary(
-            title=title,
-            content=summary_text,
-            document_id=doc.id,
-            user_id=user_id,
-        )
-        db.add(obj)
+        db.delete(row)
         db.commit()
-        db.refresh(obj)
+        return True
 
-        return SummaryOut(
-            id=obj.id,
-            title=obj.title,
-            content=obj.content,
-            document_id=obj.document_id,
-            created_at=obj.created_at,
-        )
 
-    # ---------------------------
-    # utilidades de texto simples
-    # ---------------------------
-    _sent_splitter = re.compile(r"(?<=[\.\!\?…])\s+|\n+")
-    _word_re = re.compile(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+", re.UNICODE)
-    _stop = set("""
-        de la que el en y a los del se las por un para con no una su al lo como más pero sus le ya o muy sin sobre
-        también me hasta hay donde quien desde todo nos durante todos uno les ni contra otros ese eso ante ellos e esto
-        mí antes algunos qué unos yo otro otras otra él tanto esa estos mucho quienes nada muchos cual poco ella estar
-        estas algunas algo nosotros mi mis tú te ti tu tus ellas nosotras vosotros vosotras os mío mía míos mías tuyo tuya
-        tuyos tuyas suyo suya suyos suyas nuestro nuestra nuestros nuestras vuestro vuestra vuestros vuestras esos esas
-        estoy estás está estamos estáis están esté estés estemos estéis estén estaré estarás estará estaremos estaréis
-        estarán estaba estabas estaba estábamos estabais estaban estuve estuviste estuvo estuvimos estuvisteis estuvieron
-        estuviera estuvieras estuviera estuviéramos estuvierais estuvieran estuviese estuvieses estuviese estuviésemos
-        estuvieseis estuviesen estando estado estada estados estadas estad
-    """.split())
+def _choose_provider() -> LlmProvider:
+    prov = os.getenv("SUMMARIZER_PROVIDER", "").lower()
+    # Por ahora solo soportamos OpenAI; si hace falta otro, se agrega acá.
+    if prov == "openai":
+        return OpenAiAdapter()
+    raise RuntimeError("IA provider not configured (set SUMMARIZER_PROVIDER=openai)")
 
-    def _split_sentences(self, text: str) -> List[str]:
-        parts = [p.strip() for p in self._sent_splitter.split(text) if p and p.strip()]
-        # Colapsa espacios
-        return [re.sub(r"\s+", " ", p) for p in parts]
 
-    def _tokenize(self, sentence: str) -> List[str]:
-        toks = [t.lower() for t in self._word_re.findall(sentence)]
-        return [t for t in toks if t not in self._stop and len(t) > 1]
+def _chunk(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
+    text = (text or "").strip()
+    if not text:
+        return []
+
+    if len(text) <= max_chars:
+        return [text]
+
+    out: List[str] = []
+    current: List[str] = []
+    current_len = 0
+
+    # Rompemos por párrafos primero
+    for para in text.split("\n\n"):
+        p = para.strip()
+        if not p:
+            continue
+        if current_len + len(p) + 2 <= max_chars:
+            current.append(p)
+            current_len += len(p) + 2
+        else:
+            if current:
+                out.append("\n\n".join(current))
+            current = [p]
+            current_len = len(p)
+
+    if current:
+        out.append("\n\n".join(current))
+
+    return out
+
+
+def summarize_strict(
+    title: str,
+    text: str,
+    max_sentences: int = 5,
+) -> Tuple[str, str, int]:
+    """Hace chunking y resume SOLO con IA.
+
+    Devuelve:
+        content: str  -> texto resumido final
+        provider: str -> nombre del proveedor (ej: "openai")
+        chunks_used: int -> cuántos chunks se mandaron a la IA
+    """
+    prov = _choose_provider()
+    raw = (text or "").strip()
+    if not raw:
+        raise ValueError("Empty text to summarize")
+
+    chunks = _chunk(raw, MAX_CHUNK_CHARS)
+    if not chunks:
+        raise ValueError("Empty text after preprocessing")
+
+    # Escalamos la longitud objetivo en base a la cantidad de chunks.
+    # max_sentences viene del frontend (parámetro del usuario).
+    target_total = max(1, max_sentences)
+    per_chunk = max(2, target_total // max(1, len(chunks)))
+
+    used = 0
+    partials: List[str] = []
+
+    # 1) Resumir cada chunk con IA
+    for ch in chunks:
+        out = prov.summarize_text(ch, target_sentences=per_chunk, timeout_s=14.0)
+        if not out:
+            raise RuntimeError("AI summarization failed (chunk)")
+        used += 1
+        partials.append(out)
+
+    # 2) Resumen final de resúmenes (también con IA)
+    combined = "\n\n".join(partials)
+    final = prov.summarize_text(
+        combined,
+        target_sentences=target_total,
+        timeout_s=16.0,
+    )
+    if not final:
+        raise RuntimeError("AI summarization failed (final)")
+
+    return final, prov.name, used

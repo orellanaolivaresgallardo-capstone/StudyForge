@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 from app.db import Base
 
+# ===================== Users =====================
 class User(Base):
     __tablename__ = "users"
     __table_args__ = {"schema": "studyforge"}
@@ -16,6 +17,7 @@ class User(Base):
     documents = relationship("Document", back_populates="owner")
 
 
+# ===================== Documents =====================
 class Document(Base):
     __tablename__ = "documents"
     __table_args__ = {"schema": "studyforge"}
@@ -32,11 +34,16 @@ class Document(Base):
     summaries = relationship(
         "Summary",
         back_populates="document",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
-    quizzes = relationship("Quiz", back_populates="document")
+    quizzes = relationship(
+        "Quiz",
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
 
 
+# ===================== Summaries =====================
 class Summary(Base):
     __tablename__ = "summaries"
     __table_args__ = {"schema": "studyforge"}
@@ -50,16 +57,40 @@ class Summary(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # relaciones (opcionales si ya existen en Document/User)
     document = relationship("Document", back_populates="summaries", lazy="joined")
     user = relationship("User", lazy="joined")
 
 
+# ===================== Quizzes =====================
 class Quiz(Base):
     __tablename__ = "quizzes"
     __table_args__ = {"schema": "studyforge"}
 
     id = Column(Integer, primary_key=True)
-    document_id = Column(Integer, ForeignKey("studyforge.documents.id"), nullable=False)
-    # ... (resto de campos si los tienes definidos)
+    title = Column(String(200), nullable=False, default="Quiz automático")
+    user_id = Column(Integer, ForeignKey("studyforge.users.id"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("studyforge.documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    size = Column(Integer, nullable=False, default=5)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
     document = relationship("Document", back_populates="quizzes")
+    questions = relationship(
+        "QuizQuestion",
+        back_populates="quiz",
+        cascade="all, delete-orphan",
+    )
+
+
+class QuizQuestion(Base):
+    __tablename__ = "quiz_questions"
+    __table_args__ = {"schema": "studyforge"}
+
+    id = Column(Integer, primary_key=True)
+    quiz_id = Column(Integer, ForeignKey("studyforge.quizzes.id", ondelete="CASCADE"), nullable=False, index=True)
+    question = Column(Text, nullable=False)
+    options_json = Column(Text, nullable=False)  # JSON: ["A","B","C","D"]
+    answer_index = Column(Integer, nullable=False)  # 0..3
+    explanation = Column(Text)
+
+    quiz = relationship("Quiz", back_populates="questions")
