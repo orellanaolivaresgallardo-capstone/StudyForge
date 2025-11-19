@@ -1,218 +1,324 @@
-# StudyForge — Milestone: DB · API · Front
+# StudyForge 2.0
 
-**Resumen:** Implementación operativa de extremo a extremo con **Backend FastAPI**, **PostgreSQL** (schema `studyforge`), **Alembic** para migraciones y **Frontend Vite/React**.
+**Sistema de apoyo al aprendizaje con Inteligencia Artificial**
 
----
-
-## 1. Arquitectura y stack
-
-- **Backend:** Python 3.11 · FastAPI · SQLAlchemy · Alembic · Uvicorn  
-- **Base de datos:** PostgreSQL (schema por defecto `studyforge`, no `public`)  
-- **Frontend:** React · Vite · pnpm  
-- **Validación:** Pydantic v2 (rechazo de `title` y `content` vacíos)
+StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su proceso de aprendizaje mediante la generación de resúmenes personalizados y cuestionarios adaptativos.
 
 ---
 
-## 2. Alcance funcional (milestone)
+## 🎯 Características Principales
 
-- `GET /health` → estado del backend.  
-- `GET /documents` → listado de documentos (`{ "items": [...] }`).  
-- `POST /documents` → creación de documento (valida `title` y `content` no vacíos).  
-- Migraciones con Alembic (historial reproducible).  
-- Tablas creadas: `users`, `documents`, `summaries`, `quizzes`.  
-- Frontend (Home):
-  - Lectura de `/health`.
-  - Formulario para crear documento.
-  - Listado con persistencia real.
+### 1. **Generación de Resúmenes Inteligentes**
+- Carga de documentos en múltiples formatos: **PDF, PPTX, PPT, DOCX, DOC, TXT**
+- Resúmenes adaptados a 3 niveles de expertise:
+  - **Básico**: Vocabulario simple y conceptos fundamentales
+  - **Medio**: Balance entre detalle y claridad
+  - **Avanzado**: Análisis técnico y profundo
+- Identificación automática de temas y conceptos clave
+- **Los documentos NO se almacenan** (solo los resúmenes generados)
+
+### 2. **Cuestionarios Adaptativos**
+- Generación automática de preguntas de opción múltiple
+- Cantidad de preguntas adaptable (máximo 30 por cuestionario)
+- Dificultad adaptativa basada en desempeño histórico
+- Opción de cuestionario completo o por tema específico
+- **Feedback inmediato** con explicaciones detalladas
+
+### 3. **Seguimiento de Progreso**
+- Historial de cuestionarios realizados
+- Estadísticas de desempeño por tema
+- Adaptación automática de dificultad según resultados
 
 ---
 
-## 3. Requisitos
+## 🛠️ Stack Tecnológico
 
-- **Python** 3.11  
-- **PostgreSQL** 14 o superior (servicio activo)  
-- **Node.js** 18 o superior y **pnpm** 10 o superior
+### Backend
+- **Python**: 3.14
+- **Framework**: FastAPI
+- **Base de datos**: PostgreSQL 18
+- **ORM**: SQLAlchemy 2.0
+- **Migraciones**: Alembic
+- **Autenticación**: JWT (python-jose + Argon2)
+- **IA**: OpenAI API (GPT-4)
+- **Procesamiento de archivos**: PyPDF2, pdfplumber, python-pptx, python-docx
+
+### Frontend
+- **Node**: 24
+- **Bundler**: Vite
+- **Framework**: React 19
+- **Lenguaje**: TypeScript 5.8
+- **Estilos**: Tailwind CSS
+- **Gestor de paquetes**: pnpm
+
+### Deployment
+- **Hosting**: Render / Google Cloud Platform
+- **CI/CD**: GitHub Actions (próximamente)
 
 ---
 
-## 4. Configuración de entorno
+## 📋 Requisitos
 
-### 4.1. Variables de entorno
+- **Python 3.14**
+- **PostgreSQL 18**
+- **Node.js 24**
+- **pnpm 10+**
+- **OpenAI API Key**
 
-> No se deben versionar. Incluya en el repositorio únicamente sus variantes `.example`.
+---
 
-**`backend/.env`** (runtime — usado por la aplicación):
-```ini
-DATABASE_URL=postgresql+psycopg://<user_app>:<pass_app>@localhost:5432/studyforge?options=-csearch_path=studyforge,public
-ENV=dev
+## 🚀 Instalación y Configuración
+
+### 1. Clonar el Repositorio
+
+```bash
+git clone https://github.com/tu-usuario/studyforge.git
+cd studyforge
 ```
 
-**`backend/.env.alembic`** (migraciones — usado por Alembic):
-```ini
-ALEMBIC_URL=postgresql+psycopg://<user_owner>:<pass_owner>@localhost:5432/studyforge?options=-csearch_path=studyforge,public
+### 2. Configurar Base de Datos PostgreSQL
+
+Ejecuta el script SQL como superusuario de PostgreSQL:
+
+```bash
+psql -U postgres -f backend/setup_database.sql
 ```
 
-**Ejemplos de referencia:**  
-- `backend/.env.example`  
-- `backend/.env.alembic.example` (añadir si no existe)
+Esto creará:
+- Base de datos `studyforge`
+- Schema `studyforge`
+- Roles `studyforge_owner` (migraciones) y `studyforge_app` (runtime)
 
-### 4.2. Preparación de base de datos (una vez por entorno)
+**Importante**: Cambia las contraseñas en el script antes de ejecutarlo en producción.
 
-Crear dos roles: **owner** (DDL/migraciones) y **app** (DML).
+### 3. Configurar Backend
 
-```sql
--- Conectado como superusuario (p. ej., postgres)
-CREATE ROLE studyforge_owner LOGIN PASSWORD '...';
-CREATE ROLE studyforge_app   LOGIN PASSWORD '...';
+#### 3.1. Crear entorno virtual e instalar dependencias
 
-CREATE DATABASE studyforge OWNER studyforge_owner;
-
--- Schema y permisos
-CREATE SCHEMA IF NOT EXISTS studyforge AUTHORIZATION studyforge_owner;
-
-GRANT USAGE ON SCHEMA studyforge TO studyforge_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA studyforge TO studyforge_app;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA studyforge
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO studyforge_app;
-```
-
----
-
-## 5. Migraciones (Alembic)
-
-```powershell
+```bash
 cd backend
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
 
-# Estado de migraciones
+# Windows
+.\.venv\Scripts\Activate.ps1
+
+# Linux/Mac
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+#### 3.2. Configurar variables de entorno
+
+Crea dos archivos de configuración:
+
+**`backend/.env`** (para la aplicación):
+```env
+DATABASE_URL=postgresql+psycopg://studyforge_app:password@localhost:5432/studyforge?options=-csearch_path=studyforge,public
+SECRET_KEY=tu-clave-secreta-super-segura-cambiar-en-produccion
+OPENAI_API_KEY=sk-tu-api-key-de-openai
+ENV=development
+DEBUG=True
+```
+
+**`backend/.env.alembic`** (para migraciones):
+```env
+ALEMBIC_URL=postgresql+psycopg://studyforge_owner:password@localhost:5432/studyforge?options=-csearch_path=studyforge,public
+```
+
+#### 3.3. Ejecutar migraciones
+
+```bash
+# Verificar estado actual
 alembic current
 
-# Subir a la última versión disponible
+# Crear migración inicial (si no existe)
+alembic revision --autogenerate -m "Crear tablas iniciales"
+
+# Aplicar migraciones
 alembic upgrade head
 ```
 
-**Notas:**  
-- Alembic utiliza la variable `ALEMBIC_URL` (rol **owner**).  
-- El archivo `alembic/env.py` está preparado para leer `.env.alembic` y `.env`, fijar `search_path` y evitar problemas de interpolación con `%`.
+### 4. Configurar Frontend
 
----
-
-## 6. Puesta en marcha
-
-### 6.1. Backend
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload
-```
-- Documentación interactiva (Swagger): <http://127.0.0.1:8000/docs>
-
-### 6.2. Frontend
-```powershell
+```bash
 cd frontend
 pnpm install
+```
+
+---
+
+## 🎮 Ejecución
+
+### Backend (puerto 8000)
+
+```bash
+cd backend
+.\.venv\Scripts\Activate.ps1  # Windows
+# source .venv/bin/activate   # Linux/Mac
+
+uvicorn app.main:app --reload
+```
+
+Documentación API: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Frontend (puerto 5173)
+
+```bash
+cd frontend
 pnpm dev
 ```
-- Aplicación: <http://localhost:5173/>
+
+Aplicación: [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 7. API de referencia (ejemplos)
+## 📚 Estructura del Proyecto
 
-**Health**
-```http
-GET http://127.0.0.1:8000/health
 ```
-Respuesta:
-```json
-{ "status": "ok" }
+StudyForge/
+├── backend/
+│   ├── alembic/              # Migraciones de base de datos
+│   ├── app/
+│   │   ├── core/             # Seguridad, dependencias
+│   │   ├── models/           # Modelos SQLAlchemy
+│   │   ├── schemas/          # Schemas Pydantic
+│   │   ├── routers/          # Endpoints API
+│   │   ├── services/         # Lógica de negocio
+│   │   ├── repositories/     # Acceso a datos
+│   │   ├── utils/            # Utilidades
+│   │   ├── config.py         # Configuración
+│   │   ├── db.py             # Configuración BD
+│   │   └── main.py           # App FastAPI
+│   ├── tests/                # Tests
+│   ├── requirements.txt
+│   ├── setup_database.sql    # Script de configuración BD
+│   └── .env.example
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # Componentes React
+│   │   ├── pages/            # Páginas
+│   │   ├── services/         # Servicios API
+│   │   ├── hooks/            # Custom hooks
+│   │   ├── utils/            # Utilidades
+│   │   └── App.tsx
+│   ├── package.json
+│   └── vite.config.ts
+│
+└── docs/
+    ├── ARCHITECTURE.md       # Arquitectura detallada
+    ├── DECISIONS.md          # Decisiones técnicas
+    └── ROADMAP.md            # Plan de desarrollo
 ```
 
-**Lista de documentos**
-```http
-GET http://127.0.0.1:8000/documents
+---
+
+## 🔐 Seguridad
+
+- **Contraseñas**: Hash con Argon2 (más seguro que bcrypt)
+- **Autenticación**: JWT con expiración de 24 horas
+- **Privacidad**: Los documentos NO se almacenan en la base de datos
+- **Validación**: Pydantic para todos los datos de entrada
+- **Rate Limiting**: Control de llamadas a OpenAI por usuario
+- **Límites de archivo**: Máximo 10MB por documento
+
+---
+
+## 📖 API Endpoints
+
+### Autenticación
+- `POST /auth/register` - Registrar nuevo usuario
+- `POST /auth/login` - Iniciar sesión
+- `GET /auth/me` - Obtener usuario actual
+
+### Resúmenes
+- `POST /summaries/upload` - Subir documento y generar resumen
+- `GET /summaries` - Listar resúmenes del usuario
+- `GET /summaries/{id}` - Obtener resumen específico
+- `DELETE /summaries/{id}` - Eliminar resumen
+
+### Cuestionarios
+- `POST /quizzes/generate` - Generar cuestionario
+- `GET /quizzes` - Listar cuestionarios
+- `GET /quizzes/{id}` - Obtener cuestionario
+- `POST /quiz-attempts` - Iniciar intento
+- `POST /quiz-attempts/{id}/answer` - Responder pregunta
+- `POST /quiz-attempts/{id}/complete` - Finalizar cuestionario
+- `GET /quiz-attempts/{id}/results` - Ver resultados
+
+### Estadísticas
+- `GET /stats/progress` - Progreso por tema
+- `GET /stats/performance` - Desempeño histórico
+
+---
+
+## 🧪 Testing
+
+```bash
+cd backend
+pytest
 ```
-Respuesta (ejemplo):
-```json
-{
-  "items": [
-    { "id": 1, "title": "Ejemplo", "description": "..." }
-  ]
-}
-```
-
-**Crear documento (válido)**
-```http
-POST http://127.0.0.1:8000/documents
-Content-Type: application/json
-
-{
-  "title": "Doc E2E",
-  "content": "Contenido de prueba",
-  "description": "via API"
-}
-```
-
-**Crear documento (inválido) → 422 Unprocessable Entity**
-```json
-{ "title": "   ", "content": "" }
-```
 
 ---
 
-## 8. Solución de problemas
+## 🚢 Deployment
 
-- **CORS en frontend:** añadir `CORSMiddleware` en `app.main` con orígenes `http://localhost:5173` y `http://127.0.0.1:5173`.  
-- **`relation ... does not exist`:** ejecutar `alembic upgrade head` (con rol owner).  
-- **Conexión fallida:** verificar `DATABASE_URL` y que PostgreSQL esté en ejecución.  
-- **Caché de Vite:** la carpeta `frontend/.vite/` debe estar en `.gitignore`; si causa problemas, eliminarla y reiniciar `pnpm dev`.
+### Render
 
----
+#### Backend
+1. Crear Web Service en Render
+2. Conectar repositorio
+3. Build Command: `pip install -r requirements.txt && alembic upgrade head`
+4. Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. Agregar base de datos PostgreSQL
+6. Configurar variables de entorno
 
-## 9. Checklist E2E (rápido)
+#### Frontend
+1. Crear Static Site en Render
+2. Build Command: `pnpm install && pnpm build`
+3. Publish Directory: `dist`
 
-1. `\dt studyforge.*` y `SELECT * FROM studyforge.alembic_version;`  
-2. `GET /health`  
-3. `GET /documents`  
-4. `POST /documents` válido → aparece en la lista  
-5. `POST /documents` inválido → **422**  
-6. Frontend crea y lista → persiste tras F5
-
----
-
-## 10. Seguridad de datos
-
-- Validación en API (Pydantic v2) para `title` y `content` no vacíos.  
-- Restricciones **CHECK** en BD: `documents_title_not_blank` y `documents_content_not_blank`.  
-- El rol `studyforge_app` no posee permisos DDL.
+### Google Cloud Platform
+Ver documentación en `docs/deployment/gcp.md` (próximamente)
 
 ---
 
-## 11. Flujo de trabajo (Git)
+## 🗺️ Roadmap
 
-- Rama `main` protegida → PRs desde ramas `feat/...`.  
-- Convenciones de commit (`feat:`, `fix:`, `chore:`, etc.).  
-- Versionado con tags, p. ej.: `v0.1.0-milestone-db-api-front`.
+- [x] Arquitectura y diseño del sistema
+- [x] Modelos de base de datos
+- [x] Configuración de migraciones
+- [ ] Sistema de autenticación
+- [ ] Procesamiento de archivos
+- [ ] Integración con OpenAI
+- [ ] Generación de resúmenes
+- [ ] Generación de cuestionarios
+- [ ] Sistema adaptativo
+- [ ] Frontend completo
+- [ ] Tests unitarios
+- [ ] Tests de integración
+- [ ] Documentación API
+- [ ] Deployment a producción
 
 ---
 
-## 12. Nota sobre el schema
-
-Se utiliza `studyforge` como **schema por defecto** (no `public`) para aislar objetos.  
-La cadena de conexión fija `search_path=studyforge,public`.
-
----
-
-## 13. Licencia
+## 📄 Licencia
 
 WIP
 
-## 14. Documentación
+---
 
-- [Resumen del estado actual](docs/SUMMARY.md)
-- [Decisiones técnicas](docs/DECISIONS.md)
-- [Próximos pasos (corto plazo)](docs/NEXT_STEPS.md)
-- [Roadmap por fases](docs/ROADMAP.md)
+## 🤝 Contribución
+
+Este es un proyecto universitario. Las contribuciones están limitadas al equipo de desarrollo.
+
+---
+
+## 📞 Soporte
+
+Para reportar problemas o sugerencias, crear un issue en el repositorio.
+
+---
+
+**Desarrollado con ❤️ para mejorar el aprendizaje estudiantil**

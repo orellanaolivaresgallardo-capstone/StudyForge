@@ -1,202 +1,135 @@
 # app/services/summary_service.py
-from __future__ import annotations
-
-from typing import Optional, List, Tuple
-import math
-import re
-
+"""
+Service para gestión de resúmenes.
+"""
+from uuid import UUID
+from typing import List, Tuple
 from sqlalchemy.orm import Session
+from fastapi import UploadFile, HTTPException, status
+from app.repositories.summary_repository import SummaryRepository
+from app.services.file_processor import FileProcessor
+from app.services.openai_service import OpenAIService
+from app.models.summary import Summary, ExpertiseLevel
 
-from app.repositories.models import Document, Summary, User
-from app.schemas.summary_schemas import (
-    SummaryIn,
-    SummaryOut,
-    SummaryListOut,
-)
 
 class SummaryService:
-    #
-    # CRUD básico (ya lo tenías; lo dejamos completo para claridad)
-    #
-    def list(
-        self, db: Session, user_id: int, limit: int = 20, offset: int = 0, document_id: Optional[int] = None
-    ) -> SummaryListOut:
-        q = db.query(Summary).filter(Summary.user_id == user_id)
-        if document_id is not None:
-            q = q.filter(Summary.document_id == document_id)
+    """Service para crear y gestionar resúmenes."""
 
-        rows = (
-            q.order_by(Summary.id.asc())
-            .offset(offset)
-            .limit(min(max(limit, 1), 200))
-            .all()
+    def __init__(self):
+        """Inicializa el service con OpenAI."""
+        self.openai_service = OpenAIService()
+
+    async def create_summary_from_file(
+        self,
+        db: Session,
+        user_id: UUID,
+        file: UploadFile,
+        expertise_level: ExpertiseLevel,
+    ) -> Summary:
+        """
+        Crea un resumen a partir de un archivo subido.
+
+        Args:
+            db: Sesión de base de datos
+            user_id: ID del usuario
+            file: Archivo subido
+            expertise_level: Nivel de expertise del resumen
+
+        Returns:
+            Resumen creado
+
+        Raises:
+            HTTPException: Si hay error al procesar
+        """
+        # 1. Validar y extraer texto del archivo
+        filename, file_type = FileProcessor.validate_file(file)
+        text = await FileProcessor.extract_text(file)
+
+        # 2. Generar resumen con OpenAI
+        summary_data = self.openai_service.generate_summary(
+            text=text,
+            expertise_level=expertise_level.value
         )
-        items = [
-            SummaryOut(
-                id=r.id,
-                title=r.title,
-                content=r.content,
-                document_id=r.document_id,
-                created_at=r.created_at,
+
+        # 3. Guardar resumen en base de datos (NO guardamos el archivo original)
+        summary = SummaryRepository.create(
+            db=db,
+            user_id=user_id,
+            title=summary_data.get("title", filename),
+            content={
+                "summary": summary_data.get("summary", ""),
+                "full_data": summary_data
+            },
+            expertise_level=expertise_level,
+            topics=summary_data.get("topics", []),
+            key_concepts=summary_data.get("key_concepts", []),
+            original_file_name=filename,
+            original_file_type=file_type,
+        )
+
+        return summary
+
+    def get_summaries(
+        self, db: Session, user_id: UUID, skip: int = 0, limit: int = 100
+    ) -> Tuple[List[Summary], int]:
+        """
+        Obtiene los resúmenes de un usuario con paginación.
+
+        Args:
+            db: Sesión de base de datos
+            user_id: ID del usuario
+            skip: Número de registros a saltar
+            limit: Número máximo de registros
+
+        Returns:
+            Tupla (lista de resúmenes, total de resúmenes)
+        """
+        summaries = SummaryRepository.get_by_user(db, user_id, skip, limit)
+        total = SummaryRepository.count_by_user(db, user_id)
+        return summaries, total
+
+    def get_summary(self, db: Session, summary_id: UUID, user_id: UUID) -> Summary:
+        """
+        Obtiene un resumen específico.
+
+        Args:
+            db: Sesión de base de datos
+            summary_id: ID del resumen
+            user_id: ID del usuario
+
+        Returns:
+            Resumen
+
+        Raises:
+            HTTPException: Si no existe o no pertenece al usuario
+        """
+        summary = SummaryRepository.get_by_id(db, summary_id)
+
+        if not summary:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Resumen no encontrado"
             )
-            for r in rows
-        ]
-        return SummaryListOut(items=items)
 
-    def get(self, db: Session, user_id: int, summary_id: int) -> Optional[SummaryOut]:
-        r = (
-            db.query(Summary)
-            .filter(Summary.user_id == user_id, Summary.id == summary_id)
-            .first()
-        )
-        if not r:
-            return None
-        return SummaryOut(
-            id=r.id,
-            title=r.title,
-            content=r.content,
-            document_id=r.document_id,
-            created_at=r.created_at,
-        )
+        if summary.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para acceder a este resumen"
+            )
 
-    def delete(self, db: Session, user_id: int, summary_id: int) -> bool:
-        r = (
-            db.query(Summary)
-            .filter(Summary.user_id == user_id, Summary.id == summary_id)
-            .first()
-        )
-        if not r:
-            return False
-        db.delete(r)
-        db.commit()
-        return True
+        return summary
 
-    def create(self, db: Session, user_id: int, payload: SummaryIn) -> Optional[SummaryOut]:
-        # Verificamos que el documento exista y sea del usuario (si documents tiene user_id)
-        doc = db.query(Document).filter(Document.id == payload.document_id).first()
-        if not doc:
-            return None
-        # Si Document.owner está activo, valida ownership
-        if hasattr(doc, "user_id") and doc.user_id is not None and doc.user_id != user_id:
-            return None
+    def delete_summary(self, db: Session, summary_id: UUID, user_id: UUID) -> None:
+        """
+        Elimina un resumen.
 
-        obj = Summary(
-            title=payload.title.strip(),
-            content=payload.content.strip(),
-            document_id=payload.document_id,
-            user_id=user_id,
-        )
-        db.add(obj)
-        db.commit()
-        db.refresh(obj)
+        Args:
+            db: Sesión de base de datos
+            summary_id: ID del resumen
+            user_id: ID del usuario
 
-        return SummaryOut(
-            id=obj.id,
-            title=obj.title,
-            content=obj.content,
-            document_id=obj.document_id,
-            created_at=obj.created_at,
-        )
-
-    #
-    # AUTO-RESUMEN (ligero, sin dependencias externas)
-    #
-    def generate_auto_summary(
-        self, db: Session, user_id: int, document_id: int, max_sentences: int = 5
-    ) -> Optional[SummaryOut]:
-        # 1) Carga documento + ownership
-        doc = db.query(Document).filter(Document.id == document_id).first()
-        if not doc:
-            return None
-        if hasattr(doc, "user_id") and doc.user_id is not None and doc.user_id != user_id:
-            return None
-
-        raw = (doc.content or "").strip()
-        if not raw:
-            return None
-
-        # 2) Resumen naive:
-        #    - Segmenta en oraciones
-        #    - Calcula score por TF simple (palabras frecuentes, ignora stopwords básicas)
-        #    - Ajuste por longitud (evitar oraciones extremadamente cortas/largas)
-        #    - Toma top-N y preserva el orden original
-        sentences = self._split_sentences(raw)
-        if not sentences:
-            return None
-
-        # Construye vocabulario y TF
-        tokenized = [self._tokenize(s) for s in sentences]
-        tf = {}
-        for toks in tokenized:
-            for t in toks:
-                tf[t] = tf.get(t, 0) + 1
-
-        # Normaliza TF
-        total = sum(tf.values()) or 1
-        for k in list(tf.keys()):
-            tf[k] = tf[k] / total
-
-        # Scoring de cada oración
-        scores: List[Tuple[int, float]] = []
-        for idx, toks in enumerate(tokenized):
-            # suma de TF, penaliza extremos de longitud
-            length = max(len(toks), 1)
-            base = sum(tf.get(t, 0.0) for t in toks)
-            length_penalty = 1.0
-            if length < 6:
-                length_penalty = 0.6
-            elif length > 40:
-                length_penalty = 0.7
-            score = base * length_penalty
-            scores.append((idx, score))
-
-        # Ordena por score desc y elige top-N índices
-        scores.sort(key=lambda x: x[1], reverse=True)
-        chosen = sorted([idx for idx, _ in scores[:max(1, max_sentences)]])
-        summary_text = " ".join(sentences[i] for i in chosen).strip()
-
-        # 3) Persiste como Summary
-        title = f"Resumen de: {doc.title[:150]}"
-        obj = Summary(
-            title=title,
-            content=summary_text,
-            document_id=doc.id,
-            user_id=user_id,
-        )
-        db.add(obj)
-        db.commit()
-        db.refresh(obj)
-
-        return SummaryOut(
-            id=obj.id,
-            title=obj.title,
-            content=obj.content,
-            document_id=obj.document_id,
-            created_at=obj.created_at,
-        )
-
-    # ---------------------------
-    # utilidades de texto simples
-    # ---------------------------
-    _sent_splitter = re.compile(r"(?<=[\.\!\?…])\s+|\n+")
-    _word_re = re.compile(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+", re.UNICODE)
-    _stop = set("""
-        de la que el en y a los del se las por un para con no una su al lo como más pero sus le ya o muy sin sobre
-        también me hasta hay donde quien desde todo nos durante todos uno les ni contra otros ese eso ante ellos e esto
-        mí antes algunos qué unos yo otro otras otra él tanto esa estos mucho quienes nada muchos cual poco ella estar
-        estas algunas algo nosotros mi mis tú te ti tu tus ellas nosotras vosotros vosotras os mío mía míos mías tuyo tuya
-        tuyos tuyas suyo suya suyos suyas nuestro nuestra nuestros nuestras vuestro vuestra vuestros vuestras esos esas
-        estoy estás está estamos estáis están esté estés estemos estéis estén estaré estarás estará estaremos estaréis
-        estarán estaba estabas estaba estábamos estabais estaban estuve estuviste estuvo estuvimos estuvisteis estuvieron
-        estuviera estuvieras estuviera estuviéramos estuvierais estuvieran estuviese estuvieses estuviese estuviésemos
-        estuvieseis estuviesen estando estado estada estados estadas estad
-    """.split())
-
-    def _split_sentences(self, text: str) -> List[str]:
-        parts = [p.strip() for p in self._sent_splitter.split(text) if p and p.strip()]
-        # Colapsa espacios
-        return [re.sub(r"\s+", " ", p) for p in parts]
-
-    def _tokenize(self, sentence: str) -> List[str]:
-        toks = [t.lower() for t in self._word_re.findall(sentence)]
-        return [t for t in toks if t not in self._stop and len(t) > 1]
+        Raises:
+            HTTPException: Si no existe o no pertenece al usuario
+        """
+        summary = self.get_summary(db, summary_id, user_id)
+        SummaryRepository.delete(db, summary)

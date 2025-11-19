@@ -1,24 +1,32 @@
 # app/db.py
-import os
-from dotenv import load_dotenv
+"""
+Configuración de la base de datos y sesiones.
+"""
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+from typing import Generator
+from app.config import settings
 
-load_dotenv()  # lee backend/.env
+# Motor de base de datos
+engine = create_engine(
+    settings.DATABASE_URL,
+    pool_pre_ping=True,  # Verifica conexiones antes de usarlas
+    echo=settings.DEBUG,  # Log de SQL en modo debug
+)
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL no está definido en backend/.env")
+# Sesión de base de datos
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-engine = create_engine(DATABASE_URL, echo=False, future=True)
+# Base para modelos
+Base = declarative_base()
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
-class Base(DeclarativeBase):
-    pass
-
-# Dependency para inyectar Session en endpoints
-def get_db():
+def get_db() -> Generator[Session, None, None]:
+    """
+    Dependencia de FastAPI para obtener sesión de base de datos.
+    Se cierra automáticamente al finalizar la petición.
+    """
     db = SessionLocal()
     try:
         yield db

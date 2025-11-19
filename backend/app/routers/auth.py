@@ -1,74 +1,75 @@
 # app/routers/auth.py
-from datetime import datetime
-from typing import Optional
-
+"""
+Router de autenticación - Registro, login y usuario actual.
+"""
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-
 from app.db import get_db
-from app.repositories.models import User
-from app.core.security import (
-    hash_password,
-    verify_password,
-    create_access_token,
-)
-from app.core.deps import get_current_user  # devuelve User ORM
+from app.core.dependencies import get_current_user
+from app.services.auth_service import AuthService
+from app.schemas.user import UserCreate, UserLogin, UserResponse
+from app.schemas.auth import Token
+from app.models.user import User
 
 router = APIRouter()
 
-# ===== Schemas =====
-class SignupIn(BaseModel):
-    email: EmailStr
-    password: str
 
-class UserOut(BaseModel):
-    id: int
-    email: EmailStr
-    created_at: Optional[datetime] = None
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    """
+    Registra un nuevo usuario en el sistema.
 
-class LoginIn(BaseModel):
-    email: EmailStr
-    password: str
+    Args:
+        user_data: Datos del usuario a registrar
+        db: Sesión de base de datos
 
-class TokenOut(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+    Returns:
+        Usuario creado
 
-
-# ===== Helpers =====
-def _get_user_by_email(db: Session, email: str) -> Optional[User]:
-    return db.query(User).filter(User.email == email).first()
-
-
-# ===== Routes =====
-@router.post("/signup", response_model=UserOut, status_code=201, summary="Crear usuario (signup)")
-def signup(payload: SignupIn, db: Session = Depends(get_db)):
-    email = payload.email.strip().lower()
-    if _get_user_by_email(db, email):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="email ya registrado")
-
-    user = User(
-        email=email,
-        password_hash=hash_password(payload.password),
+    Raises:
+        HTTPException: Si el email o username ya existen
+    """
+    user = AuthService.register(
+        db=db,
+        email=user_data.email,
+        username=user_data.username,
+        password=user_data.password,
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return UserOut(id=user.id, email=user.email, created_at=user.created_at)
+    return user
 
 
-@router.post("/login", response_model=TokenOut, summary="Iniciar sesión")
-def login(payload: LoginIn, db: Session = Depends(get_db)):
-    email = payload.email.strip().lower()
-    user = _get_user_by_email(db, email)
-    if not user or not user.password_hash or not verify_password(payload.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="credenciales inválidas")
+@router.post("/login", response_model=Token)
+def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    """
+    Autentica un usuario y retorna un token JWT.
 
-    token = create_access_token(user_id=user.id)
-    return TokenOut(access_token=token)
+    Args:
+        credentials: Credenciales del usuario
+        db: Sesión de base de datos
+
+    Returns:
+        Token de acceso JWT
+
+    Raises:
+        HTTPException: Si las credenciales son inválidas
+    """
+    access_token = AuthService.login(
+        db=db,
+        email=credentials.email,
+        password=credentials.password,
+    )
+    return Token(access_token=access_token)
 
 
-@router.get("/me", response_model=UserOut, summary="Usuario autenticado")
-def me(current: User = Depends(get_current_user)):
-    return UserOut(id=current.id, email=current.email, created_at=current.created_at)
+@router.get("/me", response_model=UserResponse)
+def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """
+    Obtiene la información del usuario autenticado.
+
+    Args:
+        current_user: Usuario autenticado (inyectado por dependencia)
+
+    Returns:
+        Información del usuario
+    """
+    return current_user

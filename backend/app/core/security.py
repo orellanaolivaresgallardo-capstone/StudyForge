@@ -1,109 +1,85 @@
 # app/core/security.py
+"""
+Utilidades de seguridad: hashing de contraseñas, JWT, etc.
+"""
 from datetime import datetime, timedelta, timezone
-import os
 from typing import Optional
-
-import jwt  # PyJWT
+from jose import JWTError, jwt
 from argon2 import PasswordHasher
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
+from argon2.exceptions import VerifyMismatchError
+from app.config import settings
 
-from app.db import get_db
-from app.repositories.models import User
-
-# =========================
-# Configuración
-# =========================
-JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
-JWT_ALG: str = os.getenv("JWT_ALG", "HS256")
-JWT_EXPIRE_MIN: int = int(os.getenv("JWT_EXPIRE_MIN", "60"))
-
-# Hasher Argon2
-_hasher = PasswordHasher()
-
-# Portador (Authorization: Bearer <token>)
-_bearer = HTTPBearer(auto_error=False)
+# Hasher de contraseñas usando Argon2 (más seguro que bcrypt)
+ph = PasswordHasher()
 
 
-# =========================
-# Utilidades de password
-# =========================
-def hash_password(plain: str) -> str:
-    """Devuelve hash Argon2 del password plano."""
-    return _hasher.hash(plain)
+def hash_password(password: str) -> str:
+    """
+    Hashea una contraseña usando Argon2.
+
+    Args:
+        password: Contraseña en texto plano
+
+    Returns:
+        Hash de la contraseña
+    """
+    return ph.hash(password)
 
 
-def verify_password(plain: str, hashed: str) -> bool:
-    """Verifica password plano contra hash Argon2."""
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verifica que una contraseña coincida con su hash.
+
+    Args:
+        plain_password: Contraseña en texto plano
+        hashed_password: Hash almacenado
+
+    Returns:
+        True si coincide, False en caso contrario
+    """
     try:
-        _hasher.verify(hashed, plain)
+        ph.verify(hashed_password, plain_password)
         return True
-    except Exception:
+    except VerifyMismatchError:
         return False
 
 
-# =========================
-# Utilidades de JWT
-# =========================
-def create_access_token(user_id: int, expires_minutes: Optional[int] = None) -> str:
-    """Crea un JWT HS256 con sub=user_id y expiración."""
-    minutes = expires_minutes if expires_minutes is not None else JWT_EXPIRE_MIN
-    now = datetime.now(timezone.utc)
-    payload = {
-        "sub": str(user_id),
-        "iat": int(now.timestamp()),
-        "exp": int((now + timedelta(minutes=minutes)).timestamp()),
-    }
-    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
-    return token
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Crea un JWT token de acceso.
+
+    Args:
+        data: Datos a codificar en el token (típicamente user_id)
+        expires_delta: Tiempo de expiración (por defecto 24h)
+
+    Returns:
+        Token JWT codificado
+    """
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    return encoded_jwt
 
 
-def decode_access_token(token: str) -> dict:
-    """Decodifica y valida un JWT. Lanza si no es válido."""
+def decode_access_token(token: str) -> Optional[dict]:
+    """
+    Decodifica y verifica un JWT token.
+
+    Args:
+        token: Token JWT a decodificar
+
+    Returns:
+        Payload del token si es válido, None en caso contrario
+    """
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token expirado")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token inválido")
-
-
-# =========================
-# Dependencia get_current_user
-# =========================
-def _extract_token(credentials: Optional[HTTPAuthorizationCredentials]) -> str:
-    if credentials is None or credentials.scheme.lower() != "bearer" or not credentials.credentials:
-        # Mensaje alineado con lo que vimos en /documents cuando faltaba token
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token faltante")
-    return credentials.credentials
-
-
-def _get_user_or_401(db: Session, user_id: int) -> User:
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="usuario no encontrado")
-    return user
-
-
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
-    db: Session = Depends(get_db),
-) -> User:
-    """
-    Lee 'Authorization: Bearer <token>', valida JWT y devuelve el User ORM.
-    Lanza 401 si falta token, si es inválido o si el usuario no existe.
-    """
-    token = _extract_token(credentials)
-    payload = decode_access_token(token)
-    sub = payload.get("sub")
-    if not sub:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token inválido (sin sub)")
-
-    try:
-        user_id = int(sub)
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token inválido (sub no numérico)")
-
-    return _get_user_or_401(db, user_id)
+    except JWTError:
+        return None

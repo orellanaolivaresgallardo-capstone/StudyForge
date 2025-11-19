@@ -1,31 +1,49 @@
-﻿# app/main.py
+# app/main.py
+"""
+Aplicación principal de FastAPI - StudyForge.
+Sistema de apoyo al aprendizaje con IA.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
+from app.routers import auth, summaries, quizzes, quiz_attempts, stats
 
-from app.routers.health import router as health_router
-from app.routers.documents import router as documents_router
-from app.routers.auth import router as auth_router
-from app.routers.summaries import router as summaries_router  # <= IMPORTANTE
-
-app = FastAPI(title="StudyForge API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
-    allow_methods=["GET", "POST", "DELETE", "PUT", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=86400,  # cachea la respuesta al preflight (menos latencia)
+app = FastAPI(
+    title="StudyForge API",
+    description="API para sistema de apoyo al aprendizaje con IA",
+    version="2.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Rutas
-app.include_router(health_router, prefix="/health", tags=["health"])
-app.include_router(auth_router, prefix="/auth", tags=["auth"])
-app.include_router(documents_router)
+# Configurar CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# 👇 OJO: el router de summaries YA trae prefix="/summaries"
-# Así que NO le pongas otro prefix aquí.
-app.include_router(summaries_router)
+
+@app.get("/health", tags=["health"])
+async def health_check():
+    """Endpoint de salud del sistema."""
+    return {
+        "status": "ok",
+        "service": "StudyForge API",
+        "version": "2.0.0"
+    }
+
+
+# Incluir routers
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(summaries.router, prefix="/summaries", tags=["summaries"])
+app.include_router(quizzes.router, prefix="/quizzes", tags=["quizzes"])
+app.include_router(quiz_attempts.router, prefix="/quiz-attempts", tags=["quiz-attempts"])
+app.include_router(stats.router, prefix="/stats", tags=["stats"])
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
