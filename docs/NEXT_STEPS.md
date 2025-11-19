@@ -1,53 +1,56 @@
 # NEXT_STEPS — Próximos pasos inmediatos
 
-**Última actualización:** 2025-01-19
+**Última actualización:** 2025-11-19
 
-**Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas.
+**Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas. **Fase 0.1, 0.2 y 0.3 (logging) COMPLETADAS**. Sistema multi-documento funcionando con logging estructurado integrado.
 
 ---
 
 ## Fase 0 — Tareas pendientes del backend (críticas antes de producción)
 
-### 0.1 Migraciones de base de datos
-- [ ] **Generar migración de Alembic** para nuevas tablas y campos
-  - [ ] Tabla `documents` (id, user_id, title, file_name, file_type, file_size_bytes, file_content, extracted_text, created_at, updated_at)
-  - [ ] Tabla `summary_documents` (summary_id, document_id) - relación many-to-many
-  - [ ] Campos en `users`: storage_quota_bytes, storage_used_bytes, max_documents_per_summary, max_file_size_bytes
-  - [ ] Actualizar campo `summaries`: eliminar original_file_name, original_file_type si existen
-- [ ] **Aplicar migración** en base de datos de desarrollo
-- [ ] **Verificar constraints** y foreign keys
-- [ ] **Probar rollback** de la migración
+### 0.1 Migraciones de base de datos ✅ COMPLETADO
+- [x] **Generar migración de Alembic** para nuevas tablas y campos
+  - [x] Tabla `documents` (id, user_id, title, file_name, file_type, file_size_bytes, file_content, extracted_text, created_at, updated_at)
+  - [x] Tabla `summary_documents` (summary_id, document_id) - relación many-to-many
+  - [x] Campos en `users`: storage_quota_bytes, storage_used_bytes, max_documents_per_summary, max_file_size_bytes
+  - [x] Actualizar campo `summaries`: eliminar original_file_name, original_file_type
+- [x] **Aplicar migración** en base de datos de desarrollo (f4f083c1d0fc)
+- [x] **Verificar constraints** y foreign keys
+- [ ] **Probar rollback** de la migración (pendiente)
 
-### 0.2 Actualización de servicios para multi-documento
-- [ ] **Actualizar SummaryService.create_summary_from_file**
-  - [ ] Guardar documento en tabla documents primero
-  - [ ] Crear relación con summary en summary_documents
-  - [ ] Actualizar storage_used_bytes del usuario
-  - [ ] Manejar errores y rollback si falla
-- [ ] **Crear endpoint para generar summary desde documentos existentes**
-  - [ ] `POST /summaries/from-documents` con lista de document_ids
-  - [ ] Validar que no excedan max_documents_per_summary
-  - [ ] Validar ownership de todos los documentos
-  - [ ] Concatenar extracted_text de múltiples documentos
-- [ ] **Actualizar eliminación de summaries**
-  - [ ] NO eliminar documentos asociados (pueden estar en otros summaries)
-  - [ ] Solo eliminar relación en summary_documents
+### 0.2 Actualización de servicios para multi-documento ✅ COMPLETADO
+- [x] **Actualizar SummaryService.create_summary_from_file**
+  - [x] Guardar documento en tabla documents primero
+  - [x] Crear relación con summary en summary_documents
+  - [x] Actualizar storage_used_bytes del usuario
+  - [x] Manejar errores y rollback si falla
+  - [x] Validar cuotas (max_file_size_bytes, storage_available_bytes)
+  - [x] Logging de operaciones de cuotas y OpenAI
+- [x] **Crear endpoint para generar summary desde documentos existentes**
+  - [x] `POST /summaries/from-documents` con lista de document_ids
+  - [x] Validar que no excedan max_documents_per_summary
+  - [x] Validar ownership de todos los documentos
+  - [x] Concatenar extracted_text de múltiples documentos
+- [x] **Actualizar eliminación de summaries**
+  - [x] NO eliminar documentos asociados (pueden estar en otros summaries)
+  - [x] Solo eliminar relación en summary_documents (cascade automático)
 
-### 0.3 Seguridad y logging
-- [ ] **Implementar logging estructurado**
-  - [ ] Logging de eventos de autenticación (login, logout, failed attempts)
-  - [ ] Logging de operaciones de cuotas (upload, delete, quota exceeded)
-  - [ ] Logging de errores de validación de ownership
-  - [ ] Configurar niveles de log (INFO, WARNING, ERROR)
-  - [ ] Integrar con sistema de logging (ej: loguru, structlog)
-- [ ] **Implementar rate limiting**
+### 0.3 Seguridad y logging (PARCIALMENTE COMPLETADO)
+- [x] **Implementar logging estructurado** ✅ COMPLETADO
+  - [x] Logging de eventos de autenticación (login, register, failed attempts)
+  - [x] Logging de operaciones de cuotas (upload, quota exceeded)
+  - [x] Logging de errores de validación de ownership
+  - [x] Configurar niveles de log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  - [x] Sistema centralizado en `app/core/logging.py`
+  - [x] Funciones especializadas: `log_auth_event`, `log_quota_event`, `log_ownership_validation`, `log_openai_request`, `log_error`
+- [ ] **Implementar rate limiting** ⏳ PENDIENTE
   - [ ] Limitar requests por IP/usuario
   - [ ] Diferentes límites por endpoint (más restrictivo en uploads)
   - [ ] Usar slowapi o similar
   - [ ] Headers informativos (X-RateLimit-*)
-- [ ] **Validación adicional de archivos**
+- [ ] **Validación adicional de archivos** ⏳ PENDIENTE
   - [ ] Verificar magic numbers además de extensión
-  - [ ] Usar python-magic o similar
+  - [ ] Usar python-magic o filetype
   - [ ] Prevenir evasión con extensiones falsas
 
 ### 0.4 Mejoras opcionales de seguridad
@@ -281,28 +284,41 @@
 
 ## Prioridades inmediatas (esta semana)
 
-### Críticas (Fase 0 - antes de continuar):
-1. **Generar y aplicar migración de Alembic** - Nuevas tablas documents, summary_documents y campos de cuotas
-2. **Actualizar SummaryService** - Integrar con sistema de documentos almacenados
-3. **Implementar logging básico** - Al menos eventos de autenticación y cuotas
+### ✅ COMPLETADAS (Fase 0.1, 0.2, 0.3 parcial):
+1. ✅ **Generar y aplicar migración de Alembic** - Tablas documents, summary_documents y campos de cuotas
+2. ✅ **Actualizar SummaryService** - Sistema multi-documento completamente integrado
+3. ✅ **Implementar logging estructurado** - Eventos de autenticación, cuotas, ownership y OpenAI
+4. ✅ **Endpoint nuevo** - `POST /summaries/from-documents` para reutilizar documentos almacenados
 
-### Siguientes pasos (Fase 1):
-4. **Tests básicos del backend** - Asegurar que la lógica core funciona correctamente
-5. **Frontend: Auth + Upload** - Flujo básico funcionando end-to-end
-6. **Frontend: Gestión de documentos** - Listar, ver detalles, eliminar documentos
-7. **Frontend: Lista y vista de resúmenes** - Poder visualizar lo generado
-8. **Deployment en Render (staging)** - Tener ambiente de pruebas accesible
+### ⏳ PENDIENTES (Fase 0.3 - críticas antes de producción):
+5. **Rate limiting** - Protección contra abuso de API
+6. **Validación de magic numbers** - Seguridad adicional en uploads
+7. **Tests básicos del backend** - Asegurar que la lógica core funciona correctamente
+
+### Siguientes pasos (Fase 1 y 2):
+8. **Frontend: Auth + Upload** - Flujo básico funcionando end-to-end
+9. **Frontend: Gestión de documentos** - Listar, ver detalles, eliminar documentos
+10. **Frontend: Lista y vista de resúmenes** - Poder visualizar lo generado
+11. **Deployment en Render (staging)** - Tener ambiente de pruebas accesible
 
 ---
 
 ## Notas
 
+### Sistema Actualizado (2025-11-19)
 - El backend está **100% funcional** con endpoints implementados
-- **Falta migración de BD** para tablas documents y summary_documents
+- ✅ **Migración de BD aplicada** - Tablas documents, summary_documents y campos de cuotas funcionando
+- ✅ **Sistema multi-documento** - Documentos almacenados pueden reutilizarse para múltiples resúmenes
+- ✅ **Logging estructurado** - Sistema completo de auditoría y debugging
+- ✅ **Validación de cuotas** - storage_quota_bytes, storage_used_bytes, max_file_size_bytes
 - La API está documentada en `/docs` (Swagger UI)
 - Se requiere **créditos en OpenAI** para funciones de IA (summaries y quizzes)
 - El proyecto está configurado para Windows con encoding UTF-8 CRLF
 - **Type hints corregidos** para compatibilidad con SQLAlchemy type checkers
+
+### Nuevos Endpoints
+- `POST /summaries/upload` - Ahora almacena el documento y lo asocia con el resumen
+- `POST /summaries/from-documents` - Genera resumen desde documentos ya almacenados (no consume storage adicional)
 
 ---
 

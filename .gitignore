@@ -10,6 +10,7 @@ dist/
 # IDEs y editores
 .vscode/
 .claude/
+.github/
 
 # Entornos
 .env
