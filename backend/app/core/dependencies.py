@@ -60,7 +60,7 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not user.is_active:
+    if not user.is_active:  # type: ignore[truthy-bool]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario inactivo"
@@ -74,7 +74,7 @@ def get_current_user(
 # Protegen la privacidad asegurando que los usuarios solo accedan a sus propios recursos
 # ========================================
 
-def verify_document_ownership(document: Document, user: User) -> Document:
+def verify_document_ownership(document: Document | None, user: User) -> Document:
     """
     Verifica que el documento pertenezca al usuario autenticado.
 
@@ -95,7 +95,7 @@ def verify_document_ownership(document: Document, user: User) -> Document:
             detail="Documento no encontrado"
         )
 
-    if document.user_id != user.id:
+    if document.user_id != user.id:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para acceder a este documento"
@@ -104,7 +104,7 @@ def verify_document_ownership(document: Document, user: User) -> Document:
     return document
 
 
-def verify_summary_ownership(summary: Summary, user: User) -> Summary:
+def verify_summary_ownership(summary: Summary | None, user: User) -> Summary:
     """
     Verifica que el resumen pertenezca al usuario autenticado.
 
@@ -125,7 +125,7 @@ def verify_summary_ownership(summary: Summary, user: User) -> Summary:
             detail="Resumen no encontrado"
         )
 
-    if summary.user_id != user.id:
+    if summary.user_id != user.id:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para acceder a este resumen"
@@ -134,7 +134,7 @@ def verify_summary_ownership(summary: Summary, user: User) -> Summary:
     return summary
 
 
-def verify_quiz_ownership(quiz: Quiz, user: User) -> Quiz:
+def verify_quiz_ownership(quiz: Quiz | None, user: User) -> Quiz:
     """
     Verifica que el quiz pertenezca al usuario autenticado.
 
@@ -155,7 +155,7 @@ def verify_quiz_ownership(quiz: Quiz, user: User) -> Quiz:
             detail="Quiz no encontrado"
         )
 
-    if quiz.user_id != user.id:
+    if quiz.user_id != user.id:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para acceder a este quiz"
@@ -164,7 +164,7 @@ def verify_quiz_ownership(quiz: Quiz, user: User) -> Quiz:
     return quiz
 
 
-def verify_quiz_attempt_ownership(attempt: QuizAttempt, user: User) -> QuizAttempt:
+def verify_quiz_attempt_ownership(attempt: QuizAttempt | None, user: User) -> QuizAttempt:
     """
     Verifica que el intento de quiz pertenezca al usuario autenticado.
 
@@ -185,7 +185,7 @@ def verify_quiz_attempt_ownership(attempt: QuizAttempt, user: User) -> QuizAttem
             detail="Intento de quiz no encontrado"
         )
 
-    if attempt.user_id != user.id:
+    if attempt.user_id != user.id:  # type: ignore[comparison-overlap]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para acceder a este intento de quiz"
