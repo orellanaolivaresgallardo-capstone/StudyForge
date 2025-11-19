@@ -19,7 +19,7 @@ class ExpertiseLevel(str, enum.Enum):
 
 
 class Summary(Base):
-    """Modelo de resumen de documento."""
+    """Modelo de resumen generado a partir de uno o más documentos."""
 
     __tablename__ = "summaries"
     __table_args__ = {"schema": "studyforge"}
@@ -31,14 +31,14 @@ class Summary(Base):
     expertise_level = Column(Enum(ExpertiseLevel), nullable=False, index=True)
     topics = Column(JSONB, nullable=False, default=list)  # Lista de temas identificados
     key_concepts = Column(JSONB, nullable=False, default=list)  # Conceptos clave
-    original_file_name = Column(String(255), nullable=False)  # Solo nombre, NO contenido
-    original_file_type = Column(String(10), nullable=False)  # pdf, pptx, docx, txt
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relaciones
     user = relationship("User", back_populates="summaries")
     quizzes = relationship("Quiz", back_populates="summary")
+    # Relación muchos-a-muchos con documentos (1-N documentos por resumen)
+    documents = relationship("Document", secondary="studyforge.summary_documents", back_populates="summaries")
 
     def __repr__(self):
         return f"<Summary {self.title} - {self.expertise_level.value}>"

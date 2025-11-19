@@ -2,8 +2,16 @@
 """
 Schemas de Pydantic para validación de datos.
 """
-from app.schemas.user import UserCreate, UserResponse, UserLogin
+from app.schemas.user import UserCreate, UserResponse, UserLogin, UserDetailResponse, UserQuotaUpdate
 from app.schemas.auth import Token, TokenPayload
+from app.schemas.document import (
+    DocumentUpload,
+    DocumentResponse,
+    DocumentDetailResponse,
+    DocumentListResponse,
+    DocumentUpdateTitle,
+    StorageInfo,
+)
 from app.schemas.summary import (
     SummaryCreate,
     SummaryResponse,
@@ -28,8 +36,16 @@ __all__ = [
     "UserCreate",
     "UserResponse",
     "UserLogin",
+    "UserDetailResponse",
+    "UserQuotaUpdate",
     "Token",
     "TokenPayload",
+    "DocumentUpload",
+    "DocumentResponse",
+    "DocumentDetailResponse",
+    "DocumentListResponse",
+    "DocumentUpdateTitle",
+    "StorageInfo",
     "SummaryCreate",
     "SummaryResponse",
     "SummaryListResponse",
