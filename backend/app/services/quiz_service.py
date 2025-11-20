@@ -13,7 +13,6 @@ from app.services.file_processor import FileProcessor
 from app.services.openai_service import OpenAIService
 from app.models.quiz import Quiz
 from app.models.quiz_attempt import QuizAttempt
-from app.models.question import OptionEnum
 from app.models.user import User
 from app.core.dependencies import verify_quiz_ownership, verify_summary_ownership
 from app.config import settings
@@ -109,7 +108,7 @@ class QuizService:
             num_questions=num_questions,
         )
 
-        # 5. Crear cuestionario en BD
+        # 5. Crear cuestionario en BD con preguntas en formato JSON
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user_id,
@@ -117,27 +116,9 @@ class QuizService:
             title=f"Cuestionario: {filename}",
             topic=topic,
             difficulty_level=difficulty_level,
-            max_questions=num_questions,
+            questions=questions_data[:num_questions],
         )
 
-        # 6. Crear preguntas
-        for idx, q_data in enumerate(questions_data[:num_questions], start=1):
-            options = q_data.get("options", {})
-            QuizRepository.create_question(
-                db=db,
-                quiz_id=quiz.id,
-                question_text=q_data.get("question", ""),
-                option_a=options.get("A", ""),
-                option_b=options.get("B", ""),
-                option_c=options.get("C", ""),
-                option_d=options.get("D", ""),
-                correct_option=OptionEnum(q_data.get("correct", "A")),
-                explanation=q_data.get("explanation", ""),
-                order=idx,
-            )
-
-        # Refrescar para cargar las preguntas
-        db.refresh(quiz)
         return quiz
 
     def create_quiz_from_summary(
@@ -186,7 +167,7 @@ class QuizService:
             num_questions=num_questions,
         )
 
-        # 6. Crear cuestionario en BD
+        # 6. Crear cuestionario en BD con preguntas en formato JSON
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user.id,
@@ -194,27 +175,9 @@ class QuizService:
             title=f"Cuestionario: {summary.title}",
             topic=topic,
             difficulty_level=difficulty_level,
-            max_questions=num_questions,
+            questions=questions_data[:num_questions],
         )
 
-        # 7. Crear preguntas
-        for idx, q_data in enumerate(questions_data[:num_questions], start=1):
-            options = q_data.get("options", {})
-            QuizRepository.create_question(
-                db=db,
-                quiz_id=quiz.id,
-                question_text=q_data.get("question", ""),
-                option_a=options.get("A", ""),
-                option_b=options.get("B", ""),
-                option_c=options.get("C", ""),
-                option_d=options.get("D", ""),
-                correct_option=OptionEnum(q_data.get("correct", "A")),
-                explanation=q_data.get("explanation", ""),
-                order=idx,
-            )
-
-        # Refrescar para cargar las preguntas
-        db.refresh(quiz)
         return quiz
 
     def get_quizzes(

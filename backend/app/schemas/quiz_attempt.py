@@ -5,7 +5,7 @@ Schemas para Intento de Cuestionario y Respuestas.
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from uuid import UUID
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 class QuizAttemptCreate(BaseModel):
@@ -15,19 +15,8 @@ class QuizAttemptCreate(BaseModel):
 
 class AnswerCreate(BaseModel):
     """Schema para responder una pregunta."""
-    question_id: UUID = Field(..., description="ID de la pregunta")
+    question_index: int = Field(..., ge=0, description="Índice de la pregunta (0-based)")
     selected_option: str = Field(..., pattern="^[ABCD]$", description="Opción seleccionada (A, B, C o D)")
-
-
-class AnswerResponse(BaseModel):
-    """Schema para respuesta de una pregunta."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    question_id: UUID
-    selected_option: str
-    is_correct: bool
-    answered_at: datetime
 
 
 class AnswerFeedback(BaseModel):
@@ -36,10 +25,11 @@ class AnswerFeedback(BaseModel):
     correct_option: str
     explanation: str
     selected_option: str
+    score_so_far: Optional[float] = Field(None, description="Puntaje acumulado hasta el momento")
 
 
 class QuizAttemptResponse(BaseModel):
-    """Schema para respuesta de intento de cuestionario."""
+    """Schema para respuesta de intento de cuestionario con respuestas en JSON."""
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -48,15 +38,22 @@ class QuizAttemptResponse(BaseModel):
     started_at: datetime
     completed_at: Optional[datetime]
     score: Optional[float]
+    correct_answers: List[str] = Field(
+        default_factory=list,
+        description="Array de respuestas correctas: ['A', 'B', 'C', ...]"
+    )
+    user_answers: List[str] = Field(
+        default_factory=list,
+        description="Array de respuestas del usuario: ['A', 'C', 'B', ...]"
+    )
 
 
 class QuestionResultDetail(BaseModel):
     """Detalle de una pregunta con la respuesta del usuario."""
     question_text: str
-    option_a: str
-    option_b: str
-    option_c: str
-    option_d: str
+    options: Dict[str, str] = Field(
+        description="Opciones aleatorizadas {'A': '...', 'B': '...', 'C': '...', 'D': '...'}"
+    )
     correct_option: str
     selected_option: str
     is_correct: bool

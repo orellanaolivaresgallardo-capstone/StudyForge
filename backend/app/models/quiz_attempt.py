@@ -5,13 +5,13 @@ Modelo de Intento de Cuestionario.
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, Float, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.db import Base
 
 
 class QuizAttempt(Base):
-    """Modelo de intento de cuestionario."""
+    """Modelo de intento de cuestionario con respuestas en formato JSON."""
 
     __tablename__ = "quiz_attempts"
     __table_args__ = {"schema": "studyforge"}
@@ -23,10 +23,13 @@ class QuizAttempt(Base):
     completed_at = Column(DateTime, nullable=True)
     score = Column(Float, nullable=True)  # Porcentaje 0-100
 
+    # Respuestas en formato JSON
+    correct_answers = Column(JSONB, nullable=False)  # ["A", "B", "C", "D", "A"] - Respuestas correctas aleatorizadas
+    user_answers = Column(JSONB, nullable=False, default=list)  # ["A", "C", "C", "D", "A"] - Respuestas del usuario
+
     # Relaciones
     quiz = relationship("Quiz", back_populates="attempts")
     user = relationship("User", back_populates="quiz_attempts")
-    answers = relationship("Answer", back_populates="attempt", cascade="all, delete-orphan")
 
     def __repr__(self):
         status = "completado" if self.completed_at else "en progreso"  # type: ignore[truthy-bool]

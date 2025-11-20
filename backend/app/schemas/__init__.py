@@ -22,13 +22,14 @@ from app.schemas.quiz import (
     QuizCreate,
     QuizResponse,
     QuizListResponse,
-    QuestionResponse,
+    QuestionData,
+    QuestionWithRandomizedOptions,
 )
 from app.schemas.quiz_attempt import (
     QuizAttemptCreate,
     QuizAttemptResponse,
     AnswerCreate,
-    AnswerResponse,
+    AnswerFeedback,
     QuizResultResponse,
 )
 
@@ -53,10 +54,11 @@ __all__ = [
     "QuizCreate",
     "QuizResponse",
     "QuizListResponse",
-    "QuestionResponse",
+    "QuestionData",
+    "QuestionWithRandomizedOptions",
     "QuizAttemptCreate",
     "QuizAttemptResponse",
     "AnswerCreate",
-    "AnswerResponse",
+    "AnswerFeedback",
     "QuizResultResponse",
 ]

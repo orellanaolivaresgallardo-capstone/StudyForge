@@ -141,13 +141,12 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
         {{
             "question": "Texto de la pregunta",
             "options": {{
-                "A": "Opción A",
-                "B": "Opción B",
-                "C": "Opción C",
-                "D": "Opción D"
+                "correct": "alternativa correcta",
+                "semi-correct": "alternativa casi correcta",
+                "incorrect1": "alternativa que puede confundir",
+                "incorrect2": "otra alternativa que puede confundir"
             }},
-            "correct": "A",
-            "explanation": "Explicación detallada de por qué A es correcta"
+            "explanation": "Explicación detallada de por qué la respuesta correcta es correcta y no las otras"
         }}
     ]
 }}"""

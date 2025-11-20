@@ -196,7 +196,7 @@ export interface QuizAttemptAnswerFeedback {
   is_correct: boolean;
   correct_option: CorrectOption;
   explanation: string;
-  score_so_far: number;
+  selected_option: CorrectOption;
 }
 
 export interface QuizAttemptResultsResponse {

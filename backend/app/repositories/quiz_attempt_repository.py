@@ -2,72 +2,102 @@
 """
 Repository para operaciones de base de datos relacionadas con intentos de cuestionarios.
 """
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Tuple
 from uuid import UUID
 from datetime import datetime
+import random
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from app.models.quiz_attempt import QuizAttempt
-from app.models.answer import Answer
-from app.models.question import OptionEnum
+from app.models.quiz import Quiz
 
 
 class QuizAttemptRepository:
     """Repository para gestionar intentos de cuestionarios."""
 
     @staticmethod
-    def create_attempt(db: Session, quiz_id: UUID, user_id: UUID) -> QuizAttempt:
+    def _randomize_options(questions: List[Dict[str, Any]]) -> Tuple[List[str], List[Dict[str, Any]]]:
         """
-        Crea un nuevo intento de cuestionario.
+        Aleatoriza las opciones de las preguntas y retorna las respuestas correctas.
+
+        Args:
+            questions: Lista de preguntas con formato:
+                [{"question": "...", "options": {"correct": "...", "semi-correct": "...", ...}, "explanation": "..."}]
+
+        Returns:
+            Tupla (correct_answers, randomized_questions):
+            - correct_answers: Lista de letras correctas ["A", "B", "C", ...]
+            - randomized_questions: Preguntas con opciones aleatorizadas
+        """
+        correct_answers = []
+        randomized_questions = []
+
+        for q_data in questions:
+            # Obtener opciones originales
+            options = q_data.get("options", {})
+            option_list = [
+                ("correct", options.get("correct", "")),
+                ("semi-correct", options.get("semi-correct", "")),
+                ("incorrect1", options.get("incorrect1", "")),
+                ("incorrect2", options.get("incorrect2", ""))
+            ]
+
+            # Aleatorizar orden
+            random.shuffle(option_list)
+
+            # Asignar A, B, C, D
+            randomized_options = {}
+            correct_letter = None
+
+            for idx, (option_type, option_text) in enumerate(option_list):
+                letter = ["A", "B", "C", "D"][idx]
+                randomized_options[letter] = option_text
+
+                if option_type == "correct":
+                    correct_letter = letter
+
+            # Guardar respuesta correcta
+            correct_answers.append(correct_letter)
+
+            # Crear pregunta aleatorizada
+            randomized_questions.append({
+                "question": q_data.get("question", ""),
+                "options": randomized_options,
+                "explanation": q_data.get("explanation", "")
+            })
+
+        return correct_answers, randomized_questions
+
+    @staticmethod
+    def create_attempt(db: Session, quiz: Quiz, user_id: UUID) -> Tuple[QuizAttempt, List[Dict[str, Any]]]:
+        """
+        Crea un nuevo intento de cuestionario con opciones aleatorizadas.
 
         Args:
             db: Sesión de base de datos
-            quiz_id: ID del cuestionario
+            quiz: Objeto Quiz con preguntas en formato JSON
             user_id: ID del usuario
 
         Returns:
-            Intento de cuestionario creado
+            Tupla (attempt, randomized_questions):
+            - attempt: Intento de cuestionario creado
+            - randomized_questions: Lista de preguntas con opciones aleatorizadas
         """
+        # Aleatorizar opciones
+        correct_answers, randomized_questions = QuizAttemptRepository._randomize_options(quiz.questions)
+
+        # Crear intento con respuestas correctas
         attempt = QuizAttempt(
-            quiz_id=quiz_id,
+            quiz_id=quiz.id,
             user_id=user_id,
+            correct_answers=correct_answers,
+            user_answers=[],  # Se llenarán conforme el usuario responde
         )
         db.add(attempt)
         db.commit()
         db.refresh(attempt)
-        return attempt
 
-    @staticmethod
-    def create_answer(
-        db: Session,
-        attempt_id: UUID,
-        question_id: UUID,
-        selected_option: OptionEnum,
-        is_correct: bool,
-    ) -> Answer:
-        """
-        Crea una respuesta del usuario.
-
-        Args:
-            db: Sesión de base de datos
-            attempt_id: ID del intento
-            question_id: ID de la pregunta
-            selected_option: Opción seleccionada
-            is_correct: Si la respuesta es correcta
-
-        Returns:
-            Respuesta creada
-        """
-        answer = Answer(
-            attempt_id=attempt_id,
-            question_id=question_id,
-            selected_option=selected_option,
-            is_correct=is_correct,
-        )
-        db.add(answer)
-        db.commit()
-        db.refresh(answer)
-        return answer
+        return attempt, randomized_questions
 
     @staticmethod
     def get_attempt_by_id(db: Session, attempt_id: UUID) -> Optional[QuizAttempt]:
@@ -134,47 +164,87 @@ class QuizAttemptRepository:
         )
 
     @staticmethod
-    def complete_attempt(db: Session, attempt: QuizAttempt, score: float) -> QuizAttempt:
+    def record_answer(
+        db: Session,
+        attempt: QuizAttempt,
+        question_index: int,
+        selected_option: str
+    ) -> bool:
         """
-        Marca un intento como completado y establece su score.
+        Registra la respuesta del usuario para una pregunta.
+
+        Args:
+            db: Sesión de base de datos
+            attempt: Intento de cuestionario
+            question_index: Índice de la pregunta (0-based)
+            selected_option: Opción seleccionada ("A", "B", "C", "D")
+
+        Returns:
+            True si la respuesta es correcta, False si no
+        """
+        # Verificar si el índice es válido
+        if question_index < 0 or question_index >= len(attempt.correct_answers):
+            raise ValueError(f"Índice de pregunta inválido: {question_index}")
+
+        # Actualizar user_answers
+        user_answers = attempt.user_answers.copy() if attempt.user_answers else []
+
+        # Rellenar con None si es necesario
+        while len(user_answers) <= question_index:
+            user_answers.append(None)
+
+        user_answers[question_index] = selected_option
+        attempt.user_answers = user_answers
+
+        db.commit()
+        db.refresh(attempt)
+
+        # Verificar si es correcta
+        is_correct = attempt.correct_answers[question_index] == selected_option
+        return is_correct
+
+    @staticmethod
+    def calculate_score(attempt: QuizAttempt) -> float:
+        """
+        Calcula el score del intento basado en las respuestas.
+
+        Args:
+            attempt: Intento de cuestionario
+
+        Returns:
+            Score calculado (0-100)
+        """
+        if not attempt.correct_answers or not attempt.user_answers:
+            return 0.0
+
+        total_questions = len(attempt.correct_answers)
+        correct_count = sum(
+            1 for i, correct in enumerate(attempt.correct_answers)
+            if i < len(attempt.user_answers) and attempt.user_answers[i] == correct
+        )
+
+        return (correct_count / total_questions) * 100.0
+
+    @staticmethod
+    def complete_attempt(db: Session, attempt: QuizAttempt) -> QuizAttempt:
+        """
+        Marca un intento como completado y calcula su score.
 
         Args:
             db: Sesión de base de datos
             attempt: Intento a completar
-            score: Puntuación obtenida (0-100)
 
         Returns:
             Intento actualizado
         """
+        # Calcular score
+        score = QuizAttemptRepository.calculate_score(attempt)
+
         attempt.completed_at = datetime.utcnow()
         attempt.score = score
         db.commit()
         db.refresh(attempt)
         return attempt
-
-    @staticmethod
-    def get_answer(db: Session, attempt_id: UUID, question_id: UUID) -> Optional[Answer]:
-        """
-        Obtiene una respuesta específica de un intento.
-
-        Args:
-            db: Sesión de base de datos
-            attempt_id: ID del intento
-            question_id: ID de la pregunta
-
-        Returns:
-            Respuesta si existe, None en caso contrario
-        """
-        return (
-            db.query(Answer)
-            .filter(
-                and_(
-                    Answer.attempt_id == attempt_id,
-                    Answer.question_id == question_id,
-                )
-            )
-            .first()
-        )
 
     @staticmethod
     def get_recent_attempts_by_topic(

@@ -10,6 +10,7 @@ from app.core.dependencies import get_current_user
 from app.services.summary_service import SummaryService
 from app.schemas.summary import (
     SummaryResponse,
+    SummaryDetailResponse,
     SummaryListResponse,
     SummaryFromDocumentsRequest,
     ExpertiseLevelEnum
@@ -118,14 +119,14 @@ def list_summaries(
     return SummaryListResponse(items=summaries, total=total)
 
 
-@router.get("/{summary_id}", response_model=SummaryResponse)
+@router.get("/{summary_id}", response_model=SummaryDetailResponse)
 def get_summary(
     summary_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Obtiene un resumen específico.
+    Obtiene un resumen específico con documentos asociados.
 
     Args:
         summary_id: ID del resumen
@@ -133,7 +134,7 @@ def get_summary(
         db: Sesión de base de datos
 
     Returns:
-        Resumen completo
+        Resumen completo con documentos fuente
 
     Raises:
         HTTPException: Si el resumen no existe o no pertenece al usuario
@@ -143,7 +144,22 @@ def get_summary(
         summary_id=summary_id,
         user=current_user,
     )
-    return summary
+    
+    # Convertir a respuesta con documentos
+    from app.schemas.document import DocumentResponse
+    summary_dict = {
+        "id": summary.id,
+        "user_id": summary.user_id,
+        "title": summary.title,
+        "content": summary.content,
+        "expertise_level": summary.expertise_level,
+        "topics": summary.topics,
+        "key_concepts": summary.key_concepts,
+        "created_at": summary.created_at,
+        "updated_at": summary.updated_at,
+        "documents": [DocumentResponse.model_validate(doc) for doc in summary.documents]
+    }
+    return SummaryDetailResponse(**summary_dict)
 
 
 @router.delete("/{summary_id}", status_code=status.HTTP_204_NO_CONTENT)

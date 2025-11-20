@@ -5,8 +5,11 @@ Schemas para Resumen.
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from uuid import UUID
-from typing import List, Dict, Any
+from typing import List, Dict, Any, TYPE_CHECKING
 from enum import Enum
+
+if TYPE_CHECKING:
+    from app.schemas.document import DocumentResponse
 
 
 class ExpertiseLevelEnum(str, Enum):
@@ -43,6 +46,11 @@ class SummaryResponse(BaseModel):
     key_concepts: List[str]
     created_at: datetime
     updated_at: datetime
+
+
+class SummaryDetailResponse(SummaryResponse):
+    """Schema para detalle de resumen con documentos asociados."""
+    documents: List["DocumentResponse"] = Field(default_factory=list, description="Documentos fuente asociados al resumen")
 
 
 class SummaryListResponse(BaseModel):

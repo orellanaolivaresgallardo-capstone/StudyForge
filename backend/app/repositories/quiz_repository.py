@@ -2,11 +2,10 @@
 """
 Repository para operaciones de base de datos relacionadas con cuestionarios.
 """
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.quiz import Quiz
-from app.models.question import Question, OptionEnum
 
 
 class QuizRepository:
@@ -20,10 +19,10 @@ class QuizRepository:
         title: str,
         topic: str,
         difficulty_level: int,
-        max_questions: int,
+        questions: List[Dict[str, Any]],
     ) -> Quiz:
         """
-        Crea un nuevo cuestionario en la base de datos.
+        Crea un nuevo cuestionario en la base de datos con preguntas en formato JSON.
 
         Args:
             db: Sesión de base de datos
@@ -32,7 +31,11 @@ class QuizRepository:
             title: Título del cuestionario
             topic: Tema del cuestionario
             difficulty_level: Nivel de dificultad (1-5)
-            max_questions: Número máximo de preguntas
+            questions: Lista de preguntas en formato JSON
+                Cada pregunta debe tener:
+                - question: str (texto de la pregunta)
+                - options: dict con keys "correct", "semi-correct", "incorrect1", "incorrect2"
+                - explanation: str (explicación de la respuesta)
 
         Returns:
             Cuestionario creado
@@ -43,59 +46,12 @@ class QuizRepository:
             title=title,
             topic=topic,
             difficulty_level=difficulty_level,
-            max_questions=max_questions,
+            questions=questions,
         )
         db.add(quiz)
         db.commit()
         db.refresh(quiz)
         return quiz
-
-    @staticmethod
-    def create_question(
-        db: Session,
-        quiz_id: UUID,
-        question_text: str,
-        option_a: str,
-        option_b: str,
-        option_c: str,
-        option_d: str,
-        correct_option: OptionEnum,
-        explanation: str,
-        order: int,
-    ) -> Question:
-        """
-        Crea una nueva pregunta para un cuestionario.
-
-        Args:
-            db: Sesión de base de datos
-            quiz_id: ID del cuestionario
-            question_text: Texto de la pregunta
-            option_a: Opción A
-            option_b: Opción B
-            option_c: Opción C
-            option_d: Opción D
-            correct_option: Opción correcta (A, B, C, D)
-            explanation: Explicación de la respuesta
-            order: Orden de la pregunta
-
-        Returns:
-            Pregunta creada
-        """
-        question = Question(
-            quiz_id=quiz_id,
-            question_text=question_text,
-            option_a=option_a,
-            option_b=option_b,
-            option_c=option_c,
-            option_d=option_d,
-            correct_option=correct_option,
-            explanation=explanation,
-            order=order,
-        )
-        db.add(question)
-        db.commit()
-        db.refresh(question)
-        return question
 
     @staticmethod
     def get_quiz_by_id(db: Session, quiz_id: UUID) -> Optional[Quiz]:
@@ -147,17 +103,3 @@ class QuizRepository:
             Número total de cuestionarios
         """
         return db.query(Quiz).filter(Quiz.user_id == user_id).count()
-
-    @staticmethod
-    def get_question_by_id(db: Session, question_id: UUID) -> Optional[Question]:
-        """
-        Obtiene una pregunta por su ID.
-
-        Args:
-            db: Sesión de base de datos
-            question_id: ID de la pregunta
-
-        Returns:
-            Pregunta si existe, None en caso contrario
-        """
-        return db.query(Question).filter(Question.id == question_id).first()
