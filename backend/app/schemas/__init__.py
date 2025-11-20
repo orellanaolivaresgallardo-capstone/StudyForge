@@ -28,6 +28,7 @@ from app.schemas.quiz import (
 from app.schemas.quiz_attempt import (
     QuizAttemptCreate,
     QuizAttemptResponse,
+    QuizAttemptWithQuestionsResponse,
     AnswerCreate,
     AnswerFeedback,
     QuizResultResponse,
@@ -58,6 +59,7 @@ __all__ = [
     "QuestionWithRandomizedOptions",
     "QuizAttemptCreate",
     "QuizAttemptResponse",
+    "QuizAttemptWithQuestionsResponse",
     "AnswerCreate",
     "AnswerFeedback",
     "QuizResultResponse",

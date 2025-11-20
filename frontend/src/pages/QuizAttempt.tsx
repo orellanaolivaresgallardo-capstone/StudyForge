@@ -13,9 +13,8 @@ import {
   completeQuizAttempt,
 } from "../services/api";
 import type {
-  QuizDetailResponse,
-  QuestionResponse,
-  QuizAttemptResponse,
+  QuizResponse,
+  QuizAttemptWithQuestionsResponse,
   CorrectOption,
   QuizAttemptAnswerFeedback,
 } from "../types/api.types";
@@ -24,12 +23,11 @@ export default function QuizAttemptPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [quiz, setQuiz] = useState<QuizDetailResponse | null>(null);
-  const [attempt, setAttempt] = useState<QuizAttemptResponse | null>(null);
+  const [quiz, setQuiz] = useState<QuizResponse | null>(null);
+  const [attempt, setAttempt] = useState<QuizAttemptWithQuestionsResponse | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<CorrectOption | null>(null);
   const [feedback, setFeedback] = useState<QuizAttemptAnswerFeedback | null>(null);
-  const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -63,18 +61,15 @@ export default function QuizAttemptPage() {
   }
 
   async function handleSubmitAnswer() {
-    if (!selectedOption || !attempt || !quiz) return;
-
-    const currentQuestion = quiz.questions[currentQuestionIndex];
+    if (!selectedOption || !attempt) return;
 
     try {
       setIsSubmitting(true);
       const feedbackData = await answerQuestion(attempt.id, {
-        question_id: currentQuestion.id,
+        question_index: currentQuestionIndex,
         selected_option: selectedOption,
       });
       setFeedback(feedbackData);
-      setAnsweredQuestions(new Set([...answeredQuestions, currentQuestion.id]));
     } catch (error) {
       console.error("Error submitting answer:", error);
       showToast("Error al enviar la respuesta");
@@ -84,9 +79,9 @@ export default function QuizAttemptPage() {
   }
 
   function handleNextQuestion() {
-    if (!quiz) return;
+    if (!attempt) return;
 
-    if (currentQuestionIndex < quiz.questions.length - 1) {
+    if (currentQuestionIndex < attempt.randomized_questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedOption(null);
       setFeedback(null);
@@ -108,8 +103,8 @@ export default function QuizAttemptPage() {
     }
   }
 
-  const currentQuestion = quiz?.questions[currentQuestionIndex];
-  const progress = quiz ? ((currentQuestionIndex + 1) / quiz.questions.length) * 100 : 0;
+  const currentQuestion = attempt?.randomized_questions[currentQuestionIndex];
+  const progress = attempt ? ((currentQuestionIndex + 1) / attempt.randomized_questions.length) * 100 : 0;
 
   const optionLetters: CorrectOption[] = ["A", "B", "C", "D"];
 
@@ -142,7 +137,7 @@ export default function QuizAttemptPage() {
         )}
 
         {/* Quiz Content */}
-        {!isLoading && quiz && currentQuestion && (
+        {!isLoading && quiz && attempt && currentQuestion && (
           <>
             {/* Header */}
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
@@ -154,7 +149,7 @@ export default function QuizAttemptPage() {
                 <div className="text-right">
                   <div className="text-sm text-slate-400">Progreso</div>
                   <div className="text-2xl font-bold text-violet-400">
-                    {currentQuestionIndex + 1} / {quiz.questions.length}
+                    {currentQuestionIndex + 1} / {attempt.randomized_questions.length}
                   </div>
                 </div>
               </div>
@@ -177,14 +172,13 @@ export default function QuizAttemptPage() {
 
               {/* Question Text */}
               <h2 className="text-xl font-semibold mb-6 leading-relaxed">
-                {currentQuestion.question_text}
+                {currentQuestion.question}
               </h2>
 
               {/* Options */}
               <div className="space-y-3">
                 {optionLetters.map((letter) => {
-                  const optionKey = `option_${letter.toLowerCase()}` as keyof QuestionResponse;
-                  const optionText = currentQuestion[optionKey] as string;
+                  const optionText = currentQuestion.options[letter];
                   const isSelected = selectedOption === letter;
                   const isCorrect = feedback && feedback.correct_option === letter;
                   const isWrong = feedback && selectedOption === letter && !feedback.is_correct;
@@ -320,9 +314,11 @@ export default function QuizAttemptPage() {
                         {feedback.is_correct ? "¡Correcto!" : "Incorrecto"}
                       </h3>
                       <p className="text-slate-300 mt-1">{feedback.explanation}</p>
-                      <p className="text-xs text-slate-400 mt-2">
-                        Puntuación actual: {feedback.score_so_far.toFixed(1)}%
-                      </p>
+                      {feedback.score_so_far !== undefined && (
+                        <p className="text-xs text-slate-400 mt-2">
+                          Puntuación actual: {feedback.score_so_far.toFixed(1)}%
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -343,7 +339,7 @@ export default function QuizAttemptPage() {
                     onClick={handleNextQuestion}
                     className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all"
                   >
-                    {currentQuestionIndex < quiz.questions.length - 1
+                    {currentQuestionIndex < attempt.randomized_questions.length - 1
                       ? "Siguiente pregunta"
                       : "Ver resultados"}
                   </button>

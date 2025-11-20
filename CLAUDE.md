@@ -669,99 +669,90 @@ class Summary(Base):
 
 #### Quiz (quizzes)
 
+**NOTA**: Este modelo fue rediseñado para usar JSON en lugar de tablas separadas.
+
 ```python
 class Quiz(Base):
+    """Modelo de cuestionario con preguntas en formato JSON."""
+
     __tablename__ = "quizzes"
     __table_args__ = {"schema": "studyforge"}
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.users.id"), nullable=False, index=True)
-    summary_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.summaries.id"), nullable=True)
+    summary_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.summaries.id"), nullable=True, index=True)
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    topic: Mapped[str] = mapped_column(String(255), nullable=False, default="general")
-    difficulty_level: Mapped[int] = mapped_column(Integer, nullable=False)  # 1-5
-    max_questions: Mapped[int] = mapped_column(Integer, default=10)
-
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    topic: Mapped[str] = mapped_column(String(255), nullable=False)  # "general" o tema específico
+    difficulty_level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)  # 1-5
+    questions: Mapped[list] = mapped_column(JSONB, nullable=False)  # Array de preguntas con opciones no aleatorizadas
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relaciones
     user: Mapped["User"] = relationship(back_populates="quizzes")
     summary: Mapped[Optional["Summary"]] = relationship(back_populates="quizzes")
-    questions: Mapped[List["Question"]] = relationship(back_populates="quiz", cascade="all, delete-orphan")
     attempts: Mapped[List["QuizAttempt"]] = relationship(back_populates="quiz", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Quiz {self.title} - Nivel {self.difficulty_level}>"
 ```
 
-#### Question (questions)
-
-```python
-class CorrectOption(str, Enum):
-    A = "A"
-    B = "B"
-    C = "C"
-    D = "D"
-
-class Question(Base):
-    __tablename__ = "questions"
-    __table_args__ = {"schema": "studyforge"}
-
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    quiz_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.quizzes.id"), nullable=False)
-
-    question_text: Mapped[str] = mapped_column(Text, nullable=False)
-    option_a: Mapped[str] = mapped_column(String(500), nullable=False)
-    option_b: Mapped[str] = mapped_column(String(500), nullable=False)
-    option_c: Mapped[str] = mapped_column(String(500), nullable=False)
-    option_d: Mapped[str] = mapped_column(String(500), nullable=False)
-    correct_option: Mapped[CorrectOption] = mapped_column(Enum(CorrectOption), nullable=False)
-    explanation: Mapped[str] = mapped_column(Text, nullable=False)
-    order: Mapped[int] = mapped_column(Integer, nullable=False)
-
-    # Relaciones
-    quiz: Mapped["Quiz"] = relationship(back_populates="questions")
-    answers: Mapped[List["Answer"]] = relationship(back_populates="question", cascade="all, delete-orphan")
+**Formato de campo `questions` (JSONB)**:
+```json
+[
+  {
+    "question": "¿Qué es Python?",
+    "options": {
+      "correct": "Un lenguaje de programación",
+      "semi-correct": "Una serpiente",
+      "incorrect1": "Un framework web",
+      "incorrect2": "Una base de datos"
+    },
+    "explanation": "Python es un lenguaje de programación interpretado..."
+  }
+]
 ```
+
+**NOTA**: Las tablas `questions` y `answers` fueron eliminadas en el rediseño. Las preguntas ahora se almacenan como JSON en el campo `questions` de la tabla `quizzes`, y las respuestas se almacenan como arrays JSON en la tabla `quiz_attempts`.
 
 #### QuizAttempt (quiz_attempts)
 
+**NOTA**: Este modelo fue rediseñado para almacenar respuestas como JSON arrays.
+
 ```python
 class QuizAttempt(Base):
+    """Modelo de intento de cuestionario con respuestas en formato JSON."""
+
     __tablename__ = "quiz_attempts"
     __table_args__ = {"schema": "studyforge"}
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    quiz_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.quizzes.id"), nullable=False)
+    quiz_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.quizzes.id"), nullable=False, index=True)
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.users.id"), nullable=False, index=True)
-
-    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # Porcentaje 0-100
+
+    # Respuestas en formato JSON
+    correct_answers: Mapped[list] = mapped_column(JSONB, nullable=False)  # ["A", "B", "C", "D", "A"] - Respuestas correctas aleatorizadas
+    user_answers: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["A", "C", "C", "D", "A"] - Respuestas del usuario
 
     # Relaciones
     quiz: Mapped["Quiz"] = relationship(back_populates="attempts")
     user: Mapped["User"] = relationship(back_populates="quiz_attempts")
-    answers: Mapped[List["Answer"]] = relationship(back_populates="attempt", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        status = "completado" if self.completed_at else "en progreso"
+        return f"<QuizAttempt {status} - Score: {self.score}>"
 ```
 
-#### Answer (answers)
+**Funcionamiento de la randomización**:
+1. Cuando se crea un attempt, las opciones de cada pregunta se mezclan aleatoriamente
+2. Se genera un array `correct_answers` con las letras (A/B/C/D) donde quedó la opción correcta
+3. El usuario responde usando índices (0-based) y letras (A/B/C/D)
+4. Las respuestas se almacenan en `user_answers` como array paralelo a `correct_answers`
+5. El score se calcula comparando ambos arrays: `correct_answers[i] == user_answers[i]`
 
-```python
-class Answer(Base):
-    __tablename__ = "answers"
-    __table_args__ = {"schema": "studyforge"}
-
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    attempt_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.quiz_attempts.id"), nullable=False)
-    question_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.questions.id"), nullable=False)
-
-    selected_option: Mapped[CorrectOption] = mapped_column(Enum(CorrectOption), nullable=False)
-    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    answered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-    # Relaciones
-    attempt: Mapped["QuizAttempt"] = relationship(back_populates="answers")
-    question: Mapped["Question"] = relationship(back_populates="answers")
-```
 
 ### Relación Many-to-Many: Summary ↔ Document
 
@@ -1728,6 +1719,36 @@ SELECT pg_size_pretty(pg_database_size('studyforge'));
 - **UX**: Fácil de entender para usuarios
 - **Prompting**: Fácil de traducir a prompts de OpenAI
 - **Común**: Estándar en educación
+
+### Rediseño de Quizzes con JSON
+
+**Decisión**: Almacenar preguntas y respuestas como JSONB en lugar de tablas normalizadas
+
+**Problema Original**:
+- Bug: `max_questions` siempre se guardaba como 10
+- Bug: `correct_option` siempre se guardaba como "A"
+- 4 tablas relacionadas (quizzes, questions, answers, quiz_attempts)
+- Sin randomización de opciones (memorización fácil)
+
+**Solución Implementada**:
+- Reducir de 4 tablas a 2 (`quizzes` y `quiz_attempts`)
+- Almacenar preguntas como JSONB en `quizzes.questions`
+- Almacenar respuestas correctas/usuario como JSON arrays en `quiz_attempts`
+- Randomizar opciones al crear attempt, no al crear quiz
+- Opciones en formato semántico: `{"correct", "semi-correct", "incorrect1", "incorrect2"}`
+
+**Beneficios**:
+- **Simplicidad**: 2 tablas vs 4 - menos JOINs, menos complejidad
+- **Performance**: Sin JOINs para cargar preguntas - query única
+- **Atomicidad**: Quiz + preguntas en single transaction
+- **Randomización**: Built-in - cada attempt tiene opciones mezcladas
+- **Flexibilidad**: Fácil agregar campos a preguntas sin ALTER TABLE
+- **Evaluación simple**: Comparar arrays `correct_answers[i] == user_answers[i]`
+- **Bugs resueltos**: Ambos bugs originales eliminados
+
+**Trade-offs**:
+- No se pueden hacer queries SQL sobre preguntas individuales
+- Resultados mostrados no usan orden randomizado exacto (limitación temporal)
 
 ---
 

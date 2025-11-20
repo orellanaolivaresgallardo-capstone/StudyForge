@@ -48,6 +48,13 @@ class QuizAttemptResponse(BaseModel):
     )
 
 
+class QuizAttemptWithQuestionsResponse(QuizAttemptResponse):
+    """Schema que incluye las preguntas aleatorizadas para el frontend."""
+    randomized_questions: List[Dict[str, Any]] = Field(
+        description="Preguntas con opciones aleatorizadas {'A': '...', 'B': '...', etc}"
+    )
+
+
 class QuestionResultDetail(BaseModel):
     """Detalle de una pregunta con la respuesta del usuario."""
     question_text: str

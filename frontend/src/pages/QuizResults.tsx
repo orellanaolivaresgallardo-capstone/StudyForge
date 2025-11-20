@@ -8,7 +8,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { getQuizAttemptResults } from "../services/api";
 import type {
-  QuizAttemptResultsResponse,
+  QuizResultResponse,
   CorrectOption,
 } from "../types/api.types";
 
@@ -16,7 +16,7 @@ export default function QuizResultsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [results, setResults] = useState<QuizAttemptResultsResponse | null>(null);
+  const [results, setResults] = useState<QuizResultResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -139,8 +139,8 @@ export default function QuizResultsPage() {
                 </div>
 
                 {/* Title */}
-                <h1 className="text-3xl font-bold mb-2">{results.quiz.title}</h1>
-                <p className="text-slate-400 mb-4">Tema: {results.quiz.topic}</p>
+                <h1 className="text-3xl font-bold mb-2">Resultados del Cuestionario</h1>
+                <p className="text-slate-400 mb-4">Quiz ID: {results.quiz_id.slice(0, 8)}</p>
 
                 {/* Message */}
                 <p className="text-lg text-slate-300 mb-6">
@@ -157,7 +157,7 @@ export default function QuizResultsPage() {
                   </div>
                   <div className="bg-slate-900/50 rounded-xl p-4">
                     <div className="text-2xl font-bold text-red-400">
-                      {results.total_questions - results.correct_answers}
+                      {results.incorrect_answers}
                     </div>
                     <div className="text-xs text-slate-400">Incorrectas</div>
                   </div>
@@ -176,14 +176,14 @@ export default function QuizResultsPage() {
               <h2 className="text-xl font-bold mb-6">Revisión de respuestas</h2>
 
               <div className="space-y-6">
-                {results.answers.map((item, idx) => {
-                  const isCorrect = item.answer.is_correct;
-                  const selectedOption = item.answer.selected_option;
-                  const correctOption = item.question.correct_option;
+                {results.questions.map((question, idx) => {
+                  const isCorrect = question.is_correct;
+                  const selectedOption = question.selected_option;
+                  const correctOption = question.correct_option;
 
                   return (
                     <div
-                      key={item.answer.id}
+                      key={idx}
                       className={`p-6 rounded-xl border-2 ${
                         isCorrect
                           ? "bg-green-500/5 border-green-500/30"
@@ -203,15 +203,13 @@ export default function QuizResultsPage() {
                         </div>
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg mb-3">
-                            {item.question.question_text}
+                            {question.question_text}
                           </h3>
 
                           {/* Options */}
                           <div className="space-y-2">
                             {optionLetters.map((letter) => {
-                              const optionKey =
-                                `option_${letter.toLowerCase()}` as keyof typeof item.question;
-                              const optionText = item.question[optionKey] as string;
+                              const optionText = question.options[letter];
                               const isSelectedOption = selectedOption === letter;
                               const isCorrectOption = correctOption === letter;
 
@@ -273,7 +271,7 @@ export default function QuizResultsPage() {
                               Explicación:
                             </h4>
                             <p className="text-sm text-slate-400">
-                              {item.question.explanation}
+                              {question.explanation}
                             </p>
                           </div>
                         </div>
@@ -293,7 +291,7 @@ export default function QuizResultsPage() {
                 Volver a resúmenes
               </button>
               <button
-                onClick={() => navigate(`/quizzes/${results.quiz.id}/attempt`)}
+                onClick={() => navigate(`/quizzes/${results.quiz_id}/attempt`)}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all"
               >
                 Intentar de nuevo

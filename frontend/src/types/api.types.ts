@@ -113,19 +113,25 @@ export interface SummaryCreateFromDocuments {
 
 export type CorrectOption = "A" | "B" | "C" | "D";
 
-export interface QuestionResponse {
-  id: string;
-  quiz_id: string;
-  question_text: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  order: number;
+// Opciones de pregunta en formato original (OpenAI)
+export interface QuestionOptionsData {
+  correct: string;
+  "semi-correct": string;
+  incorrect1: string;
+  incorrect2: string;
 }
 
-export interface QuestionWithAnswer extends QuestionResponse {
-  correct_option: CorrectOption;
+// Pregunta en formato JSON (almacenado en BD)
+export interface QuestionData {
+  question: string;
+  options: QuestionOptionsData;
+  explanation: string;
+}
+
+// Pregunta con opciones aleatorizadas (A, B, C, D)
+export interface QuestionWithRandomizedOptions {
+  question: string;
+  options: Record<string, string>; // {'A': '...', 'B': '...', 'C': '...', 'D': '...'}
   explanation: string;
 }
 
@@ -136,12 +142,8 @@ export interface QuizResponse {
   title: string;
   topic: string;
   difficulty_level: number; // 1-5
-  max_questions: number;
   created_at: string;
-}
-
-export interface QuizDetailResponse extends QuizResponse {
-  questions: QuestionResponse[];
+  questions: QuestionData[]; // Preguntas en formato JSON
 }
 
 export interface QuizListResponse {
@@ -172,15 +174,12 @@ export interface QuizAttemptResponse {
   started_at: string;
   completed_at: string | null;
   score: number | null;
+  correct_answers: string[]; // ["A", "B", "C", ...] - Respuestas correctas aleatorizadas
+  user_answers: string[]; // ["A", "C", "B", ...] - Respuestas del usuario
 }
 
-export interface AnswerResponse {
-  id: string;
-  attempt_id: string;
-  question_id: string;
-  selected_option: CorrectOption;
-  is_correct: boolean;
-  answered_at: string;
+export interface QuizAttemptWithQuestionsResponse extends QuizAttemptResponse {
+  randomized_questions: QuestionWithRandomizedOptions[]; // Preguntas con opciones aleatorizadas
 }
 
 export interface QuizAttemptCreate {
@@ -188,7 +187,7 @@ export interface QuizAttemptCreate {
 }
 
 export interface QuizAttemptAnswer {
-  question_id: string;
+  question_index: number; // Índice de la pregunta (0-based)
   selected_option: CorrectOption;
 }
 
@@ -197,18 +196,29 @@ export interface QuizAttemptAnswerFeedback {
   correct_option: CorrectOption;
   explanation: string;
   selected_option: CorrectOption;
+  score_so_far?: number; // Puntaje acumulado hasta el momento
 }
 
-export interface QuizAttemptResultsResponse {
-  attempt: QuizAttemptResponse;
-  quiz: QuizDetailResponse;
-  answers: Array<{
-    answer: AnswerResponse;
-    question: QuestionWithAnswer;
-  }>;
+// Detalle de una pregunta en los resultados
+export interface QuestionResultDetail {
+  question_text: string;
+  options: Record<string, string>; // {'A': '...', 'B': '...', 'C': '...', 'D': '...'}
+  correct_option: string;
+  selected_option: string;
+  is_correct: boolean;
+  explanation: string;
+}
+
+// Resultados completos de un quiz attempt
+export interface QuizResultResponse {
+  attempt_id: string;
+  quiz_id: string;
   score: number;
   total_questions: number;
   correct_answers: number;
+  incorrect_answers: number;
+  completed_at: string;
+  questions: QuestionResultDetail[];
 }
 
 // ==================== STATS ====================

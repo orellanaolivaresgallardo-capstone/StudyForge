@@ -24,15 +24,15 @@ import type {
   ExpertiseLevel,
   // Quizzes
   QuizResponse,
-  QuizDetailResponse,
   QuizListResponse,
   QuizCreateFromSummary,
   // Quiz Attempts
   QuizAttemptResponse,
+  QuizAttemptWithQuestionsResponse,
   QuizAttemptCreate,
   QuizAttemptAnswer,
   QuizAttemptAnswerFeedback,
-  QuizAttemptResultsResponse,
+  QuizResultResponse,
   // Stats
   UserProgress,
   UserPerformance,
@@ -322,8 +322,8 @@ export async function listQuizzes(
   return response.data;
 }
 
-export async function getQuiz(quizId: string): Promise<QuizDetailResponse> {
-  const response = await apiClient.get<QuizDetailResponse>(
+export async function getQuiz(quizId: string): Promise<QuizResponse> {
+  const response = await apiClient.get<QuizResponse>(
     `/quizzes/${quizId}`
   );
   return response.data;
@@ -333,8 +333,8 @@ export async function getQuiz(quizId: string): Promise<QuizDetailResponse> {
 
 export async function createQuizAttempt(
   data: QuizAttemptCreate
-): Promise<QuizAttemptResponse> {
-  const response = await apiClient.post<QuizAttemptResponse>(
+): Promise<QuizAttemptWithQuestionsResponse> {
+  const response = await apiClient.post<QuizAttemptWithQuestionsResponse>(
     "/quiz-attempts",
     data
   );
@@ -363,8 +363,8 @@ export async function completeQuizAttempt(
 
 export async function getQuizAttemptResults(
   attemptId: string
-): Promise<QuizAttemptResultsResponse> {
-  const response = await apiClient.get<QuizAttemptResultsResponse>(
+): Promise<QuizResultResponse> {
+  const response = await apiClient.get<QuizResultResponse>(
     `/quiz-attempts/${attemptId}/results`
   );
   return response.data;

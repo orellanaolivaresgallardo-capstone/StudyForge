@@ -12,6 +12,7 @@ from app.repositories.quiz_attempt_repository import QuizAttemptRepository
 from app.schemas.quiz_attempt import (
     QuizAttemptCreate,
     QuizAttemptResponse,
+    QuizAttemptWithQuestionsResponse,
     AnswerCreate,
     AnswerFeedback,
     QuizResultResponse,
@@ -22,7 +23,7 @@ from app.models.user import User
 router = APIRouter()
 
 
-@router.post("", response_model=QuizAttemptResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=QuizAttemptWithQuestionsResponse, status_code=status.HTTP_201_CREATED)
 def start_quiz_attempt(
     attempt_data: QuizAttemptCreate,
     current_user: User = Depends(get_current_user),
@@ -47,13 +48,24 @@ def start_quiz_attempt(
     quiz = verify_quiz_ownership(quiz, current_user)
 
     # Crear intento con opciones aleatorizadas
-    attempt, _ = QuizAttemptRepository.create_attempt(
+    attempt, randomized_questions = QuizAttemptRepository.create_attempt(
         db=db,
         quiz=quiz,
         user_id=current_user.id,
     )
 
-    return attempt
+    # Retornar attempt con las preguntas aleatorizadas
+    return QuizAttemptWithQuestionsResponse(
+        id=attempt.id,
+        quiz_id=attempt.quiz_id,
+        user_id=attempt.user_id,
+        started_at=attempt.started_at,
+        completed_at=attempt.completed_at,
+        score=attempt.score,
+        correct_answers=attempt.correct_answers,
+        user_answers=attempt.user_answers,
+        randomized_questions=randomized_questions,
+    )
 
 
 @router.post("/{attempt_id}/answer", response_model=AnswerFeedback)
