@@ -9,13 +9,15 @@ import {
 import "./index.css";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Home from "./pages/home";
 import Login from "./pages/login";
 import SignUp from "./pages/signup";
 import DocumentsPage from "./pages/documents";
+import SummariesPage from "./pages/summaries";
 import ErrorPage from "./pages/ErrorPage";
 
 const router = createBrowserRouter([
-  { path: "/", element: <Navigate to="/documents" replace /> },
+  { path: "/", element: <Home /> },
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <SignUp /> },
   {
@@ -23,6 +25,15 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <DocumentsPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/summaries",
+    element: (
+      <ProtectedRoute>
+        <SummariesPage />
       </ProtectedRoute>
     ),
     errorElement: <ErrorPage />,

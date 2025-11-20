@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 import {
   listDocuments,
   uploadDocument as apiUploadDocument,
@@ -13,7 +14,7 @@ import {
 import type { DocumentResponse } from "../types/api.types";
 
 export default function DocumentsPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
@@ -121,23 +122,8 @@ export default function DocumentsPage() {
         `
       }}></div>
 
-      {/* Header glass */}
-      <header className="sticky top-0 z-20 backdrop-blur-md bg-slate-900/75 border-b border-white/10 shadow-lg">
-        <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-extrabold tracking-tight">StudyForge</h1>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-slate-300 truncate max-w-[200px]">
-              {user?.email || "Usuario"}
-            </span>
-            <button
-              onClick={logout}
-              className="rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/10 transition"
-            >
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Navbar */}
+      <Navbar />
 
       <main className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-10">
         {/* Upload Zone */}
