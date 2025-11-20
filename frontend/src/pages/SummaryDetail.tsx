@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { getSummary, deleteSummary } from "../services/api";
+import { getSummary, deleteSummary, createQuizFromSummary } from "../services/api";
 import type { SummaryDetailResponse, ExpertiseLevel } from "../types/api.types";
 
 export default function SummaryDetailPage() {
@@ -17,6 +17,9 @@ export default function SummaryDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState(10);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -58,9 +61,32 @@ export default function SummaryDetailPage() {
     }
   }
 
-  function handleGenerateQuiz() {
-    // TODO: Implementar cuando esté listo el sistema de quizzes
-    showToast("Generación de quiz próximamente");
+  function handleOpenQuizModal() {
+    setShowQuizModal(true);
+    setQuizQuestions(10);
+  }
+
+  async function handleGenerateQuiz() {
+    if (!id) return;
+
+    try {
+      setIsGeneratingQuiz(true);
+      const quiz = await createQuizFromSummary({
+        summary_id: id,
+        max_questions: quizQuestions,
+      });
+      showToast("Quiz generado exitosamente");
+      setShowQuizModal(false);
+      // Redirigir a la página de tomar el quiz
+      setTimeout(() => navigate(`/quizzes/${quiz.id}/attempt`), 1000);
+    } catch (error: any) {
+      console.error("Error generating quiz:", error);
+      showToast(
+        error.response?.data?.detail || "Error al generar el cuestionario"
+      );
+    } finally {
+      setIsGeneratingQuiz(false);
+    }
   }
 
   const getExpertiseLevelBadge = (level: ExpertiseLevel) => {
@@ -223,7 +249,7 @@ export default function SummaryDetailPage() {
               {/* Actions */}
               <div className="flex gap-3">
                 <button
-                  onClick={handleGenerateQuiz}
+                  onClick={handleOpenQuizModal}
                   className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center gap-2"
                 >
                   <svg
@@ -404,6 +430,82 @@ export default function SummaryDetailPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Quiz Generation Modal */}
+        {showQuizModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setShowQuizModal(false)}
+            ></div>
+
+            {/* Modal */}
+            <div className="relative bg-slate-800/95 backdrop-blur-md rounded-2xl border border-slate-700/50 max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold">Generar cuestionario</h3>
+                <button
+                  onClick={() => setShowQuizModal(false)}
+                  className="p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <p className="text-slate-300 mb-6">
+                Se generará un cuestionario basado en este resumen para evaluar
+                tu comprensión del material.
+              </p>
+
+              {/* Number of Questions */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Número de preguntas
+                </label>
+                <input
+                  type="number"
+                  min="5"
+                  max="30"
+                  value={quizQuestions}
+                  onChange={(e) => setQuizQuestions(parseInt(e.target.value) || 10)}
+                  className="w-full px-4 py-2 rounded-xl bg-slate-900/50 border border-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                <p className="text-xs text-slate-400 mt-1">
+                  Entre 5 y 30 preguntas (recomendado: 10)
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowQuizModal(false)}
+                  disabled={isGeneratingQuiz}
+                  className="flex-1 px-4 py-2 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 font-medium transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGenerateQuiz}
+                  disabled={isGeneratingQuiz}
+                  className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingQuiz ? "Generando..." : "Generar"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Delete Confirmation Modal */}

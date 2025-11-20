@@ -15,6 +15,9 @@ import SignUp from "./pages/signup";
 import DocumentsPage from "./pages/documents";
 import SummariesPage from "./pages/summaries";
 import SummaryDetailPage from "./pages/SummaryDetail";
+import QuizzesPage from "./pages/Quizzes";
+import QuizAttemptPage from "./pages/QuizAttempt";
+import QuizResultsPage from "./pages/QuizResults";
 import ErrorPage from "./pages/ErrorPage";
 
 const router = createBrowserRouter([
@@ -44,6 +47,33 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <SummaryDetailPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/quizzes",
+    element: (
+      <ProtectedRoute>
+        <QuizzesPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/quizzes/:id/attempt",
+    element: (
+      <ProtectedRoute>
+        <QuizAttemptPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/quiz-attempts/:id/results",
+    element: (
+      <ProtectedRoute>
+        <QuizResultsPage />
       </ProtectedRoute>
     ),
     errorElement: <ErrorPage />,

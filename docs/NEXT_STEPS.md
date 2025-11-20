@@ -4,7 +4,7 @@
 
 **Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas. **Fases 0.1, 0.2, 0.3 COMPLETADAS**. Sistema multi-documento funcionando con logging estructurado integrado, rate limiting implementado, y validación de archivos con magic numbers para seguridad.
 
-**Frontend en progreso**: **Fases 2.1, 2.2, 2.4 y 2.5 COMPLETADAS**. AuthContext implementado, páginas de login/signup actualizadas, tipos TypeScript completos, cliente API con axios. Página de documentos básica funcionando con upload drag-and-drop y lista. Sistema completo de gestión de resúmenes: lista de resúmenes, creación desde documentos existentes (modal), y vista detallada con documentos fuente. Diseño aurora gradient preservado en toda la aplicación.
+**Frontend MVP COMPLETO**: **Fases 2.1, 2.2, 2.4, 2.5 y 2.6 COMPLETADAS AL 100%**. Sistema completo de autenticación, gestión de documentos con drag-and-drop, sistema de resúmenes (lista, creación desde documentos, vista detallada), y sistema de quizzes completo (lista de quizzes, generación, toma con feedback inmediato, resultados detallados). Navbar actualizada con todos los enlaces. Diseño aurora gradient preservado en toda la aplicación. **Flujo end-to-end completamente funcional**: documento → resumen → quiz → resultados.
 
 ---
 
@@ -196,25 +196,46 @@
   - [x] Loading states y manejo de errores
   - [x] Diseño aurora gradient preservado
 
-### 2.6 Sistema de quizzes
-- [ ] Generación de quiz
-  - [ ] Desde archivo nuevo
-  - [ ] Desde resumen existente
-  - [ ] Selector de tema
-  - [ ] Selector de número de preguntas
-- [ ] Tomar quiz (`/quiz/:id/attempt`)
-  - [ ] Mostrar pregunta actual
-  - [ ] Opciones A, B, C, D
-  - [ ] Feedback inmediato al responder
-    - [ ] Mostrar si es correcta
-    - [ ] Mostrar respuesta correcta si falla
-    - [ ] Mostrar explicación
-  - [ ] Navegación entre preguntas
-  - [ ] Progreso visual (X de Y preguntas)
-- [ ] Resultados de quiz (`/quiz/attempts/:id/results`)
-  - [ ] Score final
-  - [ ] Desglose por pregunta
-  - [ ] Recomendaciones basadas en resultados
+### 2.6 Sistema de quizzes ✅ COMPLETADO AL 100%
+- [x] **Lista de quizzes** (`/quizzes`)
+  - [x] Cards con título, tema, dificultad y número de preguntas
+  - [x] Badge de dificultad con código de colores (1-5)
+  - [x] Botón de inicio para cada quiz
+  - [x] Empty state con redirección a resúmenes
+  - [x] Card informativo sobre sistema adaptativo
+  - [x] Enlace en Navbar (desktop y mobile)
+  - [x] Diseño aurora gradient preservado
+- [x] Generación de quiz
+  - [x] Desde resumen existente (modal en `/summaries/:id`)
+  - [x] Selector de número de preguntas (5-30)
+  - [x] Integración con endpoint de OpenAI
+  - [ ] Desde archivo nuevo (pendiente - se puede agregar desde `/documents`)
+  - [ ] Selector de tema específico (usa tema del resumen por ahora)
+- [x] Tomar quiz (`/quizzes/:id/attempt`)
+  - [x] Mostrar pregunta actual con opciones A, B, C, D
+  - [x] Feedback inmediato al responder
+    - [x] Indicador visual si es correcta o incorrecta
+    - [x] Mostrar respuesta correcta si falla
+    - [x] Mostrar explicación detallada
+    - [x] Puntaje acumulado en tiempo real
+  - [x] Navegación entre preguntas
+  - [x] Progreso visual con barra y contador (X de Y preguntas)
+  - [x] Auto-inicio de intento al cargar quiz
+  - [x] Botón de siguiente pregunta después de responder
+  - [x] Redirección automática a resultados al terminar
+  - [x] Diseño aurora gradient preservado
+- [x] Resultados de quiz (`/quiz-attempts/:id/results`)
+  - [x] Score final con badge visual y código de colores
+  - [x] Estadísticas: correctas, incorrectas, total
+  - [x] Mensaje personalizado según puntuación
+  - [x] Desglose detallado por pregunta
+    - [x] Pregunta, opciones, respuesta seleccionada
+    - [x] Indicadores visuales de correcto/incorrecto
+    - [x] Explicación de cada pregunta
+  - [x] Botón para volver a resúmenes
+  - [x] Botón para intentar de nuevo
+  - [x] Diseño aurora gradient preservado
+  - [ ] Recomendaciones basadas en resultados (pendiente - puede agregar IA)
 
 ### 2.7 Estadísticas y progreso
 - [ ] Página de estadísticas (`/stats`)
