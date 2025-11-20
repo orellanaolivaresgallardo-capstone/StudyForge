@@ -1,17 +1,12 @@
 // src/pages/login.tsx
 import { useState } from "react";
-
-type LoginResp = { access_token?: string; token?: string; message?: string } | Record<string, unknown>;
-
-const API_BASE =
-  (import.meta as ImportMeta).env?.VITE_API_BASE ?? "http://localhost:8000";
-const AUTH_URL = `${API_BASE}/auth/login`;
-
-// Para páginas sueltas (no router SPA), redirigimos a la HTML real:
-const REDIRECT_URL =
-  (import.meta as ImportMeta).env?.VITE_UPLOAD_REDIRECT_PATH ?? "/src/pages/uploaddocuments.html";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -45,45 +40,22 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(AUTH_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-      });
+      await login(
+        { email: email.trim().toLowerCase(), password },
+        remember
+      );
 
-      const ok = res.status === 200;
-      let data: LoginResp | null = null;
-      try {
-        data = (await res.json()) as LoginResp;
-      } catch {
-        /* ignore parse errors on non-JSON responses */
-      }
-
-      if (ok) {
-        const token =
-          (data as any)?.access_token ??
-          (data as any)?.token ??
-          undefined;
-
-        if (typeof token === "string" && token.length) {
-          // remember = true -> localStorage; false -> sessionStorage
-          (remember ? localStorage : sessionStorage).setItem("sf_token", token);
-          // limpia el otro storage para evitar conflictos
-          (remember ? sessionStorage : localStorage).removeItem("sf_token");
-        }
-
-        showToast("Inicio de sesión exitoso. Redirigiendo…");
-        setTimeout(() => {
-          window.location.href = REDIRECT_URL;
-        }, 700);
-      } else if (res.status === 401) {
+      showToast("Inicio de sesión exitoso. Redirigiendo…");
+      setTimeout(() => {
+        navigate("/documents");
+      }, 700);
+    } catch (err: any) {
+      console.error(err);
+      if (err?.response?.status === 401) {
         showToast("Correo o contraseña incorrectos.");
       } else {
         showToast("No se pudo iniciar sesión. Intenta nuevamente.");
       }
-    } catch (err) {
-      console.error(err);
-      showToast("No se pudo conectar al servidor.");
     } finally {
       setLoading(false);
     }

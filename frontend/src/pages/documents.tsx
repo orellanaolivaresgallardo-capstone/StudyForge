@@ -1,0 +1,266 @@
+// frontend/src/pages/documents.tsx
+/**
+ * Página principal de gestión de documentos.
+ * Conserva el diseño aurora del HTML original.
+ */
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import {
+  listDocuments,
+  uploadDocument as apiUploadDocument,
+  deleteDocument as apiDeleteDocument,
+} from "../services/api";
+import type { DocumentResponse } from "../types/api.types";
+
+export default function DocumentsPage() {
+  const { user, logout } = useAuth();
+  const [documents, setDocuments] = useState<DocumentResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Estado de upload
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  async function loadDocuments() {
+    try {
+      setIsLoading(true);
+      const response = await listDocuments();
+      setDocuments(response.items);
+    } catch (error) {
+      console.error("Error loading documents:", error);
+      showToast("No se pudieron cargar los documentos");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function showToast(msg: string, ms = 2200) {
+    setToast(msg);
+    setTimeout(() => setToast(null), ms);
+  }
+
+  async function handleFileUpload(file: File) {
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const allowedTypes = ["pdf", "docx", "pptx", "txt"];
+    const fileExt = file.name.split(".").pop()?.toLowerCase();
+    if (!fileExt || !allowedTypes.includes(fileExt)) {
+      showToast("Solo se permiten archivos PDF, DOCX, PPTX y TXT");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      await apiUploadDocument(file);
+      showToast("Documento subido con éxito ✅");
+      await loadDocuments();
+    } catch (error: any) {
+      console.error("Error uploading document:", error);
+      if (error?.response?.status === 413) {
+        showToast("El archivo es demasiado grande");
+      } else if (error?.response?.status === 507) {
+        showToast("No tienes suficiente espacio de almacenamiento");
+      } else {
+        showToast("No se pudo subir el documento");
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  async function handleDeleteDocument(id: string, title: string) {
+    const confirmed = confirm(`¿Borrar "${title}"? Esta acción no se puede deshacer.`);
+    if (!confirmed) return;
+
+    try {
+      await apiDeleteDocument(id);
+      showToast("Documento eliminado 🗑️");
+      await loadDocuments();
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      showToast("No se pudo eliminar el documento");
+    }
+  }
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileUpload(file);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 relative overflow-hidden text-slate-50">
+      {/* Aurora background */}
+      <div className="pointer-events-none fixed inset-0 z-0" style={{
+        background: `
+          radial-gradient(1200px 600px at 20% -20%, rgba(139,92,246,0.10), transparent 55%),
+          radial-gradient(900px 500px at 120% 10%, rgba(34,211,238,0.10), transparent 55%),
+          #0b1220
+        `
+      }}></div>
+
+      {/* Header glass */}
+      <header className="sticky top-0 z-20 backdrop-blur-md bg-slate-900/75 border-b border-white/10 shadow-lg">
+        <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-extrabold tracking-tight">StudyForge</h1>
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-slate-300 truncate max-w-[200px]">
+              {user?.email || "Usuario"}
+            </span>
+            <button
+              onClick={logout}
+              className="rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/10 transition"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-10">
+        {/* Upload Zone */}
+        <section className="mx-auto max-w-3xl">
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-6">
+            Sube tu documento
+          </h2>
+
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => document.getElementById("fileInput")?.click()}
+            className={`
+              relative rounded-3xl border-2 border-dashed p-8 text-center cursor-pointer
+              transition-all duration-200
+              ${isDragging
+                ? "border-green-500 bg-green-500/10"
+                : "border-white/15 bg-white/5 hover:border-white/25 hover:bg-white/10"
+              }
+              ${isUploading ? "opacity-50 pointer-events-none" : ""}
+            `}
+          >
+            <input
+              id="fileInput"
+              type="file"
+              accept=".pdf,.docx,.pptx,.txt"
+              className="hidden"
+              onChange={handleFileInputChange}
+              disabled={isUploading}
+            />
+            <p className="text-slate-300">
+              {isUploading ? (
+                <>Subiendo...</>
+              ) : (
+                <>
+                  Arrastra un <strong>PDF, DOCX, PPTX o TXT</strong> o haz click para seleccionar
+                </>
+              )}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Máximo {user?.max_file_size_bytes ? Math.round(user.max_file_size_bytes / 1024 / 1024) : 50} MB por archivo
+            </p>
+          </div>
+        </section>
+
+        {/* Documents List */}
+        <section className="mx-auto max-w-3xl">
+          <div className="flex items-end justify-between mb-4">
+            <h2 className="text-2xl font-bold tracking-tight">Mis documentos</h2>
+            <div className="text-sm text-slate-400">
+              Total: <span className="text-white font-medium">{documents.length}</span>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <div className="animate-pulse space-y-2">
+                    <div className="h-5 w-1/3 bg-slate-700 rounded"></div>
+                    <div className="h-4 w-2/3 bg-slate-700 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6 text-slate-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 7.5l8.485-4.243a2 2 0 011.03-.257L21 3.75M3 7.5V18a2.25 2.25 0 002.25 2.25H18A2.25 2.25 0 0020.25 18V6M3 7.5l9 4.5 8.25-4.125"
+                />
+              </svg>
+              <div>
+                <div className="font-medium text-slate-200">Aún no tienes documentos</div>
+                <div className="text-slate-400 text-xs">Sube uno arriba para comenzar</div>
+              </div>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {documents.map((doc) => (
+                <li
+                  key={doc.id}
+                  className="rounded-2xl bg-white/5 border border-white/10 p-4 hover:bg-white/10 hover:border-white/16 transition"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-white truncate">{doc.title}</h3>
+                      <p className="text-sm text-slate-400 mt-1">
+                        {doc.file_type.toUpperCase()} • {Math.round(doc.file_size_bytes / 1024)} KB
+                        {" • "}
+                        {new Date(doc.created_at).toLocaleDateString("es-ES")}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteDocument(doc.id, doc.title)}
+                      className="shrink-0 rounded-lg px-3 py-1.5 text-sm text-rose-400 hover:bg-rose-500/10 transition"
+                    >
+                      Borrar
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
+
+      {/* Toast */}
+      {toast && (
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-slate-900/90 border border-white/10 px-4 py-3 text-sm text-white shadow-lg">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}

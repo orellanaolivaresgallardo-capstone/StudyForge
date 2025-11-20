@@ -7,28 +7,37 @@ import {
   Navigate,
 } from "react-router-dom";
 import "./index.css";
-
-// Si usas estas páginas en rutas SPA:
-import Home from "./pages/home";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/login";
 import SignUp from "./pages/signup";
+import DocumentsPage from "./pages/documents";
 import ErrorPage from "./pages/ErrorPage";
 
-// NO tocamos #landing. Solo montamos si existe #root y si esta página fue diseñada para SPA.
-const rootEl = document.getElementById("root");
-
-// Puedes ajustar las rutas si usas SPA en otras páginas.
 const router = createBrowserRouter([
-  { path: "/", element: <Home />, errorElement: <ErrorPage /> },
+  { path: "/", element: <Navigate to="/documents" replace /> },
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <SignUp /> },
+  {
+    path: "/documents",
+    element: (
+      <ProtectedRoute>
+        <DocumentsPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
   { path: "*", element: <Navigate to="/" replace /> },
 ]);
+
+const rootEl = document.getElementById("root");
 
 if (rootEl) {
   createRoot(rootEl).render(
     <StrictMode>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </StrictMode>
   );
 }

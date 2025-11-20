@@ -1,25 +1,15 @@
 // src/pages/signup.tsx
 import { useRef, useState } from "react";
-
-type ApiResponse =
-  | { access_token?: string; token?: string; message?: string }
-  | Record<string, unknown>;
-
-const API_BASE =
-  (import.meta.env?.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
-const SIGNUP_URL = `${API_BASE}/auth/signup`;
-const LOGIN_URL  = `${API_BASE}/auth/login`;
-
-// Redirección a la página HTML real de documentos
-const REDIRECT_URL =
-  (import.meta.env?.VITE_UPLOAD_REDIRECT_PATH as string | undefined) ??
-  "/src/pages/uploaddocuments.html";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function SignupPage() {
+  const navigate = useNavigate();
+  const { signup } = useAuth();
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState(""); // UI-only (no lo envía al backend actual)
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const [showPass, setShowPass] = useState(false);
@@ -44,12 +34,10 @@ export default function SignupPage() {
     const emailValid = /\S+@\S+\.\S+/.test(email.trim());
     if (!emailValid) setEmailErr("Ingresa un correo electrónico válido.");
 
-    // username es solo de UI; puedes validarlo o dejarlo opcional
     const userValid =
-      username.length === 0 || // opcional
-      (username.length >= 3 &&
-        username.length <= 24 &&
-        /^[a-zA-Z0-9_.]+$/.test(username));
+      username.length >= 3 &&
+      username.length <= 24 &&
+      /^[a-zA-Z0-9_.]+$/.test(username);
     if (!userValid)
       setUserErr(
         'El nombre de usuario debe tener 3–24 caracteres y solo letras, números, "_" o "."'
@@ -68,51 +56,28 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      // 1) Crear cuenta (backend solo espera email + password)
-      const res = await fetch(SIGNUP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-      });
-
-      const ok = res.status === 201;
-      if (!ok) {
-        if (res.status === 409) {
-          showToast("Ese correo ya existe.");
-        } else if (res.status === 400) {
-          showToast("Datos inválidos. Revisa el formulario.");
-        } else {
-          showToast("No se pudo crear la cuenta. Intenta nuevamente.");
-        }
-        return;
-      }
-
-      // 2) Auto-login
-      try {
-        const res2 = await fetch(LOGIN_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-        });
-        if (res2.ok) {
-          const d2 = (await res2.json()) as ApiResponse;
-          const token = (d2 as any)?.access_token ?? (d2 as any)?.token;
-          if (typeof token === "string" && token.length) {
-            localStorage.setItem("sf_token", token);
-            sessionStorage.removeItem("sf_token");
-          }
-        }
-      } catch {
-        /* si falla el auto-login, igual seguimos */
-      }
+      await signup(
+        {
+          email: email.trim().toLowerCase(),
+          username: username.trim(),
+          password,
+        },
+        true
+      );
 
       showToast("Cuenta creada con éxito. Redirigiendo…");
       setTimeout(() => {
-        window.location.href = REDIRECT_URL;
+        navigate("/documents");
       }, 800);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      showToast("Error de red o servidor no disponible.");
+      if (err?.response?.status === 409) {
+        showToast("Ese correo ya existe.");
+      } else if (err?.response?.status === 400) {
+        showToast("Datos inválidos. Revisa el formulario.");
+      } else {
+        showToast("No se pudo crear la cuenta. Intenta nuevamente.");
+      }
     } finally {
       setLoading(false);
     }

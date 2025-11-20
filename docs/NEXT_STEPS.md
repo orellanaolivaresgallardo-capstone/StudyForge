@@ -1,8 +1,10 @@
 # NEXT_STEPS — Próximos pasos inmediatos
 
-**Última actualización:** 2025-11-19
+**Última actualización:** 2025-01-19
 
-**Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas. **Fase 0.1, 0.2 y 0.3 COMPLETADAS**. Sistema multi-documento funcionando con logging estructurado integrado, rate limiting implementado, y validación de archivos con magic numbers para seguridad.
+**Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas. **Fases 0.1, 0.2, 0.3 COMPLETADAS**. Sistema multi-documento funcionando con logging estructurado integrado, rate limiting implementado, y validación de archivos con magic numbers para seguridad.
+
+**Frontend en progreso**: **Fase 2.1 y 2.2 COMPLETADAS**. AuthContext implementado, páginas de login/signup actualizadas, tipos TypeScript completos, cliente API con axios. Página de documentos básica funcionando con upload drag-and-drop y lista. Diseño aurora gradient preservado.
 
 ---
 
@@ -102,56 +104,60 @@
 
 ## Fase 2 — Frontend básico (MVP)
 
-### 2.1 Configuración inicial
-- [ ] Revisar y actualizar dependencias del frontend
-- [ ] Configurar cliente HTTP (axios/fetch) apuntando a `http://localhost:8000`
-- [ ] Configurar manejo de tokens JWT (localStorage/sessionStorage)
-- [ ] Implementar contexto de autenticación con React Context
+### 2.1 Configuración inicial ✅ COMPLETADO
+- [x] Revisar y actualizar dependencias del frontend
+- [x] Configurar cliente HTTP (axios) apuntando a `http://localhost:8000`
+- [x] Configurar manejo de tokens JWT (localStorage/sessionStorage)
+- [x] Implementar contexto de autenticación con React Context (`AuthContext`)
+- [x] Implementar tipos TypeScript completos (`api.types.ts`)
+- [x] Crear servicio API completo (`api.ts`) con interceptors JWT
 
-### 2.2 Páginas de autenticación
-- [ ] Página de registro (`/register`)
-  - [ ] Formulario con email, username, password
-  - [ ] Validación client-side
-  - [ ] Manejo de errores (email duplicado, etc.)
-- [ ] Página de login (`/login`)
-  - [ ] Formulario de login
-  - [ ] Guardar token en localStorage
-  - [ ] Redirección a dashboard
-- [ ] Página de perfil (`/profile`)
+### 2.2 Páginas de autenticación ✅ COMPLETADO
+- [x] Página de registro (`/signup`)
+  - [x] Formulario con email, username, password
+  - [x] Validación client-side
+  - [x] Manejo de errores (email duplicado, etc.)
+  - [x] Diseño aurora gradient preservado
+  - [x] Integración con AuthContext
+  - [x] Redirección a /documents
+- [x] Página de login (`/login`)
+  - [x] Formulario de login
+  - [x] Guardar token en localStorage/sessionStorage
+  - [x] Redirección a /documents
+  - [x] Diseño aurora gradient preservado
+  - [x] Integración con AuthContext
+- [x] ProtectedRoute component para rutas privadas
+- [ ] Página de perfil (`/profile`) (pendiente)
   - [ ] Mostrar información del usuario
   - [ ] Botón de logout
 
-### 2.3 Dashboard principal
-- [ ] Layout con navegación
-- [ ] Resumen de estadísticas del usuario
-  - [ ] Total de documentos almacenados
-  - [ ] Total de resúmenes creados
-  - [ ] Total de quizzes realizados
-  - [ ] Score promedio
-  - [ ] **Indicador de uso de almacenamiento** (barra de progreso)
-- [ ] Acceso rápido a funcionalidades principales
+### 2.3 Dashboard principal (OMITIDO - /documents es el dashboard)
+- [x] Redirigir `/` → `/documents` directamente
+- [x] Layout básico con header glass morphism
+- [x] Botón de logout en header
 
-### 2.4 Gestión de documentos
-- [ ] Página de lista de documentos (`/documents`)
-  - [ ] Cards con título, tipo de archivo, tamaño, fecha
-  - [ ] **Indicador visual de uso de cuota** en header
-  - [ ] Búsqueda por título
-  - [ ] Filtros por tipo de archivo
-  - [ ] Botón para subir nuevo documento
-- [ ] Modal/Página de upload de documento (`/documents/upload`)
-  - [ ] Drag & drop o selector de archivos
-  - [ ] **Validación client-side de tamaño contra cuota disponible**
-  - [ ] Preview del archivo seleccionado
-  - [ ] Campo de título (opcional)
-  - [ ] Loading state durante upload
-  - [ ] Manejo de errores (cuota excedida, archivo muy grande)
-- [ ] Vista detallada de documento (`/documents/:id`)
+### 2.4 Gestión de documentos ✅ PARCIALMENTE COMPLETADO
+- [x] Página de lista de documentos (`/documents`)
+  - [x] Cards con título, tipo de archivo, tamaño, fecha
+  - [ ] **Indicador visual de uso de cuota** en header (pendiente)
+  - [ ] Búsqueda por título (pendiente)
+  - [ ] Filtros por tipo de archivo (pendiente)
+  - [x] Botón para subir nuevo documento (integrado en mismo view)
+- [x] Zona de upload de documento (inline en `/documents`)
+  - [x] Drag & drop y selector de archivos
+  - [x] **Validación client-side de tamaño contra cuota disponible**
+  - [ ] Preview del archivo seleccionado (pendiente)
+  - [ ] Campo de título (pendiente - usa filename por defecto)
+  - [x] Loading state durante upload
+  - [x] Manejo de errores (cuota excedida, archivo muy grande)
+  - [x] Diseño aurora gradient preservado
+- [ ] Vista detallada de documento (`/documents/:id`) (pendiente)
   - [ ] Información del documento (nombre, tipo, tamaño, fecha)
   - [ ] Botón para editar título
   - [ ] Botón para generar resumen desde este documento
-  - [ ] Botón eliminar con confirmación
+  - [x] Botón eliminar con confirmación (implementado inline en lista)
   - [ ] **Mostrar texto extraído** (opcional, preview)
-- [ ] **Widget de cuotas en sidebar/header**
+- [ ] **Widget de cuotas en sidebar/header** (pendiente)
   - [ ] Barra de progreso de almacenamiento usado
   - [ ] Texto: "X MB de Y GB usados"
   - [ ] Link a página de configuración/upgrade
