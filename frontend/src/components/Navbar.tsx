@@ -60,6 +60,12 @@ export default function Navbar() {
                 >
                   Cuestionarios
                 </Link>
+                <Link
+                  to="/stats"
+                  className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                >
+                  Estadísticas
+                </Link>
 
                 {/* Quota Widget (compact mode) */}
                 <QuotaWidget compact className="min-w-[200px]" />
@@ -207,6 +213,13 @@ export default function Navbar() {
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Cuestionarios
+                </Link>
+                <Link
+                  to="/stats"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-colors"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  Estadísticas
                 </Link>
                 <Link
                   to="/profile"

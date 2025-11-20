@@ -4,7 +4,7 @@
 
 **Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas. **Fases 0.1, 0.2, 0.3 COMPLETADAS**. Sistema multi-documento funcionando con logging estructurado integrado, rate limiting implementado, y validación de archivos con magic numbers para seguridad.
 
-**Frontend MVP COMPLETO**: **Fases 2.1, 2.2, 2.4, 2.5 y 2.6 COMPLETADAS AL 100%**. Sistema completo de autenticación, gestión de documentos con drag-and-drop, sistema de resúmenes (lista, creación desde documentos, vista detallada), y sistema de quizzes completo (lista de quizzes, generación, toma con feedback inmediato, resultados detallados). Navbar actualizada con todos los enlaces. Diseño aurora gradient preservado en toda la aplicación. **Flujo end-to-end completamente funcional**: documento → resumen → quiz → resultados.
+**Frontend MVP COMPLETO**: **Fases 2.1, 2.2, 2.4, 2.5, 2.6 y 2.7 COMPLETADAS AL 100%**. Sistema completo de autenticación, gestión de documentos con drag-and-drop, sistema de resúmenes (lista, creación desde documentos, vista detallada), sistema de quizzes completo (lista de quizzes, generación, toma con feedback inmediato, resultados detallados), y dashboard de estadísticas con progreso por tema y historial de intentos. Navbar actualizada con todos los enlaces. Diseño aurora gradient preservado en toda la aplicación. **Flujo end-to-end completamente funcional**: documento → resumen → quiz → resultados → estadísticas.
 
 ---
 
@@ -237,10 +237,25 @@
   - [x] Diseño aurora gradient preservado
   - [ ] Recomendaciones basadas en resultados (pendiente - puede agregar IA)
 
-### 2.7 Estadísticas y progreso
-- [ ] Página de estadísticas (`/stats`)
-  - [ ] Gráfica de progreso por tema
-  - [ ] Historial de intentos recientes
+### 2.7 Estadísticas y progreso ✅ COMPLETADO AL 100%
+- [x] **Página de estadísticas** (`/stats`)
+  - [x] Cards de resumen con totales (resúmenes, quizzes, intentos)
+  - [x] Promedio general y mejor score con código de colores
+  - [x] Temas únicos estudiados
+  - [x] Gráfica/sección de progreso por tema
+    - [x] Visualización de promedio, máximo y mínimo por tema
+    - [x] Barra de progreso por tema con colores
+    - [x] Contador de intentos por tema
+  - [x] Historial de intentos recientes (configurable con limit)
+    - [x] Últimos 10 intentos con score, dificultad y fecha
+    - [x] Click para ver detalles de intento
+    - [x] Badges de dificultad con código de colores
+  - [x] Empty state cuando no hay datos
+  - [x] Enlace en Navbar (desktop y mobile)
+  - [x] Diseño aurora gradient preservado
+  - [x] Integración con endpoints /stats/summary, /stats/progress, /stats/performance
+  - [ ] Gráficas avanzadas con librería (Chart.js/Recharts) - opcional
+  - [ ] Exportar datos a CSV/PDF - pendiente
   - [ ] Evolución de dificultad adaptativa
   - [ ] Temas que requieren más práctica
 

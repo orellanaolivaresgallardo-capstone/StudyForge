@@ -34,8 +34,8 @@ import type {
   QuizAttemptAnswerFeedback,
   QuizAttemptResultsResponse,
   // Stats
-  TopicProgress,
-  PerformanceHistory,
+  UserProgress,
+  UserPerformance,
   StatsSummary,
   // Health
   HealthResponse,
@@ -368,14 +368,15 @@ export async function getQuizAttemptResults(
 
 // ---------- STATS ----------
 
-export async function getTopicProgress(): Promise<TopicProgress[]> {
-  const response = await apiClient.get<TopicProgress[]>("/stats/progress");
+export async function getUserProgress(): Promise<UserProgress> {
+  const response = await apiClient.get<UserProgress>("/stats/progress");
   return response.data;
 }
 
-export async function getPerformanceHistory(): Promise<PerformanceHistory[]> {
-  const response = await apiClient.get<PerformanceHistory[]>(
-    "/stats/performance"
+export async function getUserPerformance(limit: number = 10): Promise<UserPerformance> {
+  const response = await apiClient.get<UserPerformance>(
+    "/stats/performance",
+    { params: { limit } }
   );
   return response.data;
 }

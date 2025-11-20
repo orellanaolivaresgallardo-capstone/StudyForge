@@ -18,6 +18,7 @@ import SummaryDetailPage from "./pages/SummaryDetail";
 import QuizzesPage from "./pages/Quizzes";
 import QuizAttemptPage from "./pages/QuizAttempt";
 import QuizResultsPage from "./pages/QuizResults";
+import StatsPage from "./pages/Stats";
 import ErrorPage from "./pages/ErrorPage";
 
 const router = createBrowserRouter([
@@ -47,6 +48,15 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <SummaryDetailPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/stats",
+    element: (
+      <ProtectedRoute>
+        <StatsPage />
       </ProtectedRoute>
     ),
     errorElement: <ErrorPage />,
