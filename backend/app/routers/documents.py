@@ -1,5 +1,5 @@
 ﻿# app/routers/documents.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -10,6 +10,14 @@ from app.repositories.models import User
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 service = DocumentService()
+
+@router.post("/extract-text")
+async def extract_text(
+    file: UploadFile = File(...)
+):
+    from app.services.document_service import DocumentService
+    service = DocumentService()
+    return await service.extract_text_from_file(file)
 
 @router.get("", response_model=DocumentListOut, summary="List documents (only mine)")
 def list_documents(

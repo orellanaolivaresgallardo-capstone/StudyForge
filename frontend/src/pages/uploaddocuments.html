@@ -427,7 +427,7 @@
            class="tilt dashed-anim relative rounded-3xl border-2 border-dashed border-white/15 bg-white/5 p-8 transition text-center overflow-hidden">
         <p class="text-slate-300">Arrastra un <strong>.txt</strong> o haz click para seleccionar</p>
         <p class="text-xs text-slate-400 mt-1">Detectaremos título, descripción y contenido automáticamente.</p>
-        <input id="fileInput" type="file" accept=".txt,text/plain" class="hidden" />
+        <input id="fileInput" type="file" accept=".txt,.pdf,.docx" class="hidden" />
         <!-- badge de éxito -->
         <div id="successBadge" class="pointer-events-none hidden absolute inset-0 grid place-items-center">
           <div class="success-pop rounded-full bg-emerald-500/90 px-5 py-2 font-semibold shadow-2xl">
@@ -717,15 +717,54 @@
   dropZone.addEventListener("drop", async (e)=>{ e.preventDefault(); dropZone.classList.remove("drop-accept"); const file = e.dataTransfer.files?.[0]; if (!file) return; await handleFile(file); });
   fileInput.addEventListener("change", async (e)=>{ const file = e.target.files?.[0]; if (!file) return; await handleFile(file); });
 
-  async function handleFile(file){
-    try {
-      if (!(file?.name?.toLowerCase().endsWith(".txt") || file?.type?.startsWith("text/"))) { showToast("Solo aceptamos .txt por ahora."); return; }
+  async function handleFile(file) {
+  try {
+    const name = file.name.toLowerCase();
+
+    // === CASO 1: TXT (se procesa localmente, como antes)
+    if (name.endsWith(".txt")) {
       const text = await readFileAsTextSmart(file);
       const meta = extractMetaFromFile(file, text);
       prepared = { ...meta, content: text };
-      armGlow(true); showActions(); btnCreate.disabled = false;
-    } catch (err) { console.error("lectura falló:", err); showToast("No se pudo leer el archivo (¿vacío?)."); }
+      armGlow(true);
+      showActions();
+      btnCreate.disabled = false;
+      return;
+    }
+
+    // === CASO 2: PDF / DOCX (se procesan en el backend)
+    if (name.endsWith(".pdf") || name.endsWith(".docx")) {
+      const form = new FormData();
+      form.append("file", file);
+
+      const res = await fetch(`${API_BASE}/documents/extract-text`, {
+        method: "POST",
+        headers: { ...authHeaders() }, // NO pongas content-type, se rompe
+        body: form
+      });
+
+      if (!res.ok) {
+        showToast("No se pudo procesar el archivo PDF/DOCX.");
+        return;
+      }
+
+      const data = await res.json();
+      prepared = data;
+
+      armGlow(true);
+      showActions();
+      btnCreate.disabled = false;
+      return;
+    }
+
+    // === Si no es TXT / PDF / DOCX
+    showToast("Formato no permitido. Usa TXT, PDF o DOCX.");
+
+  } catch (err) {
+    console.error("lectura falló:", err);
+    showToast("No se pudo leer el archivo.");
   }
+}
 
   // ==== API (CRUD) ====
   async function listDocuments(){ const r = await apiFetch("/documents"); if(!r.ok) throw new Error("list"); return r.json(); }
