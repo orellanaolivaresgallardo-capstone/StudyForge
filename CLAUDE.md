@@ -101,15 +101,29 @@ StudyForge/
 ├── frontend/                          # Interfaz React
 │   ├── src/
 │   │   ├── components/               # Componentes reutilizables
+│   │   │   ├── Navbar.tsx           # Barra de navegación
+│   │   │   ├── ProtectedRoute.tsx   # Guard de autenticación
+│   │   │   └── QuotaWidget.tsx      # Widget de cuotas
+│   │   ├── context/                  # Context API
+│   │   │   └── AuthContext.tsx      # Estado de autenticación
 │   │   ├── pages/                    # Páginas de la app
-│   │   ├── services/                 # Cliente API
-│   │   ├── App.tsx                   # Componente raíz
-│   │   └── main.tsx                  # Punto de entrada
-│   ├── public/                       # Archivos estáticos
-│   ├── package.json                  # Dependencias npm
-│   ├── tsconfig.json                 # Config TypeScript
-│   ├── vite.config.ts                # Config de Vite
-│   └── tailwind.config.js            # Config de Tailwind
+│   │   │   ├── login.tsx            # Login
+│   │   │   ├── signup.tsx           # Registro
+│   │   │   ├── documents.tsx        # Gestión de documentos
+│   │   │   ├── summaries.tsx        # Lista de resúmenes
+│   │   │   ├── SummaryDetail.tsx    # Detalle de resumen
+│   │   │   ├── Quizzes.tsx          # Lista de quizzes
+│   │   │   ├── QuizAttempt.tsx      # Tomar quiz
+│   │   │   ├── QuizResults.tsx      # Resultados de quiz
+│   │   │   └── Stats.tsx            # Dashboard estadísticas
+│   │   ├── services/                 # Servicios de API
+│   │   │   └── api.ts               # Cliente Axios
+│   │   ├── types/                    # TypeScript types
+│   │   │   └── api.types.ts         # Tipos de API
+│   │   └── main.tsx                 # Entry point
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── tailwind.config.cjs
 │
 ├── docs/                              # Documentación
 │   ├── ARCHITECTURE.md               # Arquitectura detallada
@@ -425,24 +439,72 @@ class QuizService:
 
 ## Arquitectura del Frontend
 
-El frontend es una **Single Page Application (SPA)** construida con React:
+El frontend es una **Single Page Application (SPA)** construida con React 19:
 
 ```
 ┌─────────────────────────────────────────────────┐
 │                   Pages                         │
 │         (Componentes de vista completa)         │
+│  login, signup, documents, summaries,           │
+│  SummaryDetail, Quizzes, QuizAttempt,          │
+│  QuizResults, Stats                             │
 └────────────────┬────────────────────────────────┘
                  │
 ┌────────────────▼────────────────────────────────┐
 │               Components                        │
 │          (Componentes reutilizables)            │
+│  Navbar, ProtectedRoute, QuotaWidget            │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│             Context API                         │
+│      AuthContext (estado global de auth)        │
 └────────────────┬────────────────────────────────┘
                  │
 ┌────────────────▼────────────────────────────────┐
 │               Services                          │
 │         (Cliente API con Axios)                 │
+│  Interceptores JWT, tipos TypeScript            │
 └─────────────────────────────────────────────────┘
 ```
+
+### Páginas Implementadas (MVP Completo)
+
+1. **Autenticación**:
+   - `/login` - Login con validación de formulario
+   - `/signup` - Registro de nuevos usuarios
+
+2. **Documentos** (`/documents`):
+   - Upload con drag-and-drop
+   - Validación de cuotas (tamaño, almacenamiento)
+   - Lista de documentos con cards
+   - Edición de título y eliminación
+
+3. **Resúmenes**:
+   - `/summaries` - Lista con topics y conceptos clave
+   - Modal para crear desde documentos existentes
+   - `/summaries/:id` - Vista detallada con documentos fuente
+   - Generación de quiz desde resumen
+
+4. **Quizzes**:
+   - `/quizzes` - Lista con badges de dificultad (1-5)
+   - `/quizzes/:id/attempt` - Tomar quiz con feedback inmediato
+   - `/quiz-attempts/:id/results` - Resultados con score y revisión
+
+5. **Estadísticas** (`/stats`):
+   - Cards de resumen (totales, promedios, mejor score)
+   - Progreso por tema con barras animadas
+   - Historial de intentos recientes
+
+### Características del Frontend
+
+- **Diseño**: Aurora gradient background en todas las páginas
+- **Navbar**: Glass morphism con links y QuotaWidget
+- **Routing**: React Router v7 con ProtectedRoute
+- **Estado**: AuthContext para autenticación global
+- **API**: Axios con interceptores JWT automáticos
+- **Validación**: Feedback inmediato en formularios
+- **Responsive**: Tailwind CSS con mobile-first
 
 ### Estructura de Servicios
 

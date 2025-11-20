@@ -1,8 +1,10 @@
 # StudyForge — Resumen de contexto
 
-**Última actualización:** 2025-01-19
+**Última actualización:** 2025-11-19
 
 **Branch actual:** `remake`
+
+**Estado:** Frontend MVP completado al 100%
 
 Este documento resume el estado actual del proyecto StudyForge, una aplicación web de apoyo al aprendizaje con IA que genera resúmenes adaptativos y quizzes inteligentes a partir de documentos.
 
@@ -172,17 +174,28 @@ StudyForge es una plataforma educativa que utiliza inteligencia artificial para:
 - [x] Type hints corregidos para SQLAlchemy
 
 ### ⏳ En progreso
-- [ ] Frontend React (pendiente)
 - [ ] Tests unitarios y de integración
 - [ ] Deployment en staging
 
+### ✅ Frontend MVP completado (100%)
+- [x] Sistema de autenticación (login/signup)
+- [x] Gestión de documentos con drag-and-drop
+- [x] Sistema de resúmenes (lista, creación, detalle)
+- [x] Sistema de quizzes (lista, generación, toma, resultados)
+- [x] Dashboard de estadísticas (progreso por tema, historial)
+- [x] Navbar con navegación completa
+- [x] Diseño aurora gradient en todas las páginas
+- [x] Integración completa con API backend
+- [x] QuotaWidget para monitoreo de almacenamiento
+
 ### 📋 Pendiente
-- [ ] Frontend completo
-- [ ] Testing comprehensivo
+- [ ] Testing comprehensivo (unit + integration + E2E)
 - [ ] CI/CD pipeline
 - [ ] Deployment en producción
 - [ ] Optimizaciones de performance
 - [ ] Features avanzadas (spaced repetition, gamification, etc.)
+- [ ] Página de perfil de usuario
+- [ ] Filtros y búsqueda en listas
 
 ---
 
@@ -237,12 +250,27 @@ python -c "from sqlalchemy import create_engine, text; ..."
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### Frontend (cuando esté implementado)
+### Frontend
 ```bash
 cd frontend
 pnpm install
+
+# Desarrollo (puerto 5173)
 pnpm dev
+
+# Build para producción
+pnpm run build
+
+# Preview del build
+pnpm run preview
 ```
+
+**Variables de entorno** (`.env.local`):
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+**Aplicación:** [http://localhost:5173](http://localhost:5173)
 
 ---
 
@@ -267,9 +295,10 @@ Consultar [docs/DECISIONS.md](DECISIONS.md) para detalles completos:
 ## 9) Próximos pasos
 
 ### Inmediatos (1-2 semanas)
-1. Implementar frontend MVP (auth + summaries + quizzes)
-2. Escribir tests básicos del backend
-3. Deploy en ambiente de staging
+1. ~~Implementar frontend MVP (auth + summaries + quizzes)~~ ✅ COMPLETADO
+2. Implementar página de perfil de usuario
+3. Escribir tests básicos del backend
+4. Deploy en ambiente de staging
 
 ### Corto plazo (1 mes)
 1. Testing completo (unit + integration + E2E)
@@ -307,6 +336,7 @@ Ver [docs/ROADMAP.md](ROADMAP.md) para plan completo.
 
 ---
 
-**Última compilación:** 2025-01-19
+**Última compilación:** 2025-11-19
 **Branch:** remake
 **Versión:** 2.0.0 (reimplementación completa)
+**Estado:** Frontend MVP 100% funcional, backend completo, listo para testing y deployment

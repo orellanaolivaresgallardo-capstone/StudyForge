@@ -211,7 +211,10 @@ Una vez configurado el entorno:
 1. ✅ Base de datos configurada
 2. ✅ Migraciones aplicadas
 3. ✅ Backend corriendo
-4. ⏳ Implementar endpoints de API
-5. ⏳ Desarrollar frontend
+4. ✅ Endpoints de API implementados
+5. ✅ Frontend MVP completado
+6. ⏳ Escribir tests
+7. ⏳ Deployment a staging/producción
 
 Ver [README.md](README.md) para más detalles sobre el proyecto.
+Ver [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) para el roadmap completo.

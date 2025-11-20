@@ -201,11 +201,26 @@ StudyForge/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/       # Componentes React
-│   │   ├── pages/            # Páginas
+│   │   │   ├── Navbar.tsx    # Barra de navegación
+│   │   │   ├── ProtectedRoute.tsx  # Guard de autenticación
+│   │   │   └── QuotaWidget.tsx     # Widget de cuotas
+│   │   ├── context/          # Context API
+│   │   │   └── AuthContext.tsx     # Estado de autenticación
+│   │   ├── pages/            # Páginas principales
+│   │   │   ├── login.tsx     # Login
+│   │   │   ├── signup.tsx    # Registro
+│   │   │   ├── documents.tsx # Gestión de documentos
+│   │   │   ├── summaries.tsx # Lista de resúmenes
+│   │   │   ├── SummaryDetail.tsx # Detalle de resumen
+│   │   │   ├── Quizzes.tsx   # Lista de quizzes
+│   │   │   ├── QuizAttempt.tsx   # Tomar quiz
+│   │   │   ├── QuizResults.tsx   # Resultados
+│   │   │   └── Stats.tsx     # Estadísticas
 │   │   ├── services/         # Servicios API
-│   │   ├── hooks/            # Custom hooks
-│   │   ├── utils/            # Utilidades
-│   │   └── App.tsx
+│   │   │   └── api.ts        # Cliente Axios
+│   │   ├── types/            # TypeScript types
+│   │   │   └── api.types.ts  # Tipos de API
+│   │   └── main.tsx          # Entry point
 │   ├── package.json
 │   └── vite.config.ts
 │
@@ -289,19 +304,34 @@ Ver documentación en `docs/deployment/gcp.md` (próximamente)
 
 ## 🗺️ Roadmap
 
+### Backend ✅
 - [x] Arquitectura y diseño del sistema
 - [x] Modelos de base de datos
 - [x] Configuración de migraciones
-- [ ] Sistema de autenticación
-- [ ] Procesamiento de archivos
-- [ ] Integración con OpenAI
-- [ ] Generación de resúmenes
-- [ ] Generación de cuestionarios
-- [ ] Sistema adaptativo
-- [ ] Frontend completo
+- [x] Sistema de autenticación JWT
+- [x] Procesamiento de archivos (PDF/DOCX/PPTX/TXT)
+- [x] Integración con OpenAI GPT-4o-mini
+- [x] Generación de resúmenes adaptativos
+- [x] Generación de cuestionarios
+- [x] Sistema adaptativo de dificultad
+- [x] Sistema de cuotas por usuario
+- [x] API documentada con Swagger/OpenAPI
+
+### Frontend MVP ✅
+- [x] Sistema de autenticación (login/signup)
+- [x] Gestión de documentos con drag-and-drop
+- [x] Sistema de resúmenes (lista, creación, detalle)
+- [x] Sistema de quizzes (lista, generación, toma, resultados)
+- [x] Dashboard de estadísticas
+- [x] Diseño responsivo con Tailwind CSS
+- [x] Integración completa con API backend
+
+### Pendiente 📋
+- [ ] Página de perfil de usuario
 - [ ] Tests unitarios
 - [ ] Tests de integración
-- [ ] Documentación API
+- [ ] Tests E2E
+- [ ] CI/CD pipeline
 - [ ] Deployment a producción
 
 ---
