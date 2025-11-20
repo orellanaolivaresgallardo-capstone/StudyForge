@@ -14,6 +14,7 @@ import Login from "./pages/login";
 import SignUp from "./pages/signup";
 import DocumentsPage from "./pages/documents";
 import SummariesPage from "./pages/summaries";
+import SummaryDetailPage from "./pages/SummaryDetail";
 import ErrorPage from "./pages/ErrorPage";
 
 const router = createBrowserRouter([
@@ -34,6 +35,15 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <SummariesPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/summaries/:id",
+    element: (
+      <ProtectedRoute>
+        <SummaryDetailPage />
       </ProtectedRoute>
     ),
     errorElement: <ErrorPage />,

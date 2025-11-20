@@ -1,10 +1,10 @@
 # NEXT_STEPS — Próximos pasos inmediatos
 
-**Última actualización:** 2025-01-19
+**Última actualización:** 2025-11-19
 
 **Estado actual:** Backend completamente funcional con todos los endpoints implementados y probados. Base de datos configurada, migraciones aplicadas, autenticación funcionando. Sistema de documentos y cuotas implementado, validaciones de ownership centralizadas. **Fases 0.1, 0.2, 0.3 COMPLETADAS**. Sistema multi-documento funcionando con logging estructurado integrado, rate limiting implementado, y validación de archivos con magic numbers para seguridad.
 
-**Frontend en progreso**: **Fase 2.1 y 2.2 COMPLETADAS**. AuthContext implementado, páginas de login/signup actualizadas, tipos TypeScript completos, cliente API con axios. Página de documentos básica funcionando con upload drag-and-drop y lista. Diseño aurora gradient preservado.
+**Frontend en progreso**: **Fases 2.1, 2.2, 2.4 y 2.5 COMPLETADAS**. AuthContext implementado, páginas de login/signup actualizadas, tipos TypeScript completos, cliente API con axios. Página de documentos básica funcionando con upload drag-and-drop y lista. Sistema completo de gestión de resúmenes: lista de resúmenes, creación desde documentos existentes (modal), y vista detallada con documentos fuente. Diseño aurora gradient preservado en toda la aplicación.
 
 ---
 
@@ -162,32 +162,39 @@
   - [ ] Texto: "X MB de Y GB usados"
   - [ ] Link a página de configuración/upgrade
 
-### 2.5 Gestión de resúmenes
-- [ ] Página de generación de resumen (`/summaries/new`)
-  - [ ] **Opción 1: Upload nuevo documento** (legacy, genera y almacena)
+### 2.5 Gestión de resúmenes ✅ COMPLETADO
+- [x] Página de generación de resumen (modal integrado en `/summaries`)
+  - [x] **Opción 2: Desde documentos existentes** (flujo principal implementado)
+    - [x] Selector múltiple de documentos (hasta max_documents_per_summary)
+    - [x] Validación de límite configurable
+    - [x] Selector de nivel de expertise
+    - [x] Preview de documentos seleccionados
+    - [x] Loading state durante generación
+  - [ ] **Opción 1: Upload nuevo documento** (pendiente, disponible en `/documents`)
     - [ ] Drag & drop o selector de archivos
     - [ ] Selector de nivel de expertise
     - [ ] Preview del archivo seleccionado
     - [ ] Loading state durante procesamiento
     - [ ] Manejo de errores (OpenAI quota, archivo inválido)
-  - [ ] **Opción 2: Desde documentos existentes** (nuevo flujo)
-    - [ ] Selector múltiple de documentos (hasta max_documents_per_summary)
-    - [ ] Validación de límite configurable
-    - [ ] Selector de nivel de expertise
-    - [ ] Preview de documentos seleccionados
-    - [ ] Loading state durante generación
-- [ ] Lista de resúmenes (`/summaries`)
-  - [ ] Cards con título, nivel, fecha
-  - [ ] **Mostrar documentos asociados** (íconos o badges)
-  - [ ] Filtros por nivel de expertise
-  - [ ] Búsqueda por título/tema
-- [ ] Vista detallada de resumen (`/summaries/:id`)
-  - [ ] Título y metadatos
-  - [ ] **Lista de documentos fuente** (links clickeables)
-  - [ ] Contenido del resumen formateado
-  - [ ] Lista de temas y conceptos clave
-  - [ ] Botón "Generar quiz desde este resumen"
-  - [ ] Botón eliminar (NO elimina documentos asociados)
+- [x] Lista de resúmenes (`/summaries`)
+  - [x] Cards con título, nivel, fecha
+  - [x] Mostrar temas y conceptos clave (badges)
+  - [x] Botón para crear nuevo resumen
+  - [x] Botón ver y eliminar por resumen
+  - [x] Diseño aurora gradient preservado
+  - [ ] Filtros por nivel de expertise (pendiente)
+  - [ ] Búsqueda por título/tema (pendiente)
+  - [ ] Indicador de documentos asociados en cards (pendiente)
+- [x] Vista detallada de resumen (`/summaries/:id`)
+  - [x] Título y metadatos (nivel, fecha, cantidad de documentos)
+  - [x] **Lista de documentos fuente** (cards clickeables)
+  - [x] Contenido del resumen formateado
+  - [x] Lista de temas y conceptos clave (badges visuales)
+  - [x] Botón "Generar cuestionario" (placeholder)
+  - [x] Botón eliminar con confirmación (NO elimina documentos asociados)
+  - [x] Navegación de regreso a lista
+  - [x] Loading states y manejo de errores
+  - [x] Diseño aurora gradient preservado
 
 ### 2.6 Sistema de quizzes
 - [ ] Generación de quiz
