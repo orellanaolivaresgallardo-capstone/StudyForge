@@ -224,6 +224,7 @@ StudyForge/
     ├── ARCHITECTURE.md       # Arquitectura de alto nivel (optimizado para diagramas 4+1)
     ├── DATABASE.md           # Modelo de datos, índices, migraciones
     ├── INTEGRATION.md        # Flujos end-to-end detallados (para diagramas de secuencia)
+    ├── API.md                # Documentación completa de endpoints REST
     ├── SECURITY.md           # Consideraciones de seguridad y privacidad
     ├── DECISIONS.md          # Registro de decisiones técnicas con justificación
     ├── IMPLEMENTATION.md     # Estado de implementación (checklist)
@@ -241,6 +242,7 @@ StudyForge/
 - Vista general: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Base de datos: [docs/DATABASE.md](docs/DATABASE.md)
 - Flujos de integración: [docs/INTEGRATION.md](docs/INTEGRATION.md)
+- API REST: [docs/API.md](docs/API.md)
 
 ---
 
@@ -261,29 +263,18 @@ Ver detalles completos en [docs/SECURITY.md](docs/SECURITY.md)
 
 ## 📖 API Endpoints
 
-### Autenticación
-- `POST /auth/register` - Registrar nuevo usuario
-- `POST /auth/login` - Iniciar sesión
-- `GET /auth/me` - Obtener usuario actual
+La API REST de StudyForge ofrece endpoints para autenticación, gestión de resúmenes, cuestionarios y estadísticas.
 
-### Resúmenes
-- `POST /summaries/upload` - Subir documento y generar resumen
-- `GET /summaries` - Listar resúmenes del usuario
-- `GET /summaries/{id}` - Obtener resumen específico
-- `DELETE /summaries/{id}` - Eliminar resumen
+**Recursos principales:**
+- **Autenticación** (`/auth`): Registro, login, perfil de usuario
+- **Resúmenes** (`/summaries`): Crear, listar, obtener, eliminar resúmenes
+- **Cuestionarios** (`/quizzes`): Generar y gestionar cuestionarios
+- **Intentos** (`/quiz-attempts`): Realizar cuestionarios y obtener resultados
+- **Estadísticas** (`/stats`): Progreso, desempeño y resumen de actividad
 
-### Cuestionarios
-- `POST /quizzes/generate` - Generar cuestionario
-- `GET /quizzes` - Listar cuestionarios
-- `GET /quizzes/{id}` - Obtener cuestionario
-- `POST /quiz-attempts` - Iniciar intento
-- `POST /quiz-attempts/{id}/answer` - Responder pregunta
-- `POST /quiz-attempts/{id}/complete` - Finalizar cuestionario
-- `GET /quiz-attempts/{id}/results` - Ver resultados
+**Documentación completa**: Ver [docs/API.md](docs/API.md) para detalles de todos los endpoints, parámetros, respuestas y ejemplos.
 
-### Estadísticas
-- `GET /stats/progress` - Progreso por tema
-- `GET /stats/performance` - Desempeño histórico
+**Documentación interactiva**: [http://localhost:8000/docs](http://localhost:8000/docs) (disponible cuando el servidor está corriendo)
 
 ---
 
