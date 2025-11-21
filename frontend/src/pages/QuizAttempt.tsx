@@ -109,18 +109,11 @@ export default function QuizAttemptPage() {
   const optionLetters: CorrectOption[] = ["A", "B", "C", "D"];
 
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden text-slate-50">
-      {/* Aurora background */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-slate-50">
       <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background: `
-          radial-gradient(1200px 600px at 20% -20%, rgba(139,92,246,0.10), transparent 55%),
-          radial-gradient(900px 500px at 120% 10%, rgba(34,211,238,0.10), transparent 55%),
-          #0b1220
-        `,
-        }}
-      ></div>
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       {/* Navbar */}
       <Navbar />
@@ -130,8 +123,8 @@ export default function QuizAttemptPage() {
         {isLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-500 border-t-transparent"></div>
-              <p className="mt-4 text-slate-300">Cargando cuestionario...</p>
+              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-400 border-t-transparent"></div>
+              <p className="mt-4 text-white/60">Cargando cuestionario...</p>
             </div>
           </div>
         )}
@@ -140,14 +133,14 @@ export default function QuizAttemptPage() {
         {!isLoading && quiz && attempt && currentQuestion && (
           <>
             {/* Header */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+            <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h1 className="text-2xl font-bold">{quiz.title}</h1>
-                  <p className="text-slate-400 mt-1">Tema: {quiz.topic}</p>
+                  <h1 className="text-2xl font-bold text-white">{quiz.title}</h1>
+                  <p className="text-white/60 mt-1">Tema: {quiz.topic}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-slate-400">Progreso</div>
+                  <div className="text-sm text-white/60">Progreso</div>
                   <div className="text-2xl font-bold text-violet-400">
                     {currentQuestionIndex + 1} / {attempt.randomized_questions.length}
                   </div>
@@ -155,23 +148,23 @@ export default function QuizAttemptPage() {
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-300"
+                  className="bg-violet-600 h-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
             </div>
 
             {/* Question Card */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8">
+            <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8">
               {/* Question Number Badge */}
               <div className="inline-block px-3 py-1 bg-violet-500/20 text-violet-300 rounded-lg text-sm font-medium mb-4">
                 Pregunta {currentQuestionIndex + 1}
               </div>
 
               {/* Question Text */}
-              <h2 className="text-xl font-semibold mb-6 leading-relaxed">
+              <h2 className="text-xl font-semibold text-white mb-6 leading-relaxed">
                 {currentQuestion.question}
               </h2>
 
@@ -194,7 +187,7 @@ export default function QuizAttemptPage() {
                       buttonClasses += "bg-red-500/20 border-red-500 text-red-300";
                     } else {
                       buttonClasses +=
-                        "bg-slate-900/50 border-slate-700/50 text-slate-400";
+                        "bg-white/5 border-white/10 text-white/60";
                     }
                   } else {
                     if (isSelected) {
@@ -202,7 +195,7 @@ export default function QuizAttemptPage() {
                         "bg-violet-500/20 border-violet-500 text-white";
                     } else {
                       buttonClasses +=
-                        "bg-slate-900/50 border-slate-700/50 text-white hover:border-violet-500/50";
+                        "bg-white/5 border-white/10 text-white hover:border-violet-400/50";
                     }
                   }
 
@@ -221,10 +214,10 @@ export default function QuizAttemptPage() {
                                 ? "bg-green-500 text-white"
                                 : isWrong
                                 ? "bg-red-500 text-white"
-                                : "bg-slate-700 text-slate-400"
+                                : "bg-white/10 text-white/60"
                               : isSelected
                               ? "bg-violet-500 text-white"
-                              : "bg-slate-700 text-slate-300"
+                              : "bg-white/10 text-white"
                           }`}
                         >
                           {letter}
@@ -313,9 +306,9 @@ export default function QuizAttemptPage() {
                       >
                         {feedback.is_correct ? "¡Correcto!" : "Incorrecto"}
                       </h3>
-                      <p className="text-slate-300 mt-1">{feedback.explanation}</p>
+                      <p className="text-white mt-1">{feedback.explanation}</p>
                       {feedback.score_so_far !== undefined && (
-                        <p className="text-xs text-slate-400 mt-2">
+                        <p className="text-xs text-white/60 mt-2">
                           Puntuación actual: {feedback.score_so_far.toFixed(1)}%
                         </p>
                       )}
@@ -330,14 +323,14 @@ export default function QuizAttemptPage() {
                   <button
                     onClick={handleSubmitAnswer}
                     disabled={!selectedOption || isSubmitting}
-                    className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? "Enviando..." : "Enviar respuesta"}
                   </button>
                 ) : (
                   <button
                     onClick={handleNextQuestion}
-                    className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all"
+                    className="flex-1 px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors"
                   >
                     {currentQuestionIndex < attempt.randomized_questions.length - 1
                       ? "Siguiente pregunta"
@@ -351,7 +344,7 @@ export default function QuizAttemptPage() {
 
         {/* Toast Notification */}
         {toast && (
-          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-slate-800/95 backdrop-blur-md border border-slate-700/50 rounded-xl shadow-2xl">
+          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl">
             <p className="text-white">{toast}</p>
           </div>
         )}

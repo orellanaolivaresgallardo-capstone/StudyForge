@@ -212,7 +212,6 @@ StudyForge/
 │   │   ├── services/         # Capa de servicios HTTP
 │   │   ├── types/            # Definiciones TypeScript
 │   │   ├── assets/           # Imágenes, íconos
-│   │   ├── App.tsx           # Componente raíz
 │   │   ├── main.tsx          # Entry point + configuración de rutas
 │   │   └── index.css         # Estilos globales (Tailwind)
 │   ├── package.json

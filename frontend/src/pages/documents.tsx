@@ -112,15 +112,11 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden text-slate-50">
-      {/* Aurora background */}
-      <div className="pointer-events-none fixed inset-0 z-0" style={{
-        background: `
-          radial-gradient(1200px 600px at 20% -20%, rgba(139,92,246,0.10), transparent 55%),
-          radial-gradient(900px 500px at 120% 10%, rgba(34,211,238,0.10), transparent 55%),
-          #0b1220
-        `
-      }}></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       {/* Navbar */}
       <Navbar />
@@ -128,7 +124,7 @@ export default function DocumentsPage() {
       <main className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-10">
         {/* Upload Zone */}
         <section className="mx-auto max-w-3xl">
-          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-6">
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-6">
             Sube tu documento
           </h2>
 
@@ -155,7 +151,7 @@ export default function DocumentsPage() {
               onChange={handleFileInputChange}
               disabled={isUploading}
             />
-            <p className="text-slate-300">
+            <p className="text-white/80">
               {isUploading ? (
                 <>Subiendo...</>
               ) : (
@@ -164,7 +160,7 @@ export default function DocumentsPage() {
                 </>
               )}
             </p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-white/60 mt-1">
               Máximo {user?.max_file_size_bytes ? Math.round(user.max_file_size_bytes / 1024 / 1024) : 50} MB por archivo
             </p>
           </div>
@@ -172,9 +168,9 @@ export default function DocumentsPage() {
 
         {/* Documents List */}
         <section className="mx-auto max-w-3xl">
-          <div className="flex items-end justify-between mb-4">
-            <h2 className="text-2xl font-bold tracking-tight">Mis documentos</h2>
-            <div className="text-sm text-slate-400">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-0 mb-4">
+            <h2 className="text-2xl font-bold tracking-tight text-white">Mis documentos</h2>
+            <div className="text-sm text-white/60">
               Total: <span className="text-white font-medium">{documents.length}</span>
             </div>
           </div>
@@ -182,19 +178,19 @@ export default function DocumentsPage() {
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                <div key={i} className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-4">
                   <div className="animate-pulse space-y-2">
-                    <div className="h-5 w-1/3 bg-slate-700 rounded"></div>
-                    <div className="h-4 w-2/3 bg-slate-700 rounded"></div>
+                    <div className="h-5 w-1/3 bg-white/10 rounded"></div>
+                    <div className="h-4 w-2/3 bg-white/10 rounded"></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : documents.length === 0 ? (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="w-6 h-6 text-slate-300"
+                className="w-6 h-6 text-white/60"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -207,8 +203,8 @@ export default function DocumentsPage() {
                 />
               </svg>
               <div>
-                <div className="font-medium text-slate-200">Aún no tienes documentos</div>
-                <div className="text-slate-400 text-xs">Sube uno arriba para comenzar</div>
+                <div className="font-medium text-white">Aún no tienes documentos</div>
+                <div className="text-white/60 text-xs">Sube uno arriba para comenzar</div>
               </div>
             </div>
           ) : (
@@ -216,12 +212,12 @@ export default function DocumentsPage() {
               {documents.map((doc) => (
                 <li
                   key={doc.id}
-                  className="rounded-2xl bg-white/5 border border-white/10 p-4 hover:bg-white/10 hover:border-white/16 transition"
+                  className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 hover:bg-white/10 transition"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold text-white truncate">{doc.title}</h3>
-                      <p className="text-sm text-slate-400 mt-1">
+                      <p className="text-sm text-white/60 mt-1">
                         {doc.file_type.toUpperCase()} • {Math.round(doc.file_size_bytes / 1024)} KB
                         {" • "}
                         {new Date(doc.created_at).toLocaleDateString("es-ES")}
@@ -229,7 +225,7 @@ export default function DocumentsPage() {
                     </div>
                     <button
                       onClick={() => handleDeleteDocument(doc.id, doc.title)}
-                      className="shrink-0 rounded-lg px-3 py-1.5 text-sm text-rose-400 hover:bg-rose-500/10 transition"
+                      className="shrink-0 rounded-lg px-3 py-1.5 text-sm text-rose-400 hover:bg-rose-500/10 transition-colors"
                     >
                       Borrar
                     </button>
@@ -243,7 +239,7 @@ export default function DocumentsPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-slate-900/90 border border-white/10 px-4 py-3 text-sm text-white shadow-lg">
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl px-4 py-3 text-sm text-white shadow-lg">
           {toast}
         </div>
       )}

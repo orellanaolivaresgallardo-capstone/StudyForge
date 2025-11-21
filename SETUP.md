@@ -116,11 +116,10 @@ psql -U postgres -d studyforge
 
 # Deberías ver:
 # - studyforge.users
+# - studyforge.documents
 # - studyforge.summaries
-# - studyforge.quizzes
-# - studyforge.questions
-# - studyforge.quiz_attempts
-# - studyforge.answers
+# - studyforge.quizzes         # (preguntas en JSONB)
+# - studyforge.quiz_attempts   # (respuestas en JSONB)
 # - studyforge.alembic_version
 ```
 

@@ -111,18 +111,21 @@ frontend/
 ├── public/              # Archivos estáticos
 ├── src/
 │   ├── main.tsx         # Punto de entrada, configuración de React Router
-│   ├── App.tsx          # Componente raíz (simple health check)
-│   ├── index.css        # Estilos globales (Tailwind)
+│   ├── index.css        # Estilos globales (Tailwind + custom CSS)
 │   │
 │   ├── components/      # Componentes reutilizables
-│   │   ├── Navbar.tsx       # Barra de navegación con menú responsive
+│   │   ├── Navbar.tsx          # Barra de navegación con menú responsive
+│   │   ├── LandingPage.tsx     # ✨ Landing page para usuarios no autenticados
 │   │   ├── ProtectedRoute.tsx  # HOC para rutas protegidas
 │   │   └── QuotaWidget.tsx     # Widget de cuota de almacenamiento
 │   │
 │   ├── pages/           # Páginas/vistas de la aplicación
-│   │   ├── Home.tsx             # Landing page
+│   │   ├── Home.tsx             # ♻️ Maneja landing/redirect según autenticación
 │   │   ├── login.tsx            # Página de login
 │   │   ├── signup.tsx           # Página de registro
+│   │   ├── forgot-password.tsx  # ✨ Recuperación de contraseña
+│   │   ├── features.tsx         # ✨ Página de características (marketing)
+│   │   ├── aboutus.tsx          # ✨ Página sobre nosotros (marketing)
 │   │   ├── documents.tsx        # Gestión de documentos
 │   │   ├── summaries.tsx        # Lista de resúmenes
 │   │   ├── SummaryDetail.tsx    # Detalle de resumen
@@ -130,7 +133,7 @@ frontend/
 │   │   ├── QuizAttempt.tsx      # Realizar quiz
 │   │   ├── QuizResults.tsx      # Resultados de quiz
 │   │   ├── Stats.tsx            # Estadísticas del usuario
-│   │   └── ErrorPage.tsx        # Página de error
+│   │   └── ErrorPage.tsx        # ♻️ Página 404 styled con Link de React Router
 │   │
 │   ├── context/         # Context API para estado global
 │   │   └── AuthContext.tsx  # Estado de autenticación (user, login, logout)
@@ -143,23 +146,35 @@ frontend/
 │   │
 │   └── assets/          # Imágenes, íconos, etc.
 │
+├── index.html           # ♻️ Simplificado (19 líneas, solo <div id="root">)
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
-└── tailwind.config.js
+└── tailwind.config.cjs  # ♻️ Con paleta de colores 'brand' (50-900)
+```
+
+**Nota sobre refactorización a SPA pura:**
+En la transformación a arquitectura SPA moderna se eliminaron:
+- **8 archivos HTML estáticos**: `login.html`, `signup.html`, `features.html`, `aboutus.html`, `forgot-password.html`, `results.html`, `uploaddocuments.html`, `uploaddocuments2.html`
+- **3 componentes obsoletos**: `App.tsx` (reemplazado por Home.tsx), `results.tsx`, `uploaddocuments.tsx`
+- **index.html**: Simplificado de 180 líneas a 19 líneas (solo `<div id="root">` y script)
+- Toda la navegación ahora usa React Router Links (sin recargas de página)
 ```
 
 ### Arquitectura de Componentes
 
-#### 1. Routing (React Router v6)
+#### 1. Routing (React Router v7)
 
 ```typescript
 // main.tsx
 const router = createBrowserRouter([
   // Rutas públicas
-  { path: "/", element: <Home /> },
+  { path: "/", element: <Home /> },              // Landing o redirect según auth
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <SignUp /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage /> },  // ✨ Nueva
+  { path: "/features", element: <FeaturesPage /> },               // ✨ Nueva
+  { path: "/aboutus", element: <AboutUsPage /> },                 // ✨ Nueva
 
   // Rutas protegidas (requieren autenticación)
   {
@@ -190,8 +205,16 @@ const router = createBrowserRouter([
     path: "/stats",
     element: <ProtectedRoute><StatsPage /></ProtectedRoute>,
   },
+
+  // Catch-all: redirige a home
+  { path: "*", element: <Navigate to="/" replace /> },
 ]);
 ```
+
+**Flujo de Home.tsx (ruta `/`):**
+- **Si no autenticado**: Muestra `<LandingPage />` (navegación a features, aboutus, login, signup)
+- **Si autenticado**: `<Navigate to="/documents" replace />` (redirect automático al dashboard)
+- **Mientras verifica**: Muestra spinner de carga
 
 #### 2. Estado Global (Context API)
 
@@ -230,16 +253,91 @@ interface AuthContextType {
 
 #### 4. Componentes Principales
 
-- **Navbar**: Navegación responsive con links a secciones, botón logout, avatar de usuario
-- **ProtectedRoute**: HOC que verifica autenticación antes de renderizar, redirige a /login si no autenticado
-- **QuotaWidget**: Muestra uso de almacenamiento (barra de progreso), alerta si supera 80%
+- **Navbar**: Navegación responsive con links a secciones principales
+  - Muestra diferentes menús según estado de autenticación
+  - Menú hamburguesa móvil con animaciones
+  - QuotaWidget integrado (solo para usuarios autenticados)
+  - Avatar de usuario con dropdown (logout)
+
+- **LandingPage**: Landing page para usuarios no autenticados (✨ Nuevo componente)
+  - **Hero section** con gradientes glassmorphism (`.hero-bg`, `.frame`)
+  - **Menú hamburguesa móvil** funcional con estado local
+  - **Navegación React Router** a: `/`, `/features`, `/aboutus`, `/login`, `/signup`
+  - **Diseño responsive mobile-first**: 320px (móvil) → 768px (tablet) → 1024px+ (desktop)
+  - **Efectos visuales**: Grid overlay animado, bordes con gradientes, botones con glow
+  - **Clases CSS personalizadas**: `.glass`, `.btn-glow`, `.shadow-glass`, `.grid-overlay`
+
+- **ProtectedRoute**: HOC que verifica autenticación antes de renderizar
+  - Redirige a `/login` si no autenticado
+  - Muestra spinner mientras verifica token
+  - Renderiza children si autenticación exitosa
+
+- **QuotaWidget**: Muestra uso de almacenamiento del usuario
+  - Barra de progreso con animación shimmer
+  - Alerta visual si supera 80%
+  - Modos: compact (navbar) y full (páginas)
 
 ### Diseño y Estilos
 
-- **Tailwind CSS**: Utility-first CSS framework
-- **Tema Aurora Gradient**: Degradados morados/azules con efectos glass morphism
-- **Responsive**: Mobile-first con breakpoints `sm`, `md`, `lg`, `xl`
-- **Accesibilidad**: Hover states, focus rings, aria-labels en elementos interactivos
+#### Tailwind CSS
+- **Framework**: Tailwind CSS utility-first
+- **Paleta personalizada `brand`**: Escala completa 50-900 (violeta/púrpura)
+  ```js
+  // tailwind.config.cjs
+  brand: {
+    50: "#F2E9FF",   // Muy claro
+    500: "#7C3AED",  // Principal (usado en botones, logos)
+    900: "#300A66"   // Muy oscuro
+  }
+  ```
+- **Dark mode**: Automático según sistema operativo (`darkMode: 'media'`)
+
+#### Estilos CSS Personalizados (index.css)
+
+**Landing Page:**
+- **`.hero-bg`**: Gradientes radiales múltiples (fondo hero section)
+  - 4 capas de gradientes superpuestos
+  - Colores: violeta, azul, blanco/transparente
+
+- **`.grid-overlay`**: Cuadrícula animada con máscara radial
+  - Grid de 40x40px con transparencia
+  - Máscara radial para efecto fade-out
+
+- **`.frame`**: Marco glassmorphism con borde animado
+  - Fondo semi-transparente con blur
+  - Borde gradiente usando pseudo-elemento `::before`
+  - Sombras profundas para elevación visual
+
+**Efectos Interactivos:**
+- **`.glass`**: Efecto vidrio esmerilado
+  - `backdrop-filter: blur(18px)`
+  - Fondo semi-transparente + bordes sutiles
+
+- **`.btn-glow`**: Botones con efecto glow al hover
+  - Transiciones suaves de sombra y transform
+  - Sombra violeta al hover + translateY(-1px)
+
+- **`.shadow-glass`**: Sombras para elementos glass
+
+**Animaciones:**
+- **`.animate-shimmer`**: Shimmer effect para QuotaWidget
+  - Keyframes: translateX(-100%) → translateX(100%)
+  - Duración: 3s infinite
+
+#### Responsive Design
+- **Mobile-first**: Base 320px+ (smartphones)
+- **Breakpoints Tailwind**:
+  - `sm`: 640px+ (tablets pequeñas)
+  - `md`: 768px+ (tablets)
+  - `lg`: 1024px+ (laptops)
+  - `xl`: 1280px+ (desktops)
+- **Componentes adaptativos**: Menús hamburguesa en móvil, navegación horizontal en desktop
+
+#### Accesibilidad
+- **Navegación por teclado**: Focus rings visibles
+- **ARIA labels**: Botones y elementos interactivos etiquetados
+- **Contraste**: WCAG AA compliant
+- **Hover states**: Feedback visual en todos los elementos interactivos
 
 ### Variables de Entorno Frontend
 

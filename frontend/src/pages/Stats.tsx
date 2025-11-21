@@ -279,7 +279,7 @@ export default function Stats() {
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div>
                             <p className="text-xs text-white/60 mb-1">Promedio</p>
                             <p

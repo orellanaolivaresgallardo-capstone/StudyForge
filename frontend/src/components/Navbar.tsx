@@ -21,7 +21,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50">
+    <nav className="sticky top-0 z-50 glass card border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -29,8 +29,8 @@ export default function Navbar() {
             to={isAuthenticated ? "/documents" : "/"}
             className="flex items-center gap-2 group"
           >
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg group-hover:shadow-purple-500/50 transition-shadow">
-              <span className="text-white font-bold text-sm">SF</span>
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 ring-2 ring-white/10">
+              <span className="text-white font-bold text-sm flex items-center justify-center h-full">SF</span>
             </div>
             <span className="text-xl font-extrabold text-white tracking-tight">
               StudyForge
@@ -74,9 +74,9 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
                   >
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center">
                       <span className="text-white font-semibold text-sm">
                         {user?.username?.charAt(0).toUpperCase() || "U"}
                       </span>
@@ -85,7 +85,7 @@ export default function Navbar() {
                       {user?.username || "Usuario"}
                     </span>
                     <svg
-                      className={`w-4 h-4 text-slate-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 text-slate-300 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -101,19 +101,19 @@ export default function Navbar() {
                         className="fixed inset-0 z-10"
                         onClick={() => setShowUserMenu(false)}
                       ></div>
-                      <div className="absolute right-0 mt-2 w-56 bg-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/50 shadow-2xl shadow-black/50 z-20">
-                        <div className="p-3 border-b border-slate-700/50">
+                      <div className="absolute right-0 mt-2 w-56 glass card rounded-xl border border-white/10 shadow-2xl z-20">
+                        <div className="p-3 border-b border-white/10">
                           <p className="text-sm font-semibold text-white truncate">
                             {user?.username}
                           </p>
-                          <p className="text-xs text-slate-400 truncate">
+                          <p className="text-xs text-slate-300 truncate">
                             {user?.email}
                           </p>
                         </div>
                         <div className="p-2">
                           <Link
                             to="/profile"
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-700/50 hover:text-white transition-colors"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                             onClick={() => setShowUserMenu(false)}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,7 +123,7 @@ export default function Navbar() {
                           </Link>
                           <Link
                             to="/settings"
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-700/50 hover:text-white transition-colors"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                             onClick={() => setShowUserMenu(false)}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,7 +134,7 @@ export default function Navbar() {
                           </Link>
                           <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -158,13 +158,13 @@ export default function Navbar() {
                 </Link>
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 border border-slate-700/50 transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
                 >
                   Iniciar sesión
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white btn"
                 >
                   Crear cuenta
                 </Link>
@@ -175,7 +175,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden p-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition-colors"
+            className="md:hidden p-2 rounded-lg text-slate-300 hover:bg-white/10 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {showMobileMenu ? (
@@ -189,41 +189,41 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {showMobileMenu && (
-          <div className="md:hidden py-4 border-t border-slate-700/50">
+          <div className="md:hidden py-4 border-t border-white/10">
             {isAuthenticated ? (
               <div className="space-y-3">
                 <QuotaWidget compact={false} className="mb-4" />
                 <Link
                   to="/documents"
-                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-colors"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Documentos
                 </Link>
                 <Link
                   to="/summaries"
-                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-colors"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Resúmenes
                 </Link>
                 <Link
                   to="/quizzes"
-                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-colors"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Cuestionarios
                 </Link>
                 <Link
                   to="/stats"
-                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-colors"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Estadísticas
                 </Link>
                 <Link
                   to="/profile"
-                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-colors"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Mi perfil
@@ -233,7 +233,7 @@ export default function Navbar() {
                     handleLogout();
                     setShowMobileMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
+                  className="w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
                 >
                   Cerrar sesión
                 </button>
@@ -242,21 +242,21 @@ export default function Navbar() {
               <div className="space-y-2">
                 <Link
                   to="/"
-                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-colors"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Inicio
                 </Link>
                 <Link
                   to="/login"
-                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-colors"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Iniciar sesión
                 </Link>
                 <Link
                   to="/signup"
-                  className="block px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all text-center"
+                  className="block px-4 py-2 rounded-xl text-sm font-semibold text-white btn text-center"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Crear cuenta

@@ -127,3 +127,34 @@
   - `quiz_attempts.user_answers` (JSONB array) - respuestas del usuario
   - Randomización en `QuizAttemptRepository.create_attempt()`
   - Evaluación por comparación de arrays en memoria
+
+## 2025-11-21 — Transformación a SPA pura de React
+
+- **Decisión**: Eliminar arquitectura mixta (HTML estático + React) y consolidar en SPA pura.
+- **Contexto**: El frontend tenía 8 archivos HTML estáticos (`login.html`, `signup.html`, `features.html`, etc.) coexistiendo con componentes React, además de landing page embebida en `index.html` (180 líneas).
+- **Motivo**:
+  - **UX mejorada**: Navegación sin recargas de página (transiciones fluidas)
+  - **Mantenibilidad**: Single source of truth para routing y navegación
+  - **Consistencia**: Toda la UI usa los mismos patrones (React Router, Context API)
+  - **Developer Experience**: Un solo framework para todo el frontend
+  - **SEO no crítico**: La aplicación requiere autenticación, no necesita indexación de landing
+- **Alternativas consideradas**:
+  - **Mantener landing HTML estático separado**: Rechazado - duplicación de estilos y lógica de navegación
+  - **Server-Side Rendering (SSR/Next.js)**: Rechazado - overhead innecesario para aplicación autenticada
+  - **Micro-frontends**: Rechazado - complejidad excesiva para el alcance actual
+- **Trade-offs aceptados**:
+  - **Requiere JavaScript habilitado**: Aceptable para aplicación web moderna educativa
+  - **Bundle inicial más grande**: Mitigado con code splitting de Vite y rutas lazy-loaded
+  - **No indexable por bots**: No crítico - landing es marketing, app real requiere auth
+- **Implementación**:
+  - Creado `LandingPage.tsx` (203 líneas) con diseño glassmorphism y responsive
+  - `Home.tsx` con lógica condicional: landing para no-autenticados, redirect a `/documents` para autenticados
+  - Agregadas rutas públicas: `/features`, `/aboutus`, `/forgot-password` con componentes React
+  - `index.html` simplificado de 180 líneas a 19 líneas (solo `<div id="root">`)
+  - Eliminados 8 archivos HTML estáticos (103,683 bytes total)
+  - Eliminados 3 componentes obsoletos (`App.tsx`, `results.tsx`, `uploaddocuments.tsx`)
+  - Todo el routing usa React Router v7 con `<Link>` y `<Navigate>`
+  - CSS personalizado agregado a `index.css`: `.hero-bg`, `.glass`, `.btn-glow`, `.grid-overlay`
+  - Paleta de colores `brand` (50-900) agregada a `tailwind.config.cjs`
+  - Menú hamburguesa móvil funcional con estado local en `LandingPage.tsx`
+  - Diseño responsive mobile-first (breakpoints: 320px, 640px, 768px, 1024px, 1280px+)

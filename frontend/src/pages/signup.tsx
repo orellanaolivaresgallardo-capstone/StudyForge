@@ -1,6 +1,6 @@
 // src/pages/signup.tsx
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function SignupPage() {
@@ -84,36 +84,34 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
-      {/* Fondos */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-fuchsia-500/40 blur-[120px]" />
-        <div className="absolute top-10 right-[-6rem] h-[28rem] w-[28rem] rounded-full bg-violet-600/40 blur-[140px]" />
-        <div className="absolute -bottom-24 left-1/3 h-96 w-96 rounded-full bg-sky-500/40 blur-[120px]" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       <main className="relative z-10 flex items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-xl">
-          <section className="rounded-3xl bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur-md p-6 sm:p-8 md:p-10">
+          <section className="rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl p-6 sm:p-8 md:p-10">
             <header className="mb-8">
-              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+              <h1 className="text-4xl font-extrabold tracking-tight text-white">
                 Crear cuenta
               </h1>
-              <p className="mt-2 text-slate-600">
+              <p className="mt-2 text-white/60">
                 ¿Ya tienes cuenta?{" "}
-                <a
-                  href="/src/pages/login.html"
-                  className="font-semibold text-violet-600 hover:text-violet-700"
+                <Link
+                  to="/login"
+                  className="font-semibold text-violet-400 hover:text-violet-300 transition-colors"
                 >
                   Inicia sesión
-                </a>
+                </Link>
               </p>
             </header>
 
             <form ref={formRef} onSubmit={onSubmit} noValidate className="space-y-6">
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="email" className="block text-sm font-medium text-white">
                   Correo electrónico
                 </label>
                 <input
@@ -124,13 +122,13 @@ export default function SignupPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 shadow-sm outline-none ring-violet-400/30 transition focus:border-violet-400 focus:ring-4"
                   placeholder="you@example.com"
                   aria-invalid={!!emailErr}
                   aria-describedby="email-error"
                 />
                 {emailErr && (
-                  <p id="email-error" className="mt-1 text-sm text-rose-600">
+                  <p id="email-error" className="mt-1 text-sm text-red-400">
                     {emailErr}
                   </p>
                 )}
@@ -138,7 +136,7 @@ export default function SignupPage() {
 
               {/* Username (solo UI) */}
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="username" className="block text-sm font-medium text-white">
                   Nombre de usuario (opcional)
                 </label>
                 <input
@@ -151,14 +149,14 @@ export default function SignupPage() {
                   pattern="^[a-zA-Z0-9_\.]+$"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 shadow-sm outline-none ring-violet-400/30 transition focus:border-violet-400 focus:ring-4"
                   placeholder="studyforge_user"
                   aria-invalid={!!userErr}
                   aria-describedby="username-error"
                 />
-                <p className="mt-1 text-xs text-slate-500">Opcional. 3–24 caracteres, letras, números, “_” y “.”</p>
+                <p className="mt-1 text-xs text-white/60">Opcional. 3–24 caracteres, letras, números, "_" y "."</p>
                 {userErr && (
-                  <p id="username-error" className="mt-1 text-sm text-rose-600">
+                  <p id="username-error" className="mt-1 text-sm text-red-400">
                     {userErr}
                   </p>
                 )}
@@ -166,7 +164,7 @@ export default function SignupPage() {
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="password" className="block text-sm font-medium text-white">
                   Contraseña
                 </label>
                 <div className="mt-2 relative">
@@ -179,7 +177,7 @@ export default function SignupPage() {
                     minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-12 text-slate-900 placeholder-slate-400 shadow-sm outline-none ring-violet-500/30 transition focus:border-violet-500 focus:ring-4"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white placeholder-white/40 shadow-sm outline-none ring-violet-400/30 transition focus:border-violet-400 focus:ring-4"
                     placeholder="••••••••"
                     aria-invalid={!!passErr}
                     aria-describedby="password-hint password-error"
@@ -187,7 +185,7 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={() => setShowPass((s) => !s)}
-                    className="absolute inset-y-0 right-2 my-auto grid h-9 w-10 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+                    className="absolute inset-y-0 right-2 my-auto grid h-9 w-10 place-items-center rounded-lg text-white/60 hover:bg-white/10"
                     aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
                     {!showPass ? (
@@ -201,11 +199,11 @@ export default function SignupPage() {
                     )}
                   </button>
                 </div>
-                <p id="password-hint" className="mt-1 text-xs text-slate-500">
+                <p id="password-hint" className="mt-1 text-xs text-white/60">
                   Mínimo 8 caracteres e incluye al menos 1 letra y 1 número.
                 </p>
                 {passErr && (
-                  <p id="password-error" className="mt-1 text-sm text-rose-600">
+                  <p id="password-error" className="mt-1 text-sm text-red-400">
                     {passErr}
                   </p>
                 )}
@@ -215,7 +213,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-600/30 transition hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-violet-500/40 disabled:opacity-70"
+                className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 px-6 py-4 text-lg font-semibold text-white shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-violet-400/40 disabled:opacity-70"
               >
                 <span className="inline-flex items-center justify-center gap-2">
                   {loading && (
@@ -224,18 +222,6 @@ export default function SignupPage() {
                   {loading ? "Creando cuenta…" : "Registrarse"}
                 </span>
               </button>
-
-              <p className="text-center text-xs text-slate-500">
-                Al registrarte aceptas nuestros{" "}
-                <a href="#" className="font-medium text-slate-600 underline decoration-slate-300 hover:text-slate-800">
-                  Términos de servicio
-                </a>{" "}
-                y{" "}
-                <a href="#" className="font-medium text-slate-600 underline decoration-slate-300 hover:text-slate-800">
-                  Política de privacidad
-                </a>
-                .
-              </p>
             </form>
           </section>
         </div>
@@ -243,7 +229,7 @@ export default function SignupPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg">
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl px-4 py-3 text-sm text-white shadow-lg">
           {toast}
         </div>
       )}

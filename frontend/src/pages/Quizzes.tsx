@@ -57,18 +57,11 @@ export default function QuizzesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden text-slate-50">
-      {/* Aurora background */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background: `
-          radial-gradient(1200px 600px at 20% -20%, rgba(139,92,246,0.10), transparent 55%),
-          radial-gradient(900px 500px at 120% 10%, rgba(34,211,238,0.10), transparent 55%),
-          #0b1220
-        `,
-        }}
-      ></div>
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       {/* Navbar */}
       <Navbar />
@@ -77,16 +70,16 @@ export default function QuizzesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">
               Mis Cuestionarios
             </h1>
-            <p className="text-slate-400 mt-1">
+            <p className="text-white/60 mt-1">
               Practica y evalúa tu comprensión con quizzes adaptativos
             </p>
           </div>
           <button
             onClick={() => navigate("/summaries")}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center gap-2"
+            className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors flex items-center gap-2"
           >
             <svg
               className="w-5 h-5"
@@ -109,8 +102,8 @@ export default function QuizzesPage() {
         {isLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-500 border-t-transparent"></div>
-              <p className="mt-4 text-slate-300">Cargando cuestionarios...</p>
+              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-400 border-t-transparent"></div>
+              <p className="mt-4 text-white/60">Cargando cuestionarios...</p>
             </div>
           </div>
         )}
@@ -118,9 +111,9 @@ export default function QuizzesPage() {
         {/* Empty State */}
         {!isLoading && quizzes.length === 0 && (
           <div className="text-center py-20">
-            <div className="inline-flex h-20 w-20 rounded-full bg-slate-800/50 items-center justify-center mb-4">
+            <div className="inline-flex h-20 w-20 rounded-full bg-white/10 items-center justify-center mb-4">
               <svg
-                className="w-10 h-10 text-slate-500"
+                className="w-10 h-10 text-white/60"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -133,15 +126,15 @@ export default function QuizzesPage() {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-slate-300 mb-2">
+            <h3 className="text-xl font-semibold text-white mb-2">
               No tienes cuestionarios aún
             </h3>
-            <p className="text-slate-400 mb-6">
+            <p className="text-white/60 mb-6">
               Crea tu primer cuestionario desde un resumen
             </p>
             <button
               onClick={() => navigate("/summaries")}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all"
+              className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors"
             >
               Ir a resúmenes
             </button>
@@ -154,7 +147,7 @@ export default function QuizzesPage() {
             {quizzes.map((quiz) => (
               <div
                 key={quiz.id}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 hover:border-violet-500/50 transition-all group"
+                className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 hover:border-violet-400/30 transition-all group"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -179,20 +172,20 @@ export default function QuizzesPage() {
 
                 {/* Topic */}
                 <div className="mb-4">
-                  <p className="text-xs text-slate-400 mb-1">Tema:</p>
-                  <p className="text-sm text-slate-200 font-medium">
+                  <p className="text-xs text-white/60 mb-1">Tema:</p>
+                  <p className="text-sm text-white font-medium">
                     {quiz.topic}
                   </p>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
-                  <span className="text-xs text-slate-500">
+                <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                  <span className="text-xs text-white/60">
                     {new Date(quiz.created_at).toLocaleDateString("es-ES")}
                   </span>
                   <button
                     onClick={() => handleStartQuiz(quiz.id)}
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-sm font-semibold transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+                    className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-sm font-semibold transition-colors"
                   >
                     Iniciar
                   </button>
@@ -204,7 +197,7 @@ export default function QuizzesPage() {
 
         {/* Info Card */}
         {!isLoading && quizzes.length > 0 && (
-          <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/30 p-6">
+          <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl p-6">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 p-3 bg-violet-500/20 rounded-xl">
                 <svg
@@ -225,7 +218,7 @@ export default function QuizzesPage() {
                 <h3 className="font-semibold text-white mb-1">
                   Sobre los cuestionarios adaptativos
                 </h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-white/60">
                   La dificultad de los cuestionarios se ajusta automáticamente
                   según tu rendimiento en intentos anteriores. Cada quiz incluye
                   feedback inmediato con explicaciones detalladas para ayudarte
@@ -238,7 +231,7 @@ export default function QuizzesPage() {
 
         {/* Toast Notification */}
         {toast && (
-          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-slate-800/95 backdrop-blur-md border border-slate-700/50 rounded-xl shadow-2xl">
+          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl">
             <p className="text-white">{toast}</p>
           </div>
         )}

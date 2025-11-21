@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -13,26 +14,24 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center relative overflow-hidden">
-      {/* Fondos degradados */}
-      <div aria-hidden className="absolute inset-0">
-        <div className="absolute -top-32 -left-32 h-[32rem] w-[32rem] rounded-full bg-fuchsia-600/40 blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-indigo-600/40 blur-3xl" />
-        <div className="absolute -bottom-10 -left-20 h-[20rem] w-[20rem] rounded-full bg-rose-500/30 blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center relative overflow-hidden">
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       {/* Card */}
-      <div className="relative w-full max-w-md rounded-2xl bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur p-8">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+      <div className="relative w-full max-w-md rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-xl p-8">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
           Recuperar contraseña
         </h1>
-        <p className="mt-2 text-slate-600">
+        <p className="mt-2 text-white/60">
           Ingresa tu correo electrónico y te enviaremos un enlace para
           restablecer tu contraseña.
         </p>
 
         {sent ? (
-          <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">
+          <div className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-green-300 text-sm">
             ✅ Si el correo está registrado, recibirás un email con instrucciones.
           </div>
         ) : (
@@ -41,7 +40,7 @@ export default function ForgotPasswordPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-slate-700"
+                className="block text-sm font-medium text-white"
               >
                 Email address
               </label>
@@ -52,14 +51,14 @@ export default function ForgotPasswordPage() {
                 placeholder="tu@mail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-fuchsia-500 focus:ring-4 focus:ring-fuchsia-500/20"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
               />
             </div>
 
             {/* Botón */}
             <button
               type="submit"
-              className="w-full rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-fuchsia-600/20 transition hover:opacity-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-fuchsia-500/30"
+              className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 px-6 py-3.5 text-base font-semibold text-white shadow-lg transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/30"
             >
               Enviar enlace
             </button>
@@ -67,16 +66,16 @@ export default function ForgotPasswordPage() {
         )}
 
         {/* Links secundarios */}
-        <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-slate-600 gap-3">
-          <a href="/src/pages/login.html" className="text-fuchsia-600 hover:underline">
+        <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-white/60 gap-3">
+          <Link to="/login" className="text-violet-400 hover:text-violet-300 transition-colors">
             Volver al login
-          </a>
-          <a href="/src/pages/signup.html" className="hover:underline">
+          </Link>
+          <Link to="/signup" className="hover:text-white transition-colors">
             ¿No tienes cuenta? Crear una nueva
-          </a>
+          </Link>
         </div>
 
-        <p className="mt-6 text-xs text-slate-500">
+        <p className="mt-6 text-xs text-white/60">
           Revisa también tu carpeta de spam si no encuentras el email.
         </p>
       </div>

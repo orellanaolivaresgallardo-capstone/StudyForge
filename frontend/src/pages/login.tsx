@@ -1,6 +1,6 @@
 // src/pages/login.tsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
@@ -49,9 +49,11 @@ export default function LoginPage() {
       setTimeout(() => {
         navigate("/documents");
       }, 700);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (err?.response?.status === 401) {
+      if (err && typeof err === 'object' && 'response' in err && 
+          err.response && typeof err.response === 'object' && 'status' in err.response && 
+          err.response.status === 401) {
         showToast("Correo o contraseña incorrectos.");
       } else {
         showToast("No se pudo iniciar sesión. Intenta nuevamente.");
@@ -62,29 +64,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center relative overflow-hidden font-[Inter,sans-serif]">
-      {/* Fondos degradados */}
-      <div aria-hidden className="absolute inset-0">
-        <div className="absolute -top-32 -left-20 h-[42rem] w-[42rem] rounded-full bg-gradient-to-br from-pink-400 via-fuchsia-500 to-purple-600 opacity-70 blur-3xl" />
-        <div className="absolute -bottom-32 -right-24 h-[36rem] w-[36rem] rounded-full bg-gradient-to-br from-indigo-500 to-blue-400 opacity-70 blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 h-[24rem] w-[24rem] rounded-full bg-gradient-to-br from-orange-300 to-rose-400 opacity-60 blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center relative overflow-hidden font-[Inter,sans-serif]">
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       {/* Card */}
-      <div className="relative w-full max-w-md bg-white/95 backdrop-blur rounded-2xl shadow-xl ring-1 ring-black/5 p-8">
-        <h1 className="text-3xl font-extrabold text-slate-900">Iniciar sesión</h1>
-        <p className="mt-2 text-slate-600">
+      <div className="relative w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-xl p-8">
+        <h1 className="text-3xl font-extrabold text-white">Iniciar sesión</h1>
+        <p className="mt-2 text-white/60">
           Accede a tu cuenta o{" "}
-          <a href="/src/pages/signup.html" className="text-fuchsia-600 hover:underline">
+          <Link to="/signup" className="text-violet-400 hover:text-violet-300 transition-colors">
             crea una nueva
-          </a>
+          </Link>
           .
         </p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-5" noValidate>
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+            <label htmlFor="email" className="block text-sm font-medium text-white">
               Correo electrónico
             </label>
             <input
@@ -94,12 +94,12 @@ export default function LoginPage() {
               placeholder="ejemplo@mail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-fuchsia-500 focus:ring-4 focus:ring-fuchsia-500/20"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
               aria-invalid={!!emailErr}
               aria-describedby="email-error"
             />
             {emailErr && (
-              <p id="email-error" className="mt-1 text-sm text-rose-600">
+              <p id="email-error" className="mt-1 text-sm text-red-400">
                 {emailErr}
               </p>
             )}
@@ -107,7 +107,7 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+            <label htmlFor="password" className="block text-sm font-medium text-white">
               Contraseña
             </label>
             <input
@@ -117,12 +117,12 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-fuchsia-500 focus:ring-4 focus:ring-fuchsia-500/20"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
               aria-invalid={!!passErr}
               aria-describedby="pass-error"
             />
             {passErr && (
-              <p id="pass-error" className="mt-1 text-sm text-rose-600">
+              <p id="pass-error" className="mt-1 text-sm text-red-400">
                 {passErr}
               </p>
             )}
@@ -130,25 +130,25 @@ export default function LoginPage() {
 
           {/* Opciones */}
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-sm text-white">
               <input
                 type="checkbox"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-500"
+                className="h-4 w-4 rounded border-white/10 bg-white/5 text-violet-600 focus:ring-violet-400"
               />
               Recordarme
             </label>
-            <a href="#" className="text-sm font-medium text-fuchsia-600 hover:underline">
+            <Link to="/forgot-password" className="text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors">
               ¿Olvidaste tu contraseña?
-            </a>
+            </Link>
           </div>
 
           {/* Botón */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-fuchsia-600/20 transition hover:opacity-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-fuchsia-500/30 disabled:opacity-70"
+            className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 px-6 py-3.5 text-base font-semibold text-white shadow-lg transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/30 disabled:opacity-70"
           >
             <span className="inline-flex items-center justify-center gap-2">
               {loading && (
@@ -158,7 +158,7 @@ export default function LoginPage() {
             </span>
           </button>
 
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-white/60">
             Al iniciar sesión aceptas nuestros términos de servicio y política de privacidad.
           </p>
         </form>
@@ -166,7 +166,7 @@ export default function LoginPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg">
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl px-4 py-3 text-sm text-white shadow-lg">
           {toast}
         </div>
       )}

@@ -1,8 +1,22 @@
 # Integración End-to-End — StudyForge
 
-**Última actualización:** 2025-11-20
+**Última actualización:** 2025-11-21
 
 Este documento describe los flujos completos de integración entre frontend, backend y base de datos. Útil para debugging, onboarding y generación de diagramas de secuencia.
+
+---
+
+## Nota sobre Arquitectura Frontend
+
+**StudyForge usa una arquitectura SPA pura** (Single Page Application) con React 19 y React Router v7:
+
+- **Navegación client-side**: Todas las rutas usan `<Link>` de React Router (sin recargas de página)
+- **Landing page dinámica**: El componente `LandingPage.tsx` se muestra solo para usuarios no autenticados
+- **Routing condicional**: `Home.tsx` (ruta `/`) decide entre mostrar landing o redirigir a `/documents`
+- **Rutas protegidas**: `ProtectedRoute` HOC verifica autenticación antes de renderizar
+- **Sin archivos HTML estáticos**: Toda la UI se genera con componentes React
+
+Esta arquitectura garantiza una experiencia de usuario fluida sin interrupciones durante la navegación.
 
 ---
 

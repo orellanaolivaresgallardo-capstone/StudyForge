@@ -12,6 +12,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/login";
 import SignUp from "./pages/signup";
+import ForgotPasswordPage from "./pages/forgot-password";
+import FeaturesPage from "./pages/features";
+import AboutUsPage from "./pages/aboutus";
 import DocumentsPage from "./pages/documents";
 import SummariesPage from "./pages/summaries";
 import SummaryDetailPage from "./pages/SummaryDetail";
@@ -25,6 +28,9 @@ const router = createBrowserRouter([
   { path: "/", element: <Home /> },
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <SignUp /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage /> },
+  { path: "/features", element: <FeaturesPage /> },
+  { path: "/aboutus", element: <AboutUsPage /> },
   {
     path: "/documents",
     element: (

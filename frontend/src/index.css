@@ -3,72 +3,48 @@
 @tailwind utilities;
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
+  color: #e5e7eb;
+  background-color: #0b1220;
   text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
   min-height: 100vh;
+  background-color: #0b1220;
+  color: #e5e7eb;
+  overflow-x: hidden;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+#root {
+  min-height: 100vh;
+  width: 100%;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+a:hover {
+  color: #c084fc;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 /* Custom animations for QuotaWidget aurora effects */
@@ -83,4 +59,95 @@ button:focus-visible {
 
 .animate-shimmer {
   animation: shimmer 3s infinite;
+}
+
+/* Landing page styles */
+.hero-bg {
+  background:
+    radial-gradient(60rem 40rem at 85% 10%, rgba(136, 126, 153, 0.35), transparent 60%),
+    radial-gradient(40rem 30rem at 10% 90%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(30rem 20rem at 50% -10%, rgba(255,255,255,.06), transparent 60%),
+    linear-gradient(180deg, #5d5d86 0%, #434383 60%, #2c2c81 100%);
+  position: relative;
+}
+
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px;
+  mask-image: radial-gradient(100% 60% at 70% 40%, rgba(0,0,0,.9), transparent 75%);
+  -webkit-mask-image: radial-gradient(100% 60% at 70% 40%, rgba(0,0,0,.9), transparent 75%);
+  pointer-events: none;
+}
+
+.frame {
+  position: relative;
+  border-radius: 1.5rem;
+  background: rgba(20,20,30,.45);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 25px 80px rgba(0,0,0,.65);
+}
+
+.frame::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  padding:1px;
+  background: linear-gradient(135deg, rgba(124,58,237,.6), rgba(255,255,255,.06), rgba(59,130,246,.4));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events:none;
+}
+
+.btn-glow {
+  transition: box-shadow .25s ease, transform .2s ease;
+}
+
+.btn-glow:hover {
+  box-shadow: 0 8px 30px rgba(74, 40, 133, 0.45);
+  transform: translateY(-1px);
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.shadow-glass {
+  box-shadow: 0 10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* Public pages shared styles (features, aboutus, landing) */
+.grid-bg {
+  background-image:
+    radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255,255,255,.04), transparent 12%),
+    linear-gradient(0deg, rgba(0,0,0,.25), rgba(0,0,0,.25));
+  background-size: 20px 20px, 100% 100%, 100% 100%;
+  background-position: -10px -10px, 0 0, 0 0;
+}
+
+.card {
+  box-shadow: 0 10px 30px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.btn {
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  transition: filter 0.2s ease;
+}
+
+.btn:hover {
+  filter: brightness(1.06);
+}
+
+.pill {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
 }

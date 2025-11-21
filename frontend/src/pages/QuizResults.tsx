@@ -68,18 +68,11 @@ export default function QuizResultsPage() {
   const optionLetters: CorrectOption[] = ["A", "B", "C", "D"];
 
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden text-slate-50">
-      {/* Aurora background */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-slate-50">
       <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background: `
-          radial-gradient(1200px 600px at 20% -20%, rgba(139,92,246,0.10), transparent 55%),
-          radial-gradient(900px 500px at 120% 10%, rgba(34,211,238,0.10), transparent 55%),
-          #0b1220
-        `,
-        }}
-      ></div>
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       {/* Navbar */}
       <Navbar />
@@ -88,7 +81,7 @@ export default function QuizResultsPage() {
         {/* Back Button */}
         <button
           onClick={() => navigate("/summaries")}
-          className="flex items-center gap-2 text-slate-400 hover:text-violet-400 transition-colors"
+          className="flex items-center gap-2 text-white/60 hover:text-violet-400 transition-colors"
         >
           <svg
             className="w-5 h-5"
@@ -110,8 +103,8 @@ export default function QuizResultsPage() {
         {isLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-500 border-t-transparent"></div>
-              <p className="mt-4 text-slate-300">Cargando resultados...</p>
+              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-400 border-t-transparent"></div>
+              <p className="mt-4 text-white/60">Cargando resultados...</p>
             </div>
           </div>
         )}
@@ -120,7 +113,7 @@ export default function QuizResultsPage() {
         {!isLoading && results && (
           <>
             {/* Score Card */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8">
+            <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8">
               <div className="text-center">
                 {/* Score Badge */}
                 <div
@@ -132,48 +125,48 @@ export default function QuizResultsPage() {
                     <div className={`text-4xl font-bold ${getScoreColor(results.score)}`}>
                       {results.score.toFixed(0)}%
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-white/60">
                       {results.correct_answers}/{results.total_questions}
                     </div>
                   </div>
                 </div>
 
                 {/* Title */}
-                <h1 className="text-3xl font-bold mb-2">Resultados del Cuestionario</h1>
-                <p className="text-slate-400 mb-4">Quiz ID: {results.quiz_id.slice(0, 8)}</p>
+                <h1 className="text-3xl font-bold text-white mb-2">Resultados del Cuestionario</h1>
+                <p className="text-white/60 mb-4">Quiz ID: {results.quiz_id.slice(0, 8)}</p>
 
                 {/* Message */}
-                <p className="text-lg text-slate-300 mb-6">
+                <p className="text-lg text-white mb-6">
                   {getScoreMessage(results.score)}
                 </p>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
-                  <div className="bg-slate-900/50 rounded-xl p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-md mx-auto w-full">
+                  <div className="bg-white/10 rounded-xl p-4">
                     <div className="text-2xl font-bold text-green-400">
                       {results.correct_answers}
                     </div>
-                    <div className="text-xs text-slate-400">Correctas</div>
+                    <div className="text-xs text-white/60">Correctas</div>
                   </div>
-                  <div className="bg-slate-900/50 rounded-xl p-4">
+                  <div className="bg-white/10 rounded-xl p-4">
                     <div className="text-2xl font-bold text-red-400">
                       {results.incorrect_answers}
                     </div>
-                    <div className="text-xs text-slate-400">Incorrectas</div>
+                    <div className="text-xs text-white/60">Incorrectas</div>
                   </div>
-                  <div className="bg-slate-900/50 rounded-xl p-4">
+                  <div className="bg-white/10 rounded-xl p-4">
                     <div className="text-2xl font-bold text-violet-400">
                       {results.total_questions}
                     </div>
-                    <div className="text-xs text-slate-400">Total</div>
+                    <div className="text-xs text-white/60">Total</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Questions Review */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-              <h2 className="text-xl font-bold mb-6">Revisión de respuestas</h2>
+            <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
+              <h2 className="text-xl font-bold text-white mb-6">Revisión de respuestas</h2>
 
               <div className="space-y-6">
                 {results.questions.map((question, idx) => {
@@ -202,7 +195,7 @@ export default function QuizResultsPage() {
                           {idx + 1}
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-3">
+                          <h3 className="font-semibold text-lg text-white mb-3">
                             {question.question_text}
                           </h3>
 
@@ -223,7 +216,7 @@ export default function QuizResultsPage() {
                                   "bg-red-500/20 border-red-500 text-red-300";
                               } else {
                                 optionClasses +=
-                                  "bg-slate-900/30 border-slate-700/30 text-slate-400";
+                                  "bg-white/5 border-white/10 text-white/60";
                               }
 
                               return (
@@ -266,11 +259,11 @@ export default function QuizResultsPage() {
                           </div>
 
                           {/* Explanation */}
-                          <div className="mt-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700/30">
-                            <h4 className="text-sm font-semibold text-slate-300 mb-1">
+                          <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
+                            <h4 className="text-sm font-semibold text-white mb-1">
                               Explicación:
                             </h4>
-                            <p className="text-sm text-slate-400">
+                            <p className="text-sm text-white/60">
                               {question.explanation}
                             </p>
                           </div>
@@ -286,13 +279,13 @@ export default function QuizResultsPage() {
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => navigate("/summaries")}
-                className="px-6 py-3 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 font-medium transition-colors"
+                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 font-medium transition-colors"
               >
                 Volver a resúmenes
               </button>
               <button
                 onClick={() => navigate(`/quizzes/${results.quiz_id}/attempt`)}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all"
+                className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors"
               >
                 Intentar de nuevo
               </button>
@@ -302,7 +295,7 @@ export default function QuizResultsPage() {
 
         {/* Toast Notification */}
         {toast && (
-          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-slate-800/95 backdrop-blur-md border border-slate-700/50 rounded-xl shadow-2xl">
+          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl">
             <p className="text-white">{toast}</p>
           </div>
         )}

@@ -118,11 +118,13 @@ export default function SummariesPage() {
       showToast("Resumen creado exitosamente");
       setShowCreateModal(false);
       loadSummaries();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating summary:", error);
-      showToast(
-        error.response?.data?.detail || "Error al crear el resumen"
-      );
+      const errorMessage =
+        error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response !== null && 'data' in error.response && typeof error.response.data === 'object' && error.response.data !== null && 'detail' in error.response.data
+          ? String(error.response.data.detail)
+          : "Error al crear el resumen";
+      showToast(errorMessage);
     } finally {
       setIsCreating(false);
     }
@@ -164,18 +166,11 @@ export default function SummariesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden text-slate-50">
-      {/* Aurora background */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background: `
-          radial-gradient(1200px 600px at 20% -20%, rgba(139,92,246,0.10), transparent 55%),
-          radial-gradient(900px 500px at 120% 10%, rgba(34,211,238,0.10), transparent 55%),
-          #0b1220
-        `,
-        }}
-      ></div>
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       {/* Navbar */}
       <Navbar />
@@ -184,16 +179,16 @@ export default function SummariesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">
               Mis Resúmenes
             </h1>
-            <p className="text-slate-400 mt-1">
+            <p className="text-white/60 mt-1">
               Resúmenes generados por IA adaptados a tu nivel
             </p>
           </div>
           <button
             onClick={handleOpenCreateModal}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center gap-2"
+            className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors flex items-center gap-2"
           >
             <svg
               className="w-5 h-5"
@@ -216,8 +211,8 @@ export default function SummariesPage() {
         {isLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-500 border-t-transparent"></div>
-              <p className="mt-4 text-slate-300">Cargando resúmenes...</p>
+              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-400 border-t-transparent"></div>
+              <p className="mt-4 text-white/60">Cargando resúmenes...</p>
             </div>
           </div>
         )}
@@ -225,9 +220,9 @@ export default function SummariesPage() {
         {/* Empty State */}
         {!isLoading && summaries.length === 0 && (
           <div className="text-center py-20">
-            <div className="inline-flex h-20 w-20 rounded-full bg-slate-800/50 items-center justify-center mb-4">
+            <div className="inline-flex h-20 w-20 rounded-full bg-white/10 items-center justify-center mb-4">
               <svg
-                className="w-10 h-10 text-slate-500"
+                className="w-10 h-10 text-white/60"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -240,15 +235,15 @@ export default function SummariesPage() {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-slate-300 mb-2">
+            <h3 className="text-xl font-semibold text-white mb-2">
               No tienes resúmenes aún
             </h3>
-            <p className="text-slate-400 mb-6">
+            <p className="text-white/60 mb-6">
               Crea tu primer resumen desde tus documentos
             </p>
             <button
               onClick={handleOpenCreateModal}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all"
+              className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors"
             >
               Crear resumen
             </button>
@@ -261,7 +256,7 @@ export default function SummariesPage() {
             {summaries.map((summary) => (
               <div
                 key={summary.id}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 hover:border-violet-500/50 transition-all group"
+                className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 hover:border-violet-400/30 transition-all group"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -280,18 +275,18 @@ export default function SummariesPage() {
                 {/* Topics */}
                 {summary.topics && summary.topics.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs text-slate-400 mb-2">Temas:</p>
+                    <p className="text-xs text-white/60 mb-2">Temas:</p>
                     <div className="flex flex-wrap gap-1">
                       {summary.topics.slice(0, 3).map((topic, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-1 bg-violet-500/10 text-violet-300 rounded-lg text-xs"
+                          className="px-2 py-1 bg-violet-500/20 text-violet-300 rounded-lg text-xs"
                         >
                           {topic}
                         </span>
                       ))}
                       {summary.topics.length > 3 && (
-                        <span className="px-2 py-1 bg-slate-700/50 text-slate-400 rounded-lg text-xs">
+                        <span className="px-2 py-1 bg-white/10 text-white/60 rounded-lg text-xs">
                           +{summary.topics.length - 3}
                         </span>
                       )}
@@ -302,20 +297,20 @@ export default function SummariesPage() {
                 {/* Key Concepts */}
                 {summary.key_concepts && summary.key_concepts.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs text-slate-400 mb-2">
+                    <p className="text-xs text-white/60 mb-2">
                       Conceptos clave:
                     </p>
                     <div className="flex flex-wrap gap-1">
                       {summary.key_concepts.slice(0, 3).map((concept, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-1 bg-pink-500/10 text-pink-300 rounded-lg text-xs"
+                          className="px-2 py-1 bg-pink-500/20 text-pink-300 rounded-lg text-xs"
                         >
                           {concept}
                         </span>
                       ))}
                       {summary.key_concepts.length > 3 && (
-                        <span className="px-2 py-1 bg-slate-700/50 text-slate-400 rounded-lg text-xs">
+                        <span className="px-2 py-1 bg-white/10 text-white/60 rounded-lg text-xs">
                           +{summary.key_concepts.length - 3}
                         </span>
                       )}
@@ -324,8 +319,8 @@ export default function SummariesPage() {
                 )}
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
-                  <span className="text-xs text-slate-500">
+                <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                  <span className="text-xs text-white/60">
                     {new Date(summary.created_at).toLocaleDateString("es-ES")}
                   </span>
                   <div className="flex gap-2">
@@ -360,14 +355,14 @@ export default function SummariesPage() {
             ></div>
 
             {/* Modal */}
-            <div className="relative bg-slate-800/95 backdrop-blur-md rounded-2xl border border-slate-700/50 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="relative bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
               {/* Header */}
-              <div className="p-6 border-b border-slate-700/50">
+              <div className="p-6 border-b border-white/10">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">Crear resumen</h2>
+                  <h2 className="text-2xl font-bold text-white">Crear resumen</h2>
                   <button
                     onClick={() => setShowCreateModal(false)}
-                    className="p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
+                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                   >
                     <svg
                       className="w-5 h-5"
@@ -391,7 +386,7 @@ export default function SummariesPage() {
                 <div className="space-y-6">
                   {/* Title */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       Título (opcional)
                     </label>
                     <input
@@ -399,16 +394,16 @@ export default function SummariesPage() {
                       value={summaryTitle}
                       onChange={(e) => setSummaryTitle(e.target.value)}
                       placeholder="Ej: Resumen de Matemáticas"
-                      className="w-full px-4 py-2 rounded-xl bg-slate-900/50 border border-slate-700/50 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-violet-400"
                     />
                   </div>
 
                   {/* Expertise Level */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       Nivel de experiencia
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {(["basico", "medio", "avanzado"] as ExpertiseLevel[]).map(
                         (level) => (
                           <button
@@ -416,8 +411,8 @@ export default function SummariesPage() {
                             onClick={() => setExpertiseLevel(level)}
                             className={`px-4 py-3 rounded-xl font-medium transition-all ${
                               expertiseLevel === level
-                                ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                                : "bg-slate-900/50 text-slate-400 border border-slate-700/50 hover:border-violet-500/50"
+                                ? "bg-violet-600 text-white"
+                                : "bg-white/5 text-white/60 border border-white/10 hover:border-violet-400/50"
                             }`}
                           >
                             {getExpertiseLevelLabel(level)}
@@ -429,11 +424,11 @@ export default function SummariesPage() {
 
                   {/* Document Selection */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       Selecciona documentos ({selectedDocIds.length} / {maxDocs})
                     </label>
                     {documents.length === 0 ? (
-                      <div className="text-center py-8 text-slate-400">
+                      <div className="text-center py-8 text-white/60">
                         No tienes documentos. Sube algunos primero.
                       </div>
                     ) : (
@@ -445,7 +440,7 @@ export default function SummariesPage() {
                             className={`p-4 rounded-xl border cursor-pointer transition-all ${
                               selectedDocIds.includes(doc.id)
                                 ? "bg-violet-500/20 border-violet-500/50"
-                                : "bg-slate-900/50 border-slate-700/50 hover:border-violet-500/30"
+                                : "bg-white/5 border-white/10 hover:border-violet-400/30"
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -453,7 +448,7 @@ export default function SummariesPage() {
                                 className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                                   selectedDocIds.includes(doc.id)
                                     ? "bg-violet-500 border-violet-500"
-                                    : "border-slate-600"
+                                    : "border-white/30"
                                 }`}
                               >
                                 {selectedDocIds.includes(doc.id) && (
@@ -476,7 +471,7 @@ export default function SummariesPage() {
                                 <p className="text-white font-medium">
                                   {doc.title}
                                 </p>
-                                <p className="text-xs text-slate-400">
+                                <p className="text-xs text-white/60">
                                   {doc.file_type.toUpperCase()} •{" "}
                                   {(doc.file_size_bytes / 1024).toFixed(1)} KB
                                 </p>
@@ -491,17 +486,17 @@ export default function SummariesPage() {
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-slate-700/50 flex gap-3">
+              <div className="p-6 border-t border-white/10 flex gap-3">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 font-medium transition-colors"
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 font-medium transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleCreateSummary}
                   disabled={isCreating || selectedDocIds.length === 0}
-                  className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCreating ? "Generando..." : "Generar resumen"}
                 </button>
@@ -512,7 +507,7 @@ export default function SummariesPage() {
 
         {/* Toast Notification */}
         {toast && (
-          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-slate-800/95 backdrop-blur-md border border-slate-700/50 rounded-xl shadow-2xl">
+          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl">
             <p className="text-white">{toast}</p>
           </div>
         )}
