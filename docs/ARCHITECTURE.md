@@ -39,6 +39,7 @@ StudyForge es una aplicación web de acompañamiento y apoyo para el aprendizaje
 
 ```
 backend/
+├── .venv/                   # Entorno virtual de Python (no versionado)
 ├── alembic/                 # Migraciones de base de datos
 ├── app/
 │   ├── __init__.py

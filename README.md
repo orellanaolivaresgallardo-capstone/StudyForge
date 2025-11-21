@@ -100,10 +100,10 @@ Esto creará:
 
 #### 3.1. Crear entorno virtual e instalar dependencias
 
-**IMPORTANTE**: El entorno virtual se crea en la raíz del proyecto, NO en `backend/`.
+**IMPORTANTE**: El entorno virtual se crea en `backend/`.
 
 ```bash
-# Desde la raíz del proyecto
+cd backend
 python -m venv .venv
 
 # Windows
@@ -113,7 +113,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Instalar dependencias
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 ```
 
 #### 3.2. Configurar variables de entorno
@@ -186,6 +186,7 @@ Aplicación: [http://localhost:5173](http://localhost:5173)
 ```
 StudyForge/
 ├── backend/                  # API REST con FastAPI
+│   ├── .venv/                # Entorno virtual de Python (no versionado)
 │   ├── app/
 │   │   ├── core/             # Seguridad, dependencias
 │   │   ├── models/           # Modelos SQLAlchemy

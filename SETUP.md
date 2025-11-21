@@ -49,11 +49,14 @@ SELECT current_schema();     # Verificar schema actual
 
 ## 🐍 Paso 2: Configurar Backend
 
-### 2.1. Activar entorno virtual
+### 2.1. Crear y activar entorno virtual
 
 Desde la raíz del proyecto:
 
 ```bash
+cd backend
+python -m venv .venv
+
 # Windows (PowerShell)
 .\.venv\Scripts\Activate.ps1
 
@@ -126,8 +129,7 @@ psql -U postgres -d studyforge
 ## 🚀 Paso 3: Ejecutar Backend
 
 ```bash
-# Desde la raíz del proyecto (con venv activado)
-cd backend
+# Desde backend/ (con venv activado)
 uvicorn app.main:app --reload
 ```
 
