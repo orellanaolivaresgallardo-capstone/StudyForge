@@ -1,4 +1,4 @@
-# Guía Rápida de Configuración - StudyForge 2.0
+# Guía Rápida de Configuración - StudyForge
 
 Esta guía te ayudará a configurar el proyecto desde cero.
 

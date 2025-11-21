@@ -92,7 +92,7 @@ def list_documents(
 
 ---
 
-## 3. Cuotas y Límites Configurables por Usuario
+## 3. Cuotas y Límites Específicos para cada Usuario
 
 ### 3.1 Campos de Cuota en User
 

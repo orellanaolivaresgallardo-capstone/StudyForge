@@ -1,4 +1,4 @@
-# Arquitectura StudyForge v2.0
+# Arquitectura StudyForge
 
 ## Visión General
 
@@ -55,10 +55,9 @@ backend/
 │   │   ├── __init__.py
 │   │   ├── user.py         # Usuario
 │   │   ├── summary.py      # Resumen
-│   │   ├── quiz.py         # Cuestionario
-│   │   ├── question.py     # Pregunta de cuestionario
-│   │   ├── quiz_attempt.py # Intento de cuestionario
-│   │   └── answer.py       # Respuesta del usuario
+│   │   ├── quiz.py         # Cuestionario (con preguntas en JSON)
+│   │   ├── quiz_attempt.py # Intento de cuestionario (con respuestas en JSON)
+│   │   └── document.py     # Documento almacenado
 │   │
 │   ├── schemas/            # Pydantic schemas (validación)
 │   │   ├── __init__.py
@@ -100,109 +99,196 @@ backend/
 └── .env.example
 ```
 
-## Modelo de Datos
+---
 
-### Users (Usuarios)
-```python
-id: UUID (PK)
-email: str (unique)
-username: str (unique)
-hashed_password: str
-created_at: datetime
-updated_at: datetime
-is_active: bool
+## Arquitectura del Frontend
+
+### Estructura de Carpetas
+
+```
+frontend/
+├── public/              # Archivos estáticos
+├── src/
+│   ├── main.tsx         # Punto de entrada, configuración de React Router
+│   ├── App.tsx          # Componente raíz (simple health check)
+│   ├── index.css        # Estilos globales (Tailwind)
+│   │
+│   ├── components/      # Componentes reutilizables
+│   │   ├── Navbar.tsx       # Barra de navegación con menú responsive
+│   │   ├── ProtectedRoute.tsx  # HOC para rutas protegidas
+│   │   └── QuotaWidget.tsx     # Widget de cuota de almacenamiento
+│   │
+│   ├── pages/           # Páginas/vistas de la aplicación
+│   │   ├── Home.tsx             # Landing page
+│   │   ├── login.tsx            # Página de login
+│   │   ├── signup.tsx           # Página de registro
+│   │   ├── documents.tsx        # Gestión de documentos
+│   │   ├── summaries.tsx        # Lista de resúmenes
+│   │   ├── SummaryDetail.tsx    # Detalle de resumen
+│   │   ├── Quizzes.tsx          # Lista de quizzes
+│   │   ├── QuizAttempt.tsx      # Realizar quiz
+│   │   ├── QuizResults.tsx      # Resultados de quiz
+│   │   ├── Stats.tsx            # Estadísticas del usuario
+│   │   └── ErrorPage.tsx        # Página de error
+│   │
+│   ├── context/         # Context API para estado global
+│   │   └── AuthContext.tsx  # Estado de autenticación (user, login, logout)
+│   │
+│   ├── services/        # Capa de servicios HTTP
+│   │   └── api.ts       # Cliente Axios con interceptors JWT
+│   │
+│   ├── types/           # Definiciones TypeScript
+│   │   └── api.types.ts # Tipos para requests/responses de API
+│   │
+│   └── assets/          # Imágenes, íconos, etc.
+│
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── tailwind.config.js
 ```
 
-### Summaries (Resúmenes)
-```python
-id: UUID (PK)
-user_id: UUID (FK -> Users)
-title: str
-content: jsonb  # Contenido estructurado del resumen
-expertise_level: enum('basico', 'medio', 'avanzado')
-topics: jsonb  # Lista de temas identificados
-key_concepts: jsonb  # Conceptos clave destacados
-original_file_name: str  # Solo el nombre, NO el contenido
-original_file_type: str  # pdf, pptx, docx, txt
-created_at: datetime
-updated_at: datetime
+### Arquitectura de Componentes
+
+#### 1. Routing (React Router v6)
+
+```typescript
+// main.tsx
+const router = createBrowserRouter([
+  // Rutas públicas
+  { path: "/", element: <Home /> },
+  { path: "/login", element: <Login /> },
+  { path: "/signup", element: <SignUp /> },
+
+  // Rutas protegidas (requieren autenticación)
+  {
+    path: "/documents",
+    element: <ProtectedRoute><DocumentsPage /></ProtectedRoute>,
+  },
+  {
+    path: "/summaries",
+    element: <ProtectedRoute><SummariesPage /></ProtectedRoute>,
+  },
+  {
+    path: "/summaries/:id",
+    element: <ProtectedRoute><SummaryDetailPage /></ProtectedRoute>,
+  },
+  {
+    path: "/quizzes",
+    element: <ProtectedRoute><QuizzesPage /></ProtectedRoute>,
+  },
+  {
+    path: "/quizzes/:id/attempt",
+    element: <ProtectedRoute><QuizAttemptPage /></ProtectedRoute>,
+  },
+  {
+    path: "/quiz-attempts/:id/results",
+    element: <ProtectedRoute><QuizResultsPage /></ProtectedRoute>,
+  },
+  {
+    path: "/stats",
+    element: <ProtectedRoute><StatsPage /></ProtectedRoute>,
+  },
+]);
 ```
 
-### Quizzes (Cuestionarios)
-```python
-id: UUID (PK)
-user_id: UUID (FK -> Users)
-summary_id: UUID (FK -> Summaries, nullable)  # Puede generarse de resumen o documento temporal
-title: str
-topic: str  # "general" o tema específico
-difficulty_level: int  # 1-5, adaptativo según desempeño
-max_questions: int  # Máximo 30
-created_at: datetime
+#### 2. Estado Global (Context API)
+
+**AuthContext** - Gestión de autenticación:
+```typescript
+interface AuthContextType {
+  user: UserDetailResponse | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (credentials, remember?) => Promise<void>;
+  signup: (data, remember?) => Promise<void>;
+  logout: () => void;
+  refreshUser: () => Promise<void>;
+}
 ```
 
-### Questions (Preguntas)
-```python
-id: UUID (PK)
-quiz_id: UUID (FK -> Quizzes)
-question_text: str
-option_a: str
-option_b: str
-option_c: str
-option_d: str
-correct_option: enum('A', 'B', 'C', 'D')
-explanation: str  # Explicación detallada
-order: int
+- Almacena token JWT en localStorage (remember=true) o sessionStorage (remember=false)
+- Auto-carga usuario al iniciar sesión si hay token válido
+- Intercepta 401 para redirección automática a login
+
+#### 3. Capa de Servicios (api.ts)
+
+**Cliente Axios configurado con:**
+- Base URL configurable via `VITE_API_BASE`
+- Interceptor de request: añade header `Authorization: Bearer <token>` automáticamente
+- Interceptor de response: maneja 401 (token expirado) redirigiendo a login
+- Token management: `getToken()`, `setToken()`, `clearToken()`
+
+**Funciones organizadas por recurso:**
+- **Auth**: `register()`, `login()`, `getCurrentUser()`
+- **Documents**: `uploadDocument()`, `listDocuments()`, `deleteDocument()`, `getStorageInfo()`
+- **Summaries**: `createSummaryFromDocuments()`, `listSummaries()`, `getSummary()`, `deleteSummary()`
+- **Quizzes**: `createQuizFromFile()`, `createQuizFromSummary()`, `listQuizzes()`
+- **Quiz Attempts**: `createQuizAttempt()`, `answerQuestion()`, `completeQuizAttempt()`, `getQuizAttemptResults()`
+- **Stats**: `getUserProgress()`, `getUserPerformance()`, `getStatsSummary()`
+
+#### 4. Componentes Principales
+
+- **Navbar**: Navegación responsive con links a secciones, botón logout, avatar de usuario
+- **ProtectedRoute**: HOC que verifica autenticación antes de renderizar, redirige a /login si no autenticado
+- **QuotaWidget**: Muestra uso de almacenamiento (barra de progreso), alerta si supera 80%
+
+### Diseño y Estilos
+
+- **Tailwind CSS**: Utility-first CSS framework
+- **Tema Aurora Gradient**: Degradados morados/azules con efectos glass morphism
+- **Responsive**: Mobile-first con breakpoints `sm`, `md`, `lg`, `xl`
+- **Accesibilidad**: Hover states, focus rings, aria-labels en elementos interactivos
+
+### Variables de Entorno Frontend
+
+```env
+VITE_API_BASE=http://localhost:8000  # URL del backend
 ```
 
-### QuizAttempts (Intentos de Cuestionario)
-```python
-id: UUID (PK)
-quiz_id: UUID (FK -> Quizzes)
-user_id: UUID (FK -> Users)
-started_at: datetime
-completed_at: datetime (nullable)
-score: float (nullable)  # Porcentaje 0-100
-```
+---
 
-### Answers (Respuestas)
-```python
-id: UUID (PK)
-attempt_id: UUID (FK -> QuizAttempts)
-question_id: UUID (FK -> Questions)
-selected_option: enum('A', 'B', 'C', 'D')
-is_correct: bool
-answered_at: datetime
-```
+## Base de Datos
+
+**Schema**: `studyforge` con roles separados (`studyforge_owner` para migraciones, `studyforge_app` para runtime)
+
+**Tablas principales**:
+- **Users**: Usuarios con sistema de cuotas de almacenamiento
+- **Documents**: Archivos almacenados (PDF, DOCX, PPTX, TXT) con contenido binario
+- **Summaries**: Resúmenes generados con IA (contenido en JSONB)
+- **Quizzes**: Cuestionarios con preguntas en JSONB (no tablas relacionales)
+- **QuizAttempts**: Intentos de quiz con respuestas randomizadas por intento
+
+**Ver detalles completos** (modelo de datos, índices, migraciones): **[DATABASE.md](DATABASE.md)**
 
 ## Flujo de Datos
 
-### 1. Generación de Resumen
+### 1. Generación de Resumen (Multi-documento)
 
 ```
-Usuario → Upload File (no se guarda en BD)
+Usuario → Upload File(s) o selecciona documentos existentes
     ↓
-FileProcessor → Extrae texto según tipo de archivo
+FileProcessor → Extrae y almacena texto
+    ↓
+Document Repository → Guarda documento (file_content + extracted_text)
     ↓
 OpenAI Service → Genera resumen según nivel de expertise
     ↓
-Summary Repository → Guarda solo el resumen (NO el archivo)
+Summary Repository → Guarda resumen y relación con documentos
     ↓
 Usuario ← Resumen estructurado
 ```
 
-### 2. Generación de Cuestionario
+### 2. Generación de Cuestionario (con randomización)
 
 ```
-Usuario → Solicita cuestionario (de resumen o documento nuevo)
+Usuario → Solicita cuestionario (de resumen existente)
     ↓
-Quiz Service → Analiza contenido
+Quiz Service → Analiza contenido y calcula dificultad adaptativa
     ↓
-OpenAI Service → Genera preguntas según:
-    - Nivel de dificultad (basado en historial)
-    - Cantidad (automática o especificada por usuario)
-    - Tema (general o específico)
+OpenAI Service → Genera preguntas en formato JSON semántico
     ↓
-Quiz Repository → Guarda cuestionario y preguntas
+Quiz Repository → Guarda cuestionario con questions (JSONB)
     ↓
 Usuario ← Cuestionario generado
 ```
@@ -212,42 +298,44 @@ Usuario ← Cuestionario generado
 ```
 Usuario → Inicia cuestionario
     ↓
-Quiz Attempt creado
+QuizAttempt Repository → Crea attempt + randomiza opciones
     ↓
-Usuario responde preguntas → Una por una
+Usuario responde preguntas → Por índice (0, 1, 2...)
     ↓
 Feedback inmediato (correcto/incorrecto + explicación)
     ↓
-Al finalizar → Calcula score, actualiza estadísticas
+Al finalizar → Calcula score comparando arrays
     ↓
 Algoritmo adaptativo → Ajusta nivel de dificultad futuro
 ```
 
+**Para flujos end-to-end detallados** (debugging, diagramas de secuencia): **[INTEGRATION.md](INTEGRATION.md)**
+
+---
+
 ## Características Clave
 
-### 1. Privacidad de Documentos
-- Los documentos originales NO se almacenan en la base de datos
-- Solo se procesa el contenido en memoria
-- Se guarda únicamente:
-  - El resumen generado
-  - Nombre del archivo original
-  - Tipo de archivo
+### 1. Sistema de Almacenamiento con Cuotas
+- Los documentos SE almacenan para reutilización
+- Sistema de cuotas configurable por usuario
+- Tracking de uso de almacenamiento en tiempo real
+- Múltiples documentos pueden asociarse a un resumen
 
-### 2. Niveles de Expertise
-- **Básico**: Resumen simple, vocabulario accesible
+### 2. Niveles de Expertise Adaptativos
+- **Básico**: Vocabulario simple, conceptos fundamentales
 - **Medio**: Balance entre detalle y claridad
-- **Avanzado**: Resumen técnico y detallado
+- **Avanzado**: Análisis técnico y profundo
 
-### 3. Sistema Adaptativo de Cuestionarios
-- Tracking de desempeño por tema
-- Ajuste automático de dificultad basado en últimos 5 intentos
+### 3. Quizzes con Randomización
+- Preguntas almacenadas en JSON (no tablas relacionales)
+- Randomización de opciones por intento
+- Dificultad adaptativa basada en últimos 5 intentos
 - Máximo 30 preguntas por cuestionario
-- Opción de cuestionario completo o por tema específico
 
 ### 4. Feedback Inmediato
-- Respuesta correcta/incorrecta al instante
+- Evaluación por comparación de arrays
 - Explicación detallada de cada pregunta
-- No se bloquea hasta finalizar el cuestionario
+- Progreso visible en tiempo real
 
 ## API Endpoints
 
@@ -277,63 +365,25 @@ Algoritmo adaptativo → Ajusta nivel de dificultad futuro
 
 ## Seguridad
 
-### Autenticación
-- JWT con expiración de 24 horas
-- Refresh tokens (opcional)
-- Contraseñas hasheadas con Argon2
+- **Autenticación**: JWT + Argon2 para contraseñas
+- **Privacidad**: Aislamiento de datos por usuario (ownership validation)
+- **Rate Limiting**: Middleware de límites de peticiones
+- **Validación**: Pydantic + magic numbers para archivos
 
-### Validación
-- Pydantic para validación de datos de entrada
-- Límite de tamaño de archivo: 10MB
-- Tipos de archivo permitidos: PDF, PPTX, PPT, DOCX, DOC, TXT
+**Ver detalles completos**: [SECURITY.md](SECURITY.md)
 
-### Rate Limiting
-- Límite de llamadas a OpenAI por usuario
-- Límite de uploads por día
+---
 
-## Variables de Entorno
+## Referencias
 
-```env
-# Database
-DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/studyforge
+**Documentación técnica**:
+- **Base de datos**: [DATABASE.md](DATABASE.md) - Modelo de datos, índices, migraciones, queries
+- **Integración E2E**: [INTEGRATION.md](INTEGRATION.md) - Flujos detallados para debugging y diagramas
+- **Seguridad**: [SECURITY.md](SECURITY.md) - Consideraciones de seguridad y privacidad
+- **Decisiones**: [DECISIONS.md](DECISIONS.md) - Registro de decisiones técnicas con justificación
 
-# JWT
-SECRET_KEY=your-secret-key
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-
-# OpenAI
-OPENAI_API_KEY=sk-...
-
-# File Upload
-MAX_FILE_SIZE_MB=10
-ALLOWED_EXTENSIONS=pdf,pptx,ppt,docx,doc,txt
-
-# Environment
-ENV=development
-```
-
-## Deployment
-
-### Render
-1. Crear servicio Web para backend (Python 3.14)
-2. Crear servicio PostgreSQL 18
-3. Configurar variables de entorno
-4. Build command: `pip install -r requirements.txt && alembic upgrade head`
-5. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-
-### Frontend (Render Static Site o Vercel)
-1. Build command: `pnpm install && pnpm build`
-2. Publish directory: `dist`
-
-## Próximos Pasos
-
-1. ✅ Definir arquitectura
-2. ⏳ Implementar backend base
-3. ⏳ Implementar autenticación
-4. ⏳ Implementar procesamiento de archivos
-5. ⏳ Integrar OpenAI
-6. ⏳ Implementar frontend
-7. ⏳ Testing
-8. ⏳ Deployment
+**Estado del proyecto**:
+- **Implementación**: [IMPLEMENTATION.md](IMPLEMENTATION.md) - Checklist de lo implementado
+- **Próximos pasos**: [NEXT_STEPS.md](NEXT_STEPS.md) - Tareas pendientes inmediatas
+- **Roadmap**: [ROADMAP.md](ROADMAP.md) - Plan de desarrollo a largo plazo (fases)
 

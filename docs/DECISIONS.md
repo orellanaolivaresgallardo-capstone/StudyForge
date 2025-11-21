@@ -1,6 +1,6 @@
 # DECISIONS — Registro de decisiones técnicas
 
-> Documento breve para consultar el "qué se decidió" y "por qué" con fechas.
+> Documento para consultar el "qué se decidió" y "por qué" con fechas.
 
 ## 2025-11-18 — Reimplementación completa del backend
 
@@ -91,15 +91,6 @@
 - **Motivo**: Flexibilidad en estructura de datos, soporte nativo de PostgreSQL para queries.
 - **Implementación**: `content = Column(JSONB, nullable=False)` con estructura validada por Pydantic.
 
-## 2025-11-19 — Encoding UTF-8 con CRLF para Windows
-
-- **Decisión**: Todos los archivos del proyecto en UTF-8 con line endings CRLF.
-- **Motivo**: Compatibilidad con Windows, evitar problemas de decodificación.
-- **Implementación**:
-  - Conversión con `unix2dos`
-  - Script de verificación `verify_encoding.py` (modo binario)
-  - Archivos corregidos: `requirements.txt` (UTF-16 → UTF-8), `__init__.py` files (ISO-8859-1 → UTF-8)
-
 ## 2025-11-19 — Arquitectura en capas
 
 - **Decisión**: Separación estricta en 4 capas: Models → Repositories → Services → Routers.
@@ -115,3 +106,24 @@
 - **Decisión**: Usar Pydantic v2 con `pydantic-settings` para configuración.
 - **Motivo**: Validación robusta de tipos, generación automática de OpenAPI schemas.
 - **Implementación**: Schemas en `app/schemas/`, Settings en `app/config.py`.
+
+## 2025-11-20 — Rediseño de Quizzes con almacenamiento JSON
+
+- **Decisión**: Almacenar preguntas en JSONB en lugar de tablas relacionales (Question, Answer).
+- **Motivo**:
+  - Resolver bugs críticos (max_questions siempre 10, correct_option siempre "A")
+  - Simplificar arquitectura (4 tablas → 2 tablas)
+  - Permitir randomización de opciones por intento
+  - Evaluación más simple y confiable (comparación de arrays)
+- **Alternativas consideradas**:
+  - Mantener tablas relacionales y arreglar bugs → Rechazado por complejidad de JOINs
+  - Usar tabla intermedia para randomización → Rechazado por redundancia
+- **Trade-offs aceptados**:
+  - No se pueden hacer queries SQL complejas sobre preguntas individuales
+  - Resultados muestran opciones en orden fijo (no el orden randomizado exacto)
+- **Implementación**:
+  - `quizzes.questions` (JSONB) con formato semántico (correct, semi-correct, incorrect1, incorrect2)
+  - `quiz_attempts.correct_answers` (JSONB array) - posiciones aleatorias por intento
+  - `quiz_attempts.user_answers` (JSONB array) - respuestas del usuario
+  - Randomización en `QuizAttemptRepository.create_attempt()`
+  - Evaluación por comparación de arrays en memoria

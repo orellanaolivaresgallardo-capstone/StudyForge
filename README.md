@@ -1,4 +1,4 @@
-# StudyForge 2.0
+# StudyForge
 
 **Sistema de apoyo al aprendizaje con Inteligencia Artificial**
 
@@ -9,18 +9,20 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 ## 🎯 Características Principales
 
 ### 1. **Generación de Resúmenes Inteligentes**
-- Carga de documentos en múltiples formatos: **PDF, DOCX, PPTX, TXT**
+- Carga y almacenamiento de documentos en múltiples formatos: **PDF, DOCX, PPTX, TXT**
 - Resúmenes adaptados a 3 niveles de expertise:
   - **Básico**: Vocabulario simple y conceptos fundamentales
   - **Medio**: Balance entre detalle y claridad
   - **Avanzado**: Análisis técnico y profundo
 - Identificación automática de temas y conceptos clave
-- **Los documentos NO se almacenan** (solo los resúmenes generados)
+- Sistema de cuotas de almacenamiento (5GB por defecto, configurable)
+- Reutilización de documentos almacenados para múltiples resúmenes
 
 ### 2. **Cuestionarios Adaptativos**
-- Generación automática de preguntas de opción múltiple
+- Generación automática de preguntas de opción múltiple (almacenadas en JSON)
 - Cantidad de preguntas adaptable (máximo 30 por cuestionario)
-- Dificultad adaptativa basada en desempeño histórico
+- Dificultad adaptativa basada en desempeño histórico (últimos 5 intentos)
+- Randomización de opciones en cada intento para evitar memorización
 - Opción de cuestionario completo o por tema específico
 - **Feedback inmediato** con explicaciones detalladas
 
@@ -40,7 +42,7 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 - **ORM**: SQLAlchemy 2.0
 - **Migraciones**: Alembic
 - **Autenticación**: JWT (python-jose + Argon2)
-- **IA**: OpenAI API (GPT-4)
+- **IA**: OpenAI API (GPT-4o-mini)
 - **Procesamiento de archivos**: 
   - PDF: PyPDF2, pdfplumber
   - Office (DOCX, PPTX): python-docx, python-pptx
@@ -98,8 +100,10 @@ Esto creará:
 
 #### 3.1. Crear entorno virtual e instalar dependencias
 
+**IMPORTANTE**: El entorno virtual se crea en la raíz del proyecto, NO en `backend/`.
+
 ```bash
-cd backend
+# Desde la raíz del proyecto
 python -m venv .venv
 
 # Windows
@@ -108,7 +112,8 @@ python -m venv .venv
 # Linux/Mac
 source .venv/bin/activate
 
-pip install -r requirements.txt
+# Instalar dependencias
+pip install -r backend/requirements.txt
 ```
 
 #### 3.2. Configurar variables de entorno
@@ -180,66 +185,76 @@ Aplicación: [http://localhost:5173](http://localhost:5173)
 
 ```
 StudyForge/
-├── backend/
-│   ├── alembic/              # Migraciones de base de datos
+├── backend/                  # API REST con FastAPI
 │   ├── app/
 │   │   ├── core/             # Seguridad, dependencias
 │   │   ├── models/           # Modelos SQLAlchemy
-│   │   ├── schemas/          # Schemas Pydantic
-│   │   ├── routers/          # Endpoints API
+│   │   ├── schemas/          # Schemas Pydantic (validación)
+│   │   ├── routers/          # Endpoints HTTP (FastAPI routers)
 │   │   ├── services/         # Lógica de negocio
-│   │   ├── repositories/     # Acceso a datos
-│   │   ├── utils/            # Utilidades
-│   │   ├── config.py         # Configuración
+│   │   ├── repositories/     # Acceso a datos (CRUD)
+│   │   ├── config.py         # Configuración central de la aplicación
 │   │   ├── db.py             # Configuración BD
 │   │   └── main.py           # App FastAPI
-│   ├── tests/                # Tests
-│   ├── requirements.txt
-│   ├── setup_database.sql    # Script de configuración BD
-│   └── .env.example
+│   ├── tests/
+│   ├── requirements.txt      # Dependencias Python
+│   ├── setup_database.sql    # Script de configuración BD (schema + roles)
+│   ├── .env.example          # Ejemplo de variables de entorno
+│   └── alembic.ini           # Configuración de Alembic
 │
-├── frontend/
+├── frontend/                 # SPA con React 19
+│   ├── public/               # Archivos estáticos
 │   ├── src/
-│   │   ├── components/       # Componentes React
-│   │   │   ├── Navbar.tsx    # Barra de navegación
-│   │   │   ├── ProtectedRoute.tsx  # Guard de autenticación
-│   │   │   └── QuotaWidget.tsx     # Widget de cuotas
-│   │   ├── context/          # Context API
-│   │   │   └── AuthContext.tsx     # Estado de autenticación
-│   │   ├── pages/            # Páginas principales
-│   │   │   ├── login.tsx     # Login
-│   │   │   ├── signup.tsx    # Registro
-│   │   │   ├── documents.tsx # Gestión de documentos
-│   │   │   ├── summaries.tsx # Lista de resúmenes
-│   │   │   ├── SummaryDetail.tsx # Detalle de resumen
-│   │   │   ├── Quizzes.tsx   # Lista de quizzes
-│   │   │   ├── QuizAttempt.tsx   # Tomar quiz
-│   │   │   ├── QuizResults.tsx   # Resultados
-│   │   │   └── Stats.tsx     # Estadísticas
-│   │   ├── services/         # Servicios API
-│   │   │   └── api.ts        # Cliente Axios
-│   │   ├── types/            # TypeScript types
-│   │   │   └── api.types.ts  # Tipos de API
-│   │   └── main.tsx          # Entry point
+│   │   ├── components/       # Componentes reutilizables
+│   │   ├── context/          # Estado global (Context API)
+│   │   ├── pages/            # Páginas principales (React Router)
+│   │   ├── services/         # Capa de servicios HTTP
+│   │   ├── types/            # Definiciones TypeScript
+│   │   ├── assets/           # Imágenes, íconos
+│   │   ├── App.tsx           # Componente raíz
+│   │   ├── main.tsx          # Entry point + configuración de rutas
+│   │   └── index.css         # Estilos globales (Tailwind)
 │   ├── package.json
-│   └── vite.config.ts
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── tailwind.config.js
 │
-└── docs/
-    ├── ARCHITECTURE.md       # Arquitectura detallada
-    ├── DECISIONS.md          # Decisiones técnicas
-    └── ROADMAP.md            # Plan de desarrollo
+└── docs/                     # Documentación técnica
+    ├── ARCHITECTURE.md       # Arquitectura de alto nivel (optimizado para diagramas 4+1)
+    ├── DATABASE.md           # Modelo de datos, índices, migraciones
+    ├── INTEGRATION.md        # Flujos end-to-end detallados (para diagramas de secuencia)
+    ├── SECURITY.md           # Consideraciones de seguridad y privacidad
+    ├── DECISIONS.md          # Registro de decisiones técnicas con justificación
+    ├── IMPLEMENTATION.md     # Estado de implementación (checklist)
+    ├── NEXT_STEPS.md         # Próximos pasos y tareas pendientes
+    ├── ROADMAP.md            # Plan de desarrollo a largo plazo (fases)
+    └── updates/              # Actualizaciones técnicas archivadas
 ```
+
+**Arquitectura en capas** (Backend):
+- **Models** → **Repositories** → **Services** → **Routers**
+- Separación clara de responsabilidades
+- Testabilidad y mantenibilidad
+
+**Documentación detallada**:
+- Vista general: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Base de datos: [docs/DATABASE.md](docs/DATABASE.md)
+- Flujos de integración: [docs/INTEGRATION.md](docs/INTEGRATION.md)
 
 ---
 
 ## 🔐 Seguridad
 
-- **Contraseñas**: Hash con Argon2 (más seguro que bcrypt)
-- **Autenticación**: JWT con expiración de 24 horas
-- **Privacidad**: Los documentos NO se almacenan en la base de datos
-- **Validación**: Pydantic para todos los datos de entrada
-- **Rate Limiting**: Control de llamadas a OpenAI por usuario
-- **Límites de archivo**: Máximo 10MB por documento
+- **Contraseñas**: Hash con Argon2id (más seguro que bcrypt)
+- **Autenticación**: JWT stateless con expiración de 24 horas
+- **Privacidad**: Aislamiento total de datos por usuario (ownership validation)
+- **Cuotas**: Sistema de cuotas de almacenamiento por usuario (5GB por defecto)
+- **Validación**: Pydantic para todos los datos de entrada + magic numbers para archivos
+- **Rate Limiting**: Middleware de límites de peticiones
+- **Límites de archivo**: Configurable por usuario (máximo 50MB por defecto)
+- **Base de datos**: Roles separados para migraciones (owner) y runtime (app)
+
+Ver detalles completos en [docs/SECURITY.md](docs/SECURITY.md)
 
 ---
 

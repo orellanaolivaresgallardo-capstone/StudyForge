@@ -2,61 +2,22 @@
 
 **Última actualización:** 2025-11-19
 
-**Estado actual:** Backend completamente implementado con autenticación, resúmenes con IA, quizzes adaptativos, y todas las funcionalidades core. Base de datos PostgreSQL configurada con migraciones. Proyecto en branch `remake` con reimplementación desde cero.
+Este documento describe el plan de desarrollo a largo plazo de StudyForge, organizado en fases desde MVP hasta funcionalidades avanzadas.
 
-**Completado:**
-- ✅ Autenticación con JWT y Argon2
-- ✅ CRUD completo de resúmenes
-- ✅ Sistema de quizzes con dificultad adaptativa
-- ✅ Integración con OpenAI (GPT-4o-mini)
-- ✅ Procesamiento de archivos (PDF, DOCX, PPTX, TXT)
-- ✅ Base de datos con schema aislado y roles separados
-- ✅ API documentada con Swagger/OpenAPI
+**Estado actual:** Ver [IMPLEMENTATION.md](IMPLEMENTATION.md) para detalles completos de implementación.
 
 ---
 
-## Fase 1 — Frontend MVP ⏳ *EN PROGRESO*
+## Fase 1 — Frontend MVP ✅ *COMPLETADO*
 
 **Objetivo:** Interfaz básica funcional para usar todas las features del backend
 
-### 1.1 Setup y configuración
-- [ ] Actualizar dependencias de frontend (React 19, Vite, Tailwind)
-- [ ] Configurar cliente API (axios/fetch) con interceptors
-- [ ] Implementar Context API para autenticación
-- [ ] Configurar rutas con React Router
-
-### 1.2 Autenticación
-- [ ] Página de registro
-- [ ] Página de login
-- [ ] Persistencia de token (localStorage)
-- [ ] Protección de rutas privadas
-- [ ] Página de perfil con logout
-
-### 1.3 Resúmenes
-- [ ] Upload de documentos con drag & drop
-- [ ] Selector de nivel de expertise
-- [ ] Lista de resúmenes (grid/list view)
-- [ ] Vista detallada de resumen
-- [ ] Filtros y búsqueda
-
-### 1.4 Quizzes
-- [ ] Generar quiz desde archivo o resumen
-- [ ] Interface para tomar quiz
-- [ ] Feedback inmediato por pregunta
-- [ ] Resultados detallados
-- [ ] Historial de intentos
-
-### 1.5 Dashboard y estadísticas
-- [ ] Dashboard con resumen de actividad
-- [ ] Gráficas de progreso
-- [ ] Estadísticas por tema
-- [ ] Evolución de dificultad adaptativa
-
-**Criterios de aceptación:**
-- Flujo completo funcional: registro → login → upload → resumen → quiz → resultados
-- Responsive design (mobile-first)
-- Manejo de errores y estados de carga
-- UX intuitiva y consistente
+- ✅ Setup y configuración (React 19, Vite, Tailwind, Axios, Context API)
+- ✅ Autenticación (login, signup, protección de rutas)
+- ✅ Gestión de documentos (upload con drag & drop, lista, eliminación)
+- ✅ Resúmenes (creación, lista, vista detallada)
+- ✅ Quizzes (generación, toma con feedback inmediato, resultados)
+- ✅ Dashboard de estadísticas (progreso por tema, historial)
 
 ---
 
@@ -311,21 +272,22 @@
 
 ---
 
-## Prioridades actuales (Noviembre 2025)
+## Prioridades Actuales (Noviembre 2025)
 
-1. **Frontend MVP** (Fase 1) - Hacer usable el backend existente
-2. **Testing básico** (Fase 2.1) - Prevenir regresiones
-3. **Deploy en staging** (Fase 3.2) - Validar con usuarios reales
-4. **Documentación** - README, guías de uso, API docs
+1. ✅ ~~Frontend MVP~~ *COMPLETADO*
+2. **Testing** (Fase 2) - Tests unitarios y de integración
+3. **Deployment** (Fase 3) - Deploy en staging/producción
+4. **Optimización** (Fase 4) - Performance y caché
 
 ---
 
-## Hitos clave
+## Hitos Clave
 
-- **V1.0** (MVP): Backend + Frontend básico + Deploy
-- **V1.5**: Testing completo + Optimizaciones + Seguridad básica
-- **V2.0**: Features avanzadas + Escalabilidad
-- **V3.0**: i18n + Monetización + Ecosistema
+- **✅ MVP**: Backend + Frontend básico *COMPLETADO*
+- **⏳ V1.1**: Testing completo + Deploy staging *EN PROGRESO*
+- **📋 V1.5**: Optimizaciones + Seguridad avanzada
+- **📋 V2.0**: Features avanzadas + Escalabilidad
+- **📋 V3.0**: i18n + Monetización (opcional)
 
 ---
 
