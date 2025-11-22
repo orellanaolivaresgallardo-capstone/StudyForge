@@ -73,8 +73,16 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
                 response_format={"type": "json_object"}
             )
 
+            # Validar que la respuesta no sea None
+            content = response.choices[0].message.content
+            if content is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="El mensaje en la respuesta de OpenIA estaba vacío"
+                )
+
             # Parsear respuesta JSON
-            result = json.loads(response.choices[0].message.content)
+            result = json.loads(content)
 
             return result
 
@@ -163,8 +171,16 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
                 response_format={"type": "json_object"}
             )
 
+            # Validar que la respuesta no sea None
+            content = response.choices[0].message.content
+            if content is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="El mensaje en la respuesta de OpenIA estaba vacío"
+                )
+
             # Parsear respuesta JSON
-            result = json.loads(response.choices[0].message.content)
+            result = json.loads(content)
 
             return result.get("questions", [])
 
