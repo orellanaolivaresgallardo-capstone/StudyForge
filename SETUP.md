@@ -16,6 +16,8 @@ Esta guía te ayudará a configurar el proyecto desde cero.
 
 ### 1.1. Ejecutar el script SQL
 
+**⚠️ IMPORTANTE**: En producción, cambia las contraseñas de los roles en el archivo [setup_database.sql](backend/setup_database.sql) antes de ejecutarlo.
+
 Desde la raíz del proyecto:
 
 ```bash
@@ -31,8 +33,6 @@ Esto creará:
 - Schema `studyforge`
 - Rol `studyforge_owner` (para migraciones) con password: `password`
 - Rol `studyforge_app` (para la aplicación) con password: `password`
-
-**⚠️ IMPORTANTE**: En producción, cambia las contraseñas en el archivo [setup_database.sql](backend/setup_database.sql) antes de ejecutarlo.
 
 ### 1.2. Verificar la base de datos
 
@@ -74,6 +74,11 @@ pip install -r backend/requirements.txt
 
 Crear **`backend/.env`** (para la aplicación):
 
+```bash
+cp .env.example .env
+```
+Agregar la OpenAI API Key en el archivo **`backend/.env`**:
+
 ```env
 DATABASE_URL=postgresql+psycopg://studyforge_app:password@localhost:5432/studyforge?options=-csearch_path=studyforge,public
 SECRET_KEY=change-this-to-a-random-secret-key-in-production
@@ -87,8 +92,18 @@ MAX_FILE_SIZE_MB=10
 
 Crear **`backend/.env.alembic`** (para migraciones):
 
+```bash
+cp .env.alembic.example .env.alembic
+```
+
 ```env
 ALEMBIC_URL=postgresql+psycopg://studyforge_owner:password@localhost:5432/studyforge?options=-csearch_path=studyforge,public
+```
+
+**⚠️ IMPORTANTE**: En producción, cambiar las contraseñas de DATABASE_URL y ALEMBIC_URL en los archivos por las usadas en [setup_database.sql](backend/setup_database.sql), por ejemplo: 
+
+```env
+DATABASE_URL=postgresql+psycopg://studyforge_app:contraseña_produccion@localhost:5432/studyforge?options=-csearch_path=studyforge,public
 ```
 
 ### 2.4. Generar y aplicar migraciones
