@@ -69,6 +69,12 @@ export default function SummaryDetailPage() {
   async function handleGenerateQuiz() {
     if (!id) return;
 
+    // Validación client-side
+    if (quizQuestions < 5 || quizQuestions > 30) {
+      showToast("El número de preguntas debe estar entre 5 y 30");
+      return;
+    }
+
     try {
       setIsGeneratingQuiz(true);
       const quiz = await createQuizFromSummary({
@@ -480,7 +486,25 @@ export default function SummaryDetailPage() {
                   min="5"
                   max="30"
                   value={quizQuestions}
-                  onChange={(e) => setQuizQuestions(parseInt(e.target.value) || 10)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setQuizQuestions(10);
+                      return;
+                    }
+                    const num = Number(value);
+                    if (!isNaN(num)) {
+                      setQuizQuestions(Math.min(30, Math.max(5, num)));
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const value = Number(e.target.value);
+                    if (isNaN(value) || value < 5) {
+                      setQuizQuestions(5);
+                    } else if (value > 30) {
+                      setQuizQuestions(30);
+                    }
+                  }}
                   className="w-full px-4 py-2 rounded-xl bg-slate-900/50 border border-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
                 <p className="text-xs text-slate-400 mt-1">

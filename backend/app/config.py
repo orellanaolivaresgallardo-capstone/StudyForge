@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     ALLOWED_EXTENSIONS: list[str] = ["pdf", "pptx", "docx", "txt"]
 
     # Cuestionarios
+    MIN_QUESTIONS_PER_QUIZ: int = 5
     MAX_QUESTIONS_PER_QUIZ: int = 30
     DEFAULT_QUIZ_QUESTIONS: int = 10
 

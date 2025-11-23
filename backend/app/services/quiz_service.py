@@ -94,8 +94,13 @@ class QuizService:
         text = await FileProcessor.extract_text(file)
 
         # 2. Determinar número de preguntas
-        num_questions = max_questions or settings.DEFAULT_QUIZ_QUESTIONS
-        num_questions = min(num_questions, settings.MAX_QUESTIONS_PER_QUIZ)
+        if max_questions is not None:
+            # Usuario especificó cantidad: validar rango 5-30
+            num_questions = max(settings.MIN_QUESTIONS_PER_QUIZ,
+                               min(max_questions, settings.MAX_QUESTIONS_PER_QUIZ))
+        else:
+            # Usar valor por defecto
+            num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
         # 3. Calcular dificultad adaptativa
         difficulty_level = self.calculate_adaptive_difficulty(db, user_id, topic)
@@ -153,8 +158,13 @@ class QuizService:
         summary_text = summary.content.get("summary", "")
 
         # 3. Determinar número de preguntas
-        num_questions = max_questions or settings.DEFAULT_QUIZ_QUESTIONS
-        num_questions = min(num_questions, settings.MAX_QUESTIONS_PER_QUIZ)
+        if max_questions is not None:
+            # Usuario especificó cantidad: validar rango 5-30
+            num_questions = max(settings.MIN_QUESTIONS_PER_QUIZ,
+                               min(max_questions, settings.MAX_QUESTIONS_PER_QUIZ))
+        else:
+            # Usar valor por defecto
+            num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
         # 4. Calcular dificultad adaptativa
         difficulty_level = self.calculate_adaptive_difficulty(db, user.id, topic)

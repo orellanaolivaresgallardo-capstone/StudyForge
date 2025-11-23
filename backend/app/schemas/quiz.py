@@ -38,7 +38,7 @@ class QuizCreate(BaseModel):
     """Schema para crear un cuestionario."""
     summary_id: Optional[UUID] = Field(None, description="ID del resumen (opcional)")
     topic: str = Field("general", description="Tema específico o 'general'")
-    max_questions: Optional[int] = Field(None, ge=1, le=30, description="Número de preguntas")
+    max_questions: Optional[int] = Field(None, ge=5, le=30, description="Número de preguntas (5-30)")
     file: Optional[bytes] = Field(None, description="Archivo temporal (si no hay summary_id)")
     file_name: Optional[str] = Field(None, description="Nombre del archivo")
     file_type: Optional[str] = Field(None, description="Tipo de archivo")

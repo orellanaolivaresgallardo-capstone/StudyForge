@@ -162,6 +162,7 @@ export interface QuizCreateFromFile {
 
 export interface QuizCreateFromSummary {
   summary_id: string;
+  topic?: string;
   max_questions?: number;
 }
 

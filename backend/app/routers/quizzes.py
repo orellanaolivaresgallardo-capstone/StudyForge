@@ -20,7 +20,7 @@ quiz_service = QuizService()
 async def generate_quiz_from_file(
     file: UploadFile = File(..., description="Archivo a procesar"),
     topic: str = Form("general", description="Tema específico o 'general'"),
-    max_questions: Optional[int] = Form(None, ge=1, le=30, description="Número de preguntas (máx 30)"),
+    max_questions: Optional[int] = Form(None, ge=5, le=30, description="Número de preguntas (5-30)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -53,7 +53,7 @@ async def generate_quiz_from_file(
 def generate_quiz_from_summary(
     summary_id: UUID,
     topic: str = Form("general", description="Tema específico o 'general'"),
-    max_questions: Optional[int] = Form(None, ge=1, le=30, description="Número de preguntas (máx 30)"),
+    max_questions: Optional[int] = Form(None, ge=5, le=30, description="Número de preguntas (5-30)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

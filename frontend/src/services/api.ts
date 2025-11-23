@@ -304,10 +304,15 @@ export async function createQuizFromSummary(
   if (data.max_questions) {
     formData.append("max_questions", data.max_questions.toString());
   }
-  
+
   const response = await apiClient.post<QuizResponse>(
     `/quizzes/generate-from-summary/${data.summary_id}`,
-    formData
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
   return response.data;
 }
