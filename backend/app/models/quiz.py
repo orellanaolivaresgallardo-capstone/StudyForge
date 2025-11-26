@@ -24,6 +24,8 @@ class Quiz(Base):
     topic = Column(String(255), nullable=False)  # "general" o tema específico
     difficulty_level = Column(Integer, nullable=False, default=1)  # 1-5
     questions = Column(JSONB, nullable=False)  # Array de preguntas con opciones no aleatorizadas
+    source_document_ids = Column(JSONB, nullable=True)  # IDs de documentos fuente: ["uuid-1", "uuid-2"]
+    source_summary_ids = Column(JSONB, nullable=True)  # IDs de resúmenes fuente: ["uuid-1"]
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relaciones

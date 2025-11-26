@@ -31,6 +31,7 @@ class Summary(Base):
     expertise_level = Column(Enum(ExpertiseLevel), nullable=False, index=True)
     topics = Column(JSONB, nullable=False, default=list)  # Lista de temas identificados
     key_concepts = Column(JSONB, nullable=False, default=list)  # Conceptos clave
+    deleted_documents_info = Column(JSONB, nullable=True)  # Info de documentos eliminados: [{"id": "uuid", "title": "...", "file_name": "..."}]
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

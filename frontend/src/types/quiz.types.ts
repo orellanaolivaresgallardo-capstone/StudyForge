@@ -40,6 +40,8 @@ export interface QuizResponse {
   difficulty_level: number; // 1-5
   created_at: string;
   questions: QuestionData[]; // Preguntas en formato JSON
+  source_document_ids?: string[] | null;
+  source_summary_ids?: string[] | null;
   num_questions: number;
   num_attempts: number;
 }

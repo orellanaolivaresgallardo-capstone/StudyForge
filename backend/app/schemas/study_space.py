@@ -52,6 +52,11 @@ class AddResourceRequest(BaseModel):
     resource_id: UUID = Field(..., description="ID del recurso a agregar")
 
 
+class DeleteSpaceRequest(BaseModel):
+    """Schema para eliminar espacio con confirmación de contraseña."""
+    password: str = Field(..., min_length=1, description="Contraseña del usuario para confirmar eliminación")
+
+
 class StudySpaceStatsResponse(BaseModel):
     """Schema para estadísticas del espacio."""
     space_id: str

@@ -5,11 +5,8 @@ Schemas para Resumen.
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from uuid import UUID
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any, Optional
 from enum import Enum
-
-if TYPE_CHECKING:
-    from app.schemas.document import DocumentResponse
 
 
 class KeyConceptItem(BaseModel):
@@ -39,6 +36,13 @@ class SummaryFromDocumentsRequest(BaseModel):
     expertise_level: ExpertiseLevelEnum = Field(..., description="Nivel de expertise del resumen")
 
 
+class DeletedDocumentInfo(BaseModel):
+    """Schema para información de documento eliminado."""
+    id: str = Field(..., description="UUID del documento eliminado")
+    title: str = Field(..., description="Título del documento")
+    file_name: str = Field(..., description="Nombre del archivo")
+
+
 class SummaryResponse(BaseModel):
     """Schema para respuesta de resumen."""
     model_config = ConfigDict(from_attributes=True)
@@ -50,14 +54,22 @@ class SummaryResponse(BaseModel):
     expertise_level: str
     topics: List[str]
     key_concepts: List[KeyConceptItem]
+    deleted_documents_info: Optional[List[DeletedDocumentInfo]] = Field(
+        None,
+        description="Info de documentos eliminados que fueron fuente de este resumen"
+    )
     created_at: datetime
     updated_at: datetime
     study_space_names: List[str] = Field(default_factory=list, description="Nombres de espacios a los que pertenece")
 
 
+# Import DocumentResponse after SummaryResponse is defined to avoid any import issues
+from app.schemas.document import DocumentResponse  # noqa: E402
+
+
 class SummaryDetailResponse(SummaryResponse):
     """Schema para detalle de resumen con documentos asociados."""
-    documents: List["DocumentResponse"] = Field(default_factory=list, description="Documentos fuente asociados al resumen")
+    documents: List[DocumentResponse] = Field(default_factory=list, description="Documentos fuente asociados al resumen")
 
 
 class SummaryListResponse(BaseModel):

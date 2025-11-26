@@ -11,6 +11,12 @@ export interface KeyConceptItem {
   definition: string;
 }
 
+export interface DeletedDocumentInfo {
+  id: string;
+  title: string;
+  file_name: string;
+}
+
 export interface SummaryResponse {
   id: string;
   user_id: string;
@@ -19,6 +25,7 @@ export interface SummaryResponse {
   expertise_level: ExpertiseLevel;
   topics: string[];
   key_concepts: KeyConceptItem[];
+  deleted_documents_info?: DeletedDocumentInfo[] | null;
   created_at: string;
   updated_at: string;
   study_space_names: string[];

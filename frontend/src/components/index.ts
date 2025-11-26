@@ -19,3 +19,4 @@ export { ProtectedRoute } from './auth';
 
 // Special components (stay at root level)
 export { default as LandingPage } from './LandingPage';
+export { UploadDocumentModal } from './UploadDocumentModal';

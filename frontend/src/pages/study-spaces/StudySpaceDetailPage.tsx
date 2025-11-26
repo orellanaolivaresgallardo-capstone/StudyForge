@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Navbar, Toast, Modal, LoadingSpinner, EmptyState, QuizCard } from "@/components";
+import { Navbar, Toast, Modal, LoadingSpinner, EmptyState, QuizCard, PerformanceChart } from "@/components";
 import type { ToastType } from "@/components";
 import { SpaceHeader } from "./components";
 import {
@@ -20,6 +20,10 @@ import {
   listSummaries,
   listDocuments,
   createQuizFromSpace,
+  createQuizFromDocument,
+  createQuizFromSummary,
+  createSummaryFromDocuments,
+  getUserPerformance,
 } from "@/services/api";
 import type {
   StudySpaceDetailResponse,
@@ -28,6 +32,8 @@ import type {
   SummaryResponse,
   DocumentResponse,
   QuizResponse,
+  UserPerformance,
+  ExpertiseLevel,
 } from "@/types/api.types";
 
 export default function StudySpaceDetailPage() {
@@ -37,6 +43,7 @@ export default function StudySpaceDetailPage() {
   const [space, setSpace] = useState<StudySpaceDetailResponse | null>(null);
   const [stats, setStats] = useState<StudySpaceStatsResponse | null>(null);
   const [quizzes, setQuizzes] = useState<QuizResponse[]>([]);
+  const [performance, setPerformance] = useState<UserPerformance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Toast state
@@ -53,6 +60,12 @@ export default function StudySpaceDetailPage() {
   const [availableResources, setAvailableResources] = useState<(SummaryResponse | DocumentResponse)[]>([]);
   const [isLoadingResources, setIsLoadingResources] = useState(false);
 
+  // Estado para crear resumen desde documento
+  const [showCreateSummaryModal, setShowCreateSummaryModal] = useState(false);
+  const [selectedDocumentForSummary, setSelectedDocumentForSummary] = useState<DocumentResponse | null>(null);
+  const [summaryExpertiseLevel, setSummaryExpertiseLevel] = useState<ExpertiseLevel>("medio");
+  const [isCreatingSummary, setIsCreatingSummary] = useState(false);
+
   // Estado para crear quiz
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
 
@@ -61,6 +74,7 @@ export default function StudySpaceDetailPage() {
       loadSpace(id);
       loadStats(id);
       loadQuizzes(id);
+      loadPerformance();
     }
   }, [id]);
 
@@ -101,8 +115,83 @@ export default function StudySpaceDetailPage() {
     }
   }
 
+  async function loadPerformance() {
+    try {
+      const data = await getUserPerformance(10);
+      setPerformance(data);
+    } catch (error) {
+      console.error("Error loading performance:", error);
+    }
+  }
+
   function showToast(msg: string, type: ToastType = "info") {
     setToast({ message: msg, type });
+  }
+
+  // ========== Crear Resumen desde Documento ==========
+  function handleOpenCreateSummaryModal(document: DocumentResponse) {
+    setSelectedDocumentForSummary(document);
+    setSummaryExpertiseLevel("medio");
+    setShowCreateSummaryModal(true);
+  }
+
+  async function handleCreateSummary() {
+    if (!id || !selectedDocumentForSummary) return;
+
+    try {
+      setIsCreatingSummary(true);
+      await createSummaryFromDocuments({
+        document_ids: [selectedDocumentForSummary.id],
+        expertise_level: summaryExpertiseLevel,
+      });
+      showToast("Resumen creado exitosamente", "success");
+      setShowCreateSummaryModal(false);
+      loadSpace(id);
+      loadStats(id);
+    } catch (error: any) {
+      console.error("Error creating summary:", error);
+      showToast(error.response?.data?.detail || "Error al crear el resumen", "error");
+    } finally {
+      setIsCreatingSummary(false);
+    }
+  }
+
+  // ========== Crear Quiz desde Documento ==========
+  async function handleCreateQuizFromDocument(document: DocumentResponse) {
+    try {
+      setIsCreatingQuiz(true);
+      const quiz = await createQuizFromDocument(document.id, "general", 10);
+      showToast("Quiz creado exitosamente", "success");
+      loadStats(id!);
+      loadQuizzes(id!);
+      setTimeout(() => navigate(`/quizzes/${quiz.id}`), 1500);
+    } catch (error: any) {
+      console.error("Error creating quiz from document:", error);
+      showToast(error.response?.data?.detail || "Error al crear el quiz", "error");
+    } finally {
+      setIsCreatingQuiz(false);
+    }
+  }
+
+  // ========== Crear Quiz desde Resumen ==========
+  async function handleCreateQuizFromSummary(summary: SummaryResponse) {
+    try {
+      setIsCreatingQuiz(true);
+      const quiz = await createQuizFromSummary({
+        summary_id: summary.id,
+        topic: "general",
+        max_questions: 10,
+      });
+      showToast("Quiz creado exitosamente", "success");
+      loadStats(id!);
+      loadQuizzes(id!);
+      setTimeout(() => navigate(`/quizzes/${quiz.id}`), 1500);
+    } catch (error: any) {
+      console.error("Error creating quiz from summary:", error);
+      showToast(error.response?.data?.detail || "Error al crear el quiz", "error");
+    } finally {
+      setIsCreatingQuiz(false);
+    }
   }
 
   function handleOpenEditModal() {
@@ -286,7 +375,26 @@ export default function StudySpaceDetailPage() {
           onEdit={handleOpenEditModal}
         />
 
-        {/* Quizzes Section */}
+        {/* Gráfico de Progreso */}
+        {performance && performance.recent_attempts.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-4">Progreso en este Espacio</h2>
+            <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
+              <PerformanceChart
+                attempts={performance.recent_attempts.filter(
+                  (attempt) => attempt.study_space_id === id
+                )}
+              />
+              {performance.recent_attempts.filter((a) => a.study_space_id === id).length === 0 && (
+                <p className="text-white/60 text-center py-8">
+                  Aún no tienes intentos de quiz en este espacio
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Documentos Section */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-white">Quizzes</h2>
@@ -393,7 +501,7 @@ export default function StudySpaceDetailPage() {
               {space.documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl p-4 hover:bg-white/10 transition-all duration-200"
+                  className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl p-4 hover:bg-white/10 transition-all duration-200 flex flex-col"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="text-white font-semibold flex-1 line-clamp-1">{doc.title}</h3>
@@ -406,10 +514,34 @@ export default function StudySpaceDetailPage() {
                       </svg>
                     </button>
                   </div>
-                  <p className="text-sm text-white/60">{doc.file_name}</p>
-                  <p className="text-xs text-white/50 mt-2">
+                  <p className="text-sm text-white/60 mb-1">{doc.file_name}</p>
+                  <p className="text-xs text-white/50 mb-3">
                     {(doc.file_size_bytes / 1024).toFixed(1)} KB
                   </p>
+
+                  {/* Acciones */}
+                  <div className="flex gap-2 mt-auto">
+                    <button
+                      onClick={() => handleOpenCreateSummaryModal(doc)}
+                      disabled={isCreatingSummary}
+                      className="flex-1 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      <svg className="w-3 h-3 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Resumen
+                    </button>
+                    <button
+                      onClick={() => handleCreateQuizFromDocument(doc)}
+                      disabled={isCreatingQuiz}
+                      className="flex-1 bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/30 text-pink-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      <svg className="w-3 h-3 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      Quiz
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -457,16 +589,17 @@ export default function StudySpaceDetailPage() {
               {space.summaries.map((summary) => (
                 <div
                   key={summary.id}
-                  className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl p-4 hover:bg-white/10 transition-all duration-200 cursor-pointer"
-                  onClick={() => navigate(`/summaries/${summary.id}`)}
+                  className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl p-4 hover:bg-white/10 transition-all duration-200"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-white font-semibold flex-1">{summary.title}</h3>
+                    <h3
+                      className="text-white font-semibold flex-1 cursor-pointer hover:text-violet-300 transition-colors"
+                      onClick={() => navigate(`/summaries/${summary.id}`)}
+                    >
+                      {summary.title}
+                    </h3>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveResource(summary.id, "summary", summary.title);
-                      }}
+                      onClick={() => handleRemoveResource(summary.id, "summary", summary.title)}
                       className="text-white/60 hover:text-red-400 transition-colors ml-2"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -474,7 +607,7 @@ export default function StudySpaceDetailPage() {
                       </svg>
                     </button>
                   </div>
-                  <div className="flex gap-2 flex-wrap mt-2">
+                  <div className="flex gap-2 flex-wrap mt-2 mb-3">
                     {summary.topics.slice(0, 3).map((topic, idx) => (
                       <span
                         key={idx}
@@ -484,6 +617,18 @@ export default function StudySpaceDetailPage() {
                       </span>
                     ))}
                   </div>
+
+                  {/* Acción */}
+                  <button
+                    onClick={() => handleCreateQuizFromSummary(summary)}
+                    disabled={isCreatingQuiz}
+                    className="w-full bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/30 text-pink-300 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4 inline mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Generar Quiz
+                  </button>
                 </div>
               ))}
             </div>
@@ -604,6 +749,76 @@ export default function StudySpaceDetailPage() {
             ))}
           </div>
         )}
+      </Modal>
+
+      {/* Modal Crear Resumen desde Documento */}
+      <Modal
+        isOpen={showCreateSummaryModal}
+        onClose={() => setShowCreateSummaryModal(false)}
+        title="Generar Resumen"
+        size="sm"
+      >
+        <div className="space-y-6">
+          <div>
+            <p className="text-white/80 mb-2">
+              Documento: <strong>{selectedDocumentForSummary?.title}</strong>
+            </p>
+            <p className="text-sm text-white/60">
+              Se generará un resumen automáticamente usando IA
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-white/80 font-semibold mb-3">
+              Nivel de Expertise
+            </label>
+            <div className="space-y-2">
+              {[
+                { value: "basico", label: "Básico", desc: "Lenguaje simple y directo" },
+                { value: "medio", label: "Medio", desc: "Balance entre simplicidad y detalle" },
+                { value: "avanzado", label: "Avanzado", desc: "Profundidad técnica" },
+              ].map((level) => (
+                <label
+                  key={level.value}
+                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                    summaryExpertiseLevel === level.value
+                      ? "bg-violet-600/20 border border-violet-500"
+                      : "bg-white/5 border border-white/10 hover:bg-white/10"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="expertise"
+                    value={level.value}
+                    checked={summaryExpertiseLevel === level.value}
+                    onChange={(e) => setSummaryExpertiseLevel(e.target.value as ExpertiseLevel)}
+                    className="w-4 h-4 text-violet-600"
+                  />
+                  <div className="flex-1">
+                    <div className="text-white font-medium">{level.label}</div>
+                    <div className="text-xs text-white/60">{level.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setShowCreateSummaryModal(false)}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleCreateSummary}
+              disabled={isCreatingSummary}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-white/10 disabled:to-white/10 disabled:text-white/40 text-white font-semibold transition-all"
+            >
+              {isCreatingSummary ? "Generando..." : "Generar Resumen"}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

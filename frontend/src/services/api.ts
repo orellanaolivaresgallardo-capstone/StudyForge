@@ -158,10 +158,12 @@ export async function getCurrentUser(): Promise<UserDetailResponse> {
 
 export async function uploadDocument(
   file: File,
+  studySpaceIds: string[], // Al menos un espacio requerido
   title?: string
 ): Promise<DocumentResponse> {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("study_space_ids", studySpaceIds.join(","));
   if (title) {
     formData.append("title", title);
   }
@@ -325,6 +327,29 @@ export async function createQuizFromSummary(
   return response.data;
 }
 
+export async function createQuizFromDocument(
+  documentId: string,
+  topic: string = "general",
+  maxQuestions?: number
+): Promise<QuizResponse> {
+  const formData = new FormData();
+  formData.append("topic", topic);
+  if (maxQuestions !== undefined) {
+    formData.append("max_questions", maxQuestions.toString());
+  }
+
+  const response = await apiClient.post<QuizResponse>(
+    `/quizzes/generate-from-document/${documentId}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  return response.data;
+}
+
 export async function listQuizzes(
   skip: number = 0,
   limit: number = 100
@@ -340,6 +365,10 @@ export async function getQuiz(quizId: string): Promise<QuizResponse> {
     `/quizzes/${quizId}`
   );
   return response.data;
+}
+
+export async function deleteQuiz(quizId: string): Promise<void> {
+  await apiClient.delete(`/quizzes/${quizId}`);
 }
 
 // ---------- QUIZ ATTEMPTS ----------
@@ -450,8 +479,13 @@ export async function updateStudySpace(
   return response.data;
 }
 
-export async function deleteStudySpace(spaceId: string): Promise<void> {
-  await apiClient.delete(`/study-spaces/${spaceId}`);
+export async function deleteStudySpace(
+  spaceId: string,
+  password: string
+): Promise<void> {
+  await apiClient.delete(`/study-spaces/${spaceId}`, {
+    data: { password }
+  });
 }
 
 export async function addSummaryToSpace(

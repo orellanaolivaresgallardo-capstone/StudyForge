@@ -28,6 +28,21 @@ class AnswerFeedback(BaseModel):
     score_so_far: Optional[float] = Field(None, description="Puntaje acumulado hasta el momento")
 
 
+class QuizSnapshotData(BaseModel):
+    """Schema para snapshot de quiz."""
+    id: str = Field(..., description="UUID del quiz")
+    title: str = Field(..., description="Título del quiz")
+    topic: str = Field(..., description="Tema del quiz")
+    difficulty_level: int = Field(..., description="Nivel de dificultad")
+
+
+class StudySpaceSnapshotData(BaseModel):
+    """Schema para snapshot de espacio de estudio."""
+    id: str = Field(..., description="UUID del espacio")
+    name: str = Field(..., description="Nombre del espacio")
+    color: str = Field(..., description="Color del espacio en formato hex")
+
+
 class QuizAttemptResponse(BaseModel):
     """Schema para respuesta de intento de cuestionario con respuestas en JSON."""
     model_config = ConfigDict(from_attributes=True)
@@ -45,6 +60,14 @@ class QuizAttemptResponse(BaseModel):
     user_answers: List[str] = Field(
         default_factory=list,
         description="Array de respuestas del usuario: ['A', 'C', 'B', ...]"
+    )
+    quiz_snapshot: Optional[QuizSnapshotData] = Field(
+        None,
+        description="Snapshot del quiz (preservado incluso si el quiz es eliminado)"
+    )
+    study_space_snapshot: Optional[StudySpaceSnapshotData] = Field(
+        None,
+        description="Snapshot del espacio de estudio (preservado incluso si el espacio es eliminado)"
     )
 
 

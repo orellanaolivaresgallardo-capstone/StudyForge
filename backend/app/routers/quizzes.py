@@ -48,6 +48,8 @@ def _enrich_quiz_response(quiz, db: Session, user_id: UUID) -> dict:
         "difficulty_level": quiz.difficulty_level,
         "created_at": quiz.created_at,
         "questions": quiz.questions,
+        "source_document_ids": quiz.source_document_ids,
+        "source_summary_ids": quiz.source_summary_ids,
         "study_space_name": quiz.study_space.name if quiz.study_space else None,
         "summary_title": quiz.summary.title if quiz.summary else None,
         "document_names": [d.file_name for d in quiz.summary.documents] if quiz.summary else [],
@@ -130,6 +132,43 @@ def generate_quiz_from_summary(
     return QuizResponse(**quiz_dict)
 
 
+@router.post("/generate-from-document/{document_id}", response_model=QuizResponse, status_code=status.HTTP_201_CREATED)
+def generate_quiz_from_document(
+    document_id: UUID,
+    topic: str = Form("general", description="Tema específico o 'general'"),
+    max_questions: Optional[int] = Form(None, ge=5, le=30, description="Número de preguntas (5-30)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Genera un cuestionario a partir de un documento existente.
+
+    Args:
+        document_id: ID del documento
+        topic: Tema del cuestionario o "general"
+        max_questions: Número de preguntas
+        current_user: Usuario autenticado
+        db: Sesión de base de datos
+
+    Returns:
+        Cuestionario generado con metadata
+
+    Raises:
+        HTTPException: Si el documento no existe o no pertenece al usuario
+    """
+    quiz = quiz_service.create_quiz_from_document(
+        db=db,
+        user=current_user,
+        document_id=document_id,
+        topic=topic,
+        max_questions=max_questions,
+    )
+
+    # Enriquecer con metadata
+    quiz_dict = _enrich_quiz_response(quiz, db, current_user.id)
+    return QuizResponse(**quiz_dict)
+
+
 @router.get("", response_model=QuizListResponse)
 def list_quizzes(
     skip: int = 0,
@@ -196,3 +235,39 @@ def get_quiz(
     # Enriquecer con metadata
     quiz_dict = _enrich_quiz_response(quiz, db, current_user.id)
     return QuizResponse(**quiz_dict)
+
+
+@router.delete("/{quiz_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_quiz(
+    quiz_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Elimina un quiz (hard delete).
+
+    IMPORTANTE: Los quiz_attempts asociados se preservan automáticamente
+    para mantener el historial de progreso del usuario.
+
+    Args:
+        quiz_id: ID del quiz
+        current_user: Usuario autenticado
+        db: Sesión de base de datos
+
+    Raises:
+        HTTPException: Si el quiz no existe o no pertenece al usuario
+    """
+    # Verificar ownership
+    quiz = quiz_service.get_quiz(db, quiz_id, current_user)
+
+    # Eliminar quiz usando el servicio de eliminación
+    from app.services.deletion_service import DeletionService
+    success = DeletionService.delete_quiz(db, quiz_id)
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz no encontrado"
+        )
+
+    return None

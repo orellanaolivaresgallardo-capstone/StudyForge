@@ -67,6 +67,7 @@ export type {
   StudySpaceDetailResponse,
   StudySpaceListResponse,
   AddResourceRequest,
+  DeleteSpaceRequest,
   StudySpaceStatsResponse,
 } from './study-space.types';
 

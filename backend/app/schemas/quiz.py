@@ -65,6 +65,14 @@ class QuizResponse(BaseModel):
     questions: List[Dict[str, Any]] = Field(
         description="Lista de preguntas en formato JSON"
     )
+    source_document_ids: Optional[List[str]] = Field(
+        None,
+        description="IDs de documentos fuente (para detectar cuáles fueron eliminados)"
+    )
+    source_summary_ids: Optional[List[str]] = Field(
+        None,
+        description="IDs de resúmenes fuente (para detectar cuáles fueron eliminados)"
+    )
     # Campos calculados en el router (no vienen del modelo)
     study_space_name: Optional[str] = None
     summary_title: Optional[str] = None  # Título del resumen origen si existe

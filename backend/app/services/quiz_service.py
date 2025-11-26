@@ -125,6 +125,101 @@ class QuizService:
             questions=questions_data[:num_questions],
         )
 
+        # NOTA: No hay source_document_ids ni source_summary_ids porque no está asociado a ningún documento/resumen almacenado
+
+        return quiz
+
+    def create_quiz_from_document(
+        self,
+        db: Session,
+        user: User,
+        document_id: UUID,
+        topic: str = "general",
+        max_questions: Optional[int] = None,
+    ) -> Quiz:
+        """
+        Crea un cuestionario a partir de un documento existente.
+
+        Args:
+            db: Sesión de base de datos
+            user: Usuario autenticado
+            document_id: ID del documento
+            topic: Tema específico o "general"
+            max_questions: Número de preguntas (opcional)
+
+        Returns:
+            Cuestionario creado
+
+        Raises:
+            HTTPException: Si el documento no existe o no pertenece al usuario
+        """
+        # 1. Verificar que el documento existe y pertenece al usuario
+        from app.repositories.document_repository import DocumentRepository
+        from app.core.dependencies import verify_document_ownership
+
+        document = DocumentRepository.get_by_id(db, document_id)
+        document = verify_document_ownership(document, user)
+
+        # 2. Usar el texto extraído del documento
+        document_text = document.extracted_text
+
+        if not document_text or document_text.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El documento no tiene texto extraído válido"
+            )
+
+        # 3. Determinar número de preguntas
+        if max_questions is not None:
+            # Usuario especificó cantidad: validar rango 5-30
+            num_questions = max(settings.MIN_QUESTIONS_PER_QUIZ,
+                               min(max_questions, settings.MAX_QUESTIONS_PER_QUIZ))
+        else:
+            # Usar valor por defecto
+            num_questions = settings.DEFAULT_QUIZ_QUESTIONS
+
+        # 4. Calcular dificultad adaptativa
+        difficulty_level = self.calculate_adaptive_difficulty(db, user.id, topic)
+
+        # 5. Obtener contexto del espacio si el documento pertenece a un espacio
+        space_context = None
+        study_space_id = None
+        if len(document.study_spaces) > 0:
+            # Usar la descripción del primer espacio como contexto
+            first_space = document.study_spaces[0]
+            if first_space.description:
+                space_context = first_space.description
+            # Si pertenece a exactamente un espacio, heredar
+            if len(document.study_spaces) == 1:
+                study_space_id = first_space.id
+
+        # 6. Generar cuestionario con OpenAI (con contexto del espacio si está disponible)
+        questions_data = self.openai_service.generate_quiz(
+            text=document_text,
+            topic=topic,
+            difficulty_level=difficulty_level,
+            num_questions=num_questions,
+            space_context=space_context,
+        )
+
+        # 7. Crear cuestionario en BD con preguntas en formato JSON
+        quiz = QuizRepository.create_quiz(
+            db=db,
+            user_id=user.id,
+            summary_id=None,  # No hay resumen asociado
+            study_space_id=study_space_id,  # Auto-asignado al espacio si pertenece a uno
+            title=f"Cuestionario: {document.title}",
+            topic=topic,
+            difficulty_level=difficulty_level,
+            questions=questions_data[:num_questions],
+        )
+
+        # 8. Rastrear fuentes: documento
+        quiz.source_document_ids = [str(document_id)]
+        quiz.source_summary_ids = []  # No hay resúmenes fuente
+        db.commit()
+        db.refresh(quiz)
+
         return quiz
 
     def create_quiz_from_summary(
@@ -213,6 +308,12 @@ class QuizService:
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )
+
+        # 9. Rastrear fuentes: summary y sus documentos
+        quiz.source_summary_ids = [str(summary_id)]
+        quiz.source_document_ids = [str(doc.id) for doc in summary.documents]
+        db.commit()
+        db.refresh(quiz)
 
         return quiz
 
@@ -357,5 +458,16 @@ class QuizService:
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )
+
+        # 10. Rastrear fuentes: todos los resúmenes del espacio
+        quiz.source_summary_ids = [str(summary.id) for summary in space.summaries]
+        # Recopilar todos los documentos únicos de los resúmenes
+        all_doc_ids = set()
+        for summary in space.summaries:
+            for doc in summary.documents:
+                all_doc_ids.add(str(doc.id))
+        quiz.source_document_ids = list(all_doc_ids)
+        db.commit()
+        db.refresh(quiz)
 
         return quiz

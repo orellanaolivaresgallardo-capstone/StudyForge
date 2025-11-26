@@ -5,40 +5,48 @@
  */
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Navbar, Toast, Modal } from "@/components";
+import { Navbar, Toast, Modal, UploadDocumentModal } from "@/components";
 import type { ToastType } from "@/components";
 import {
   listDocuments,
   uploadDocument as apiUploadDocument,
   deleteDocument as apiDeleteDocument,
+  listStudySpaces,
+  createStudySpace,
 } from "@/services/api";
-import type { DocumentResponse } from "@/types/api.types";
+import type { DocumentResponse, StudySpaceResponse } from "@/types/api.types";
 
 export default function DocumentsPage() {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
+  const [studySpaces, setStudySpaces] = useState<StudySpaceResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   // Estado de upload
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   // Estado de modal de confirmación
   const [deleteModal, setDeleteModal] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => {
-    loadDocuments();
+    loadData();
   }, []);
 
-  async function loadDocuments() {
+  async function loadData() {
     try {
       setIsLoading(true);
-      const response = await listDocuments();
-      setDocuments(response.items);
+      const [docsResponse, spacesResponse] = await Promise.all([
+        listDocuments(),
+        listStudySpaces(),
+      ]);
+      setDocuments(docsResponse.items);
+      setStudySpaces(spacesResponse.items);
     } catch (error) {
-      console.error("Error loading documents:", error);
-      setToast({ message: "No se pudieron cargar los documentos", type: "error" });
+      console.error("Error loading data:", error);
+      setToast({ message: "No se pudieron cargar los datos", type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +56,7 @@ export default function DocumentsPage() {
     setToast({ message: msg, type });
   }
 
-  async function handleFileUpload(file: File) {
+  function handleFileSelect(file: File) {
     if (!file) return;
 
     // Validar tipo de archivo
@@ -59,22 +67,49 @@ export default function DocumentsPage() {
       return;
     }
 
+    // Abrir modal con el archivo seleccionado
+    setSelectedFile(file);
+    setShowUploadModal(true);
+  }
+
+  async function handleUploadWithSpaces(
+    file: File,
+    spaceIds: string[],
+    title?: string
+  ) {
     try {
-      setIsUploading(true);
-      await apiUploadDocument(file);
+      await apiUploadDocument(file, spaceIds, title);
       showToast("Documento subido con éxito", "success");
-      await loadDocuments();
+      await loadData();
     } catch (error: any) {
       console.error("Error uploading document:", error);
       if (error?.response?.status === 413) {
         showToast("El archivo es demasiado grande", "error");
       } else if (error?.response?.status === 507) {
         showToast("No tienes suficiente espacio de almacenamiento", "error");
+      } else if (error?.response?.status === 400) {
+        showToast("Debes asignar el documento a un espacio de estudio", "error");
       } else {
         showToast("No se pudo subir el documento", "error");
       }
-    } finally {
-      setIsUploading(false);
+      throw error;
+    }
+  }
+
+  async function handleCreateSpace(
+    name: string,
+    description?: string,
+    color?: string
+  ): Promise<StudySpaceResponse> {
+    try {
+      const newSpace = await createStudySpace({ name, description, color });
+      setStudySpaces((prev) => [...prev, newSpace]);
+      showToast(`Espacio "${name}" creado con éxito`, "success");
+      return newSpace;
+    } catch (error: any) {
+      console.error("Error creating space:", error);
+      showToast("No se pudo crear el espacio", "error");
+      throw error;
     }
   }
 
@@ -84,7 +119,7 @@ export default function DocumentsPage() {
     try {
       await apiDeleteDocument(deleteModal.id);
       showToast("Documento eliminado", "success");
-      await loadDocuments();
+      await loadData();
       setDeleteModal(null);
     } catch (error) {
       console.error("Error deleting document:", error);
@@ -106,12 +141,14 @@ export default function DocumentsPage() {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) handleFileUpload(file);
+    if (file) handleFileSelect(file);
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleFileUpload(file);
+    if (file) handleFileSelect(file);
+    // Clear input para permitir seleccionar el mismo archivo de nuevo
+    e.target.value = "";
   };
 
   return (
@@ -143,7 +180,6 @@ export default function DocumentsPage() {
                 ? "border-green-500 bg-green-500/10"
                 : "border-white/15 bg-white/5 hover:border-white/25 hover:bg-white/10"
               }
-              ${isUploading ? "opacity-50 pointer-events-none" : ""}
             `}
           >
             <input
@@ -152,16 +188,9 @@ export default function DocumentsPage() {
               accept=".pdf,.docx,.pptx,.txt"
               className="hidden"
               onChange={handleFileInputChange}
-              disabled={isUploading}
             />
             <p className="text-white/80">
-              {isUploading ? (
-                <>Subiendo...</>
-              ) : (
-                <>
-                  Arrastra un <strong>PDF, DOCX, PPTX o TXT</strong> o haz click para seleccionar
-                </>
-              )}
+              Arrastra un <strong>PDF, DOCX, PPTX o TXT</strong> o haz click para seleccionar
             </p>
             <p className="text-xs text-white/60 mt-1">
               Máximo {user?.max_file_size_bytes ? Math.round(user.max_file_size_bytes / 1024 / 1024) : 50} MB por archivo
@@ -299,6 +328,19 @@ export default function DocumentsPage() {
           </div>
         </Modal>
       )}
+
+      {/* Upload Document Modal */}
+      <UploadDocumentModal
+        isOpen={showUploadModal}
+        onClose={() => {
+          setShowUploadModal(false);
+          setSelectedFile(null);
+        }}
+        file={selectedFile}
+        availableSpaces={studySpaces}
+        onUpload={handleUploadWithSpaces}
+        onCreateSpace={handleCreateSpace}
+      />
 
       {/* Toast Notification */}
       {toast && (

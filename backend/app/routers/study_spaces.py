@@ -16,6 +16,7 @@ from app.schemas.study_space import (
     StudySpaceDetailResponse,
     StudySpaceListResponse,
     AddResourceRequest,
+    DeleteSpaceRequest,
     StudySpaceStatsResponse,
 )
 from app.schemas.summary import SummaryResponse
@@ -89,11 +90,42 @@ def update_study_space(
 @router.delete("/{space_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_study_space(
     space_id: UUID,
+    request: DeleteSpaceRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Eliminar espacio."""
-    service.delete_space(db, space_id, current_user)
+    """
+    Eliminar espacio de estudio con confirmación de contraseña.
+
+    IMPORTANTE: Esta operación elimina permanentemente:
+    - El espacio de estudio
+    - Todos los quizzes del espacio (CASCADE)
+    - Todos los quiz_attempts de esos quizzes
+    - Todas las relaciones con documentos y summaries (CASCADE en junction tables)
+
+    Requiere confirmación con la contraseña del usuario.
+    """
+    from app.core.security import verify_password
+    from fastapi import HTTPException
+
+    # Verificar contraseña del usuario
+    if not verify_password(request.password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Contraseña incorrecta"
+        )
+
+    # Eliminar espacio usando el servicio de eliminación con cascade
+    from app.services.deletion_service import DeletionService
+    success = DeletionService.delete_study_space_with_cascade(
+        db, space_id, current_user.id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Espacio de estudio no encontrado"
+        )
 
 
 @router.post("/{space_id}/summaries", status_code=status.HTTP_204_NO_CONTENT)

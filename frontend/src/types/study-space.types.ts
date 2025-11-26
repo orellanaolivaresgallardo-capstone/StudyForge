@@ -41,6 +41,10 @@ export interface AddResourceRequest {
   resource_id: string;
 }
 
+export interface DeleteSpaceRequest {
+  password: string; // Contraseña del usuario para confirmar eliminación
+}
+
 export interface StudySpaceStatsResponse {
   space_id: string;
   space_name: string;

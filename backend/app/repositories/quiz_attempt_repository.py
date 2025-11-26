@@ -86,12 +86,31 @@ class QuizAttemptRepository:
         # Aleatorizar opciones
         correct_answers, randomized_questions = QuizAttemptRepository._randomize_options(quiz.questions)
 
-        # Crear intento con respuestas correctas
+        # Crear snapshot del quiz para preservar información
+        quiz_snapshot = {
+            "id": str(quiz.id),
+            "title": quiz.title,
+            "topic": quiz.topic,
+            "difficulty_level": quiz.difficulty_level
+        }
+
+        # Crear snapshot del espacio si el quiz pertenece a uno
+        study_space_snapshot = None
+        if quiz.study_space:
+            study_space_snapshot = {
+                "id": str(quiz.study_space.id),
+                "name": quiz.study_space.name,
+                "color": quiz.study_space.color
+            }
+
+        # Crear intento con respuestas correctas y snapshots
         attempt = QuizAttempt(
             quiz_id=quiz.id,
             user_id=user_id,
             correct_answers=correct_answers,
             user_answers=[],  # Se llenarán conforme el usuario responde
+            quiz_snapshot=quiz_snapshot,
+            study_space_snapshot=study_space_snapshot
         )
         db.add(attempt)
         db.commit()

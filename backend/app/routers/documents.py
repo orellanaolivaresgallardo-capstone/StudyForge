@@ -27,12 +27,15 @@ router = APIRouter()
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(..., description="Archivo a subir (PDF, DOCX, PPTX, TXT)"),
+    study_space_ids: str = Form(..., description="IDs de espacios de estudio (separados por coma), al menos uno requerido"),
     title: str = Form(None, description="Título del documento (opcional, usa nombre del archivo si no se especifica)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Sube un documento y lo almacena.
+    Sube un documento y lo asigna a uno o más espacios de estudio.
+
+    **IMPORTANTE**: El documento DEBE ser asignado a al menos un espacio de estudio.
 
     **Validaciones de cuota:**
     - El archivo no debe exceder max_file_size_bytes del usuario
@@ -40,18 +43,53 @@ async def upload_document(
 
     Args:
         file: Archivo a subir
+        study_space_ids: IDs de espacios separados por coma (ej: "uuid1,uuid2")
         title: Título del documento (opcional)
         current_user: Usuario autenticado
         db: Sesión de base de datos
 
     Returns:
-        Documento creado
+        Documento creado y asignado a los espacios
 
     Raises:
+        HTTPException 400: Si no se proporciona al menos un espacio o si algún espacio no existe
         HTTPException 413: Si el archivo es demasiado grande
         HTTPException 507: Si no hay suficiente espacio de almacenamiento
         HTTPException 415: Si el tipo de archivo no es soportado
     """
+    # 0. Validar y parsear study_space_ids
+    if not study_space_ids or study_space_ids.strip() == "":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes asignar el documento a al menos un espacio de estudio"
+        )
+
+    try:
+        space_ids_list = [UUID(sid.strip()) for sid in study_space_ids.split(",") if sid.strip()]
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de IDs de espacios inválido"
+        )
+
+    if not space_ids_list:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes asignar el documento a al menos un espacio de estudio"
+        )
+
+    # Verificar que todos los espacios existen y pertenecen al usuario
+    from app.repositories.study_space_repository import StudySpaceRepository
+    from app.core.dependencies import verify_space_ownership
+
+    for space_id in space_ids_list:
+        space = StudySpaceRepository.get_by_id(db, space_id)
+        if not space:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Espacio de estudio {space_id} no encontrado"
+            )
+        verify_space_ownership(space, current_user)
     # 1. Validar tipo de archivo con magic numbers (seguridad)
     filename, file_type = await FileProcessor.validate_file_security(file)
 
@@ -90,10 +128,19 @@ async def upload_document(
         extracted_text=extracted_text,
     )
 
-    # 7. Actualizar storage_used_bytes del usuario
+    # 7. Asignar documento a los espacios especificados
+    from app.repositories.study_space_repository import StudySpaceRepository
+
+    for space_id in space_ids_list:
+        space = StudySpaceRepository.get_by_id(db, space_id)
+        if space and document not in space.documents:
+            space.documents.append(document)
+
+    # 8. Actualizar storage_used_bytes del usuario
     current_user.storage_used_bytes += file_size_bytes
     db.commit()
     db.refresh(current_user)
+    db.refresh(document)
 
     return document
 
@@ -235,6 +282,9 @@ def delete_document(
     """
     Elimina un documento y libera el espacio de almacenamiento.
 
+    IMPORTANTE: Antes de eliminar el documento, denormaliza su información
+    en todos los resúmenes asociados para preservar el historial.
+
     Args:
         document_id: ID del documento
         current_user: Usuario autenticado
@@ -250,8 +300,15 @@ def delete_document(
     # Guardar tamaño para liberar storage
     file_size = document.file_size_bytes
 
-    # Eliminar documento
-    DocumentRepository.delete(db, document_id)
+    # Eliminar documento con denormalización
+    from app.services.deletion_service import DeletionService
+    success = DeletionService.delete_document_with_denormalization(db, document_id)
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Documento no encontrado"
+        )
 
     # Actualizar storage_used_bytes del usuario
     current_user.storage_used_bytes = max(0, current_user.storage_used_bytes - file_size)

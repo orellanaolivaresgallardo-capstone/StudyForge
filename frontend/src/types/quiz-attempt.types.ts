@@ -4,6 +4,19 @@
 
 import type { CorrectOption, QuestionWithRandomizedOptions } from './quiz.types';
 
+export interface QuizSnapshotData {
+  id: string;
+  title: string;
+  topic: string;
+  difficulty_level: number;
+}
+
+export interface StudySpaceSnapshotData {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface QuizAttemptResponse {
   id: string;
   quiz_id: string;
@@ -13,6 +26,8 @@ export interface QuizAttemptResponse {
   score: number | null;
   correct_answers: string[]; // ["A", "B", "C", ...] - Respuestas correctas aleatorizadas
   user_answers: string[]; // ["A", "C", "B", ...] - Respuestas del usuario
+  quiz_snapshot?: QuizSnapshotData | null;
+  study_space_snapshot?: StudySpaceSnapshotData | null;
 }
 
 export interface QuizAttemptWithQuestionsResponse extends QuizAttemptResponse {
