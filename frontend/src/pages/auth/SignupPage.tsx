@@ -1,7 +1,7 @@
-// src/pages/signup.tsx
+// frontend/src/pages/auth/SignupPage.tsx
 import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignupPage() {
   const navigate = useNavigate();

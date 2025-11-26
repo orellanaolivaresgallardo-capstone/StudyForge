@@ -79,7 +79,7 @@ const Modal: React.FC<ModalProps> = ({
     <div
       className={`
         fixed inset-0 z-50 flex items-center justify-center p-4
-        bg-black/50
+        bg-black/70 backdrop-blur-sm
         ${isExiting ? 'animate-fadeOut' : 'animate-fadeIn'}
       `}
       onClick={handleBackdropClick}
@@ -91,23 +91,23 @@ const Modal: React.FC<ModalProps> = ({
         ref={modalRef}
         className={`
           w-full ${sizeClasses[size]}
-          bg-white rounded-lg shadow-2xl
+          bg-slate-800 border border-white/10 rounded-2xl shadow-2xl
           overflow-hidden
           ${isExiting ? 'animate-scaleOut' : 'animate-scaleIn'}
         `}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between px-8 py-6">
             {title && (
-              <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
+              <h2 id="modal-title" className="text-3xl font-bold text-white">
                 {title}
               </h2>
             )}
             {showCloseButton && (
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-white/60 hover:text-white transition-colors"
                 aria-label="Close modal"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +124,7 @@ const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Body */}
-        <div className="px-6 py-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <div className="px-8 pb-8 max-h-[calc(100vh-200px)] overflow-y-auto">
           {children}
         </div>
       </div>

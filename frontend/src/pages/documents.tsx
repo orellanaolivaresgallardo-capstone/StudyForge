@@ -274,23 +274,25 @@ export default function DocumentsPage() {
           title="Confirmar eliminación"
           size="sm"
         >
-          <div className="space-y-4">
-            <p className="text-slate-300">
-              ¿Estás seguro de que quieres eliminar <strong>"{deleteModal.title}"</strong>?
-            </p>
-            <p className="text-sm text-slate-400">
-              Esta acción no se puede deshacer.
-            </p>
-            <div className="flex gap-3 justify-end">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <p className="text-white/80">
+                ¿Estás seguro de que quieres eliminar <strong>"{deleteModal.title}"</strong>?
+              </p>
+              <p className="text-sm text-white/60">
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setDeleteModal(null)}
-                className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+                className="flex-1 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDeleteDocument}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+                className="flex-1 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors"
               >
                 Eliminar
               </button>

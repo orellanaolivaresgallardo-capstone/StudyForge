@@ -1,4 +1,4 @@
-// src/main.tsx
+// frontend/src/main.tsx
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -10,9 +10,9 @@ import "./index.css";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
-import Login from "./pages/login";
-import SignUp from "./pages/signup";
-import ForgotPasswordPage from "./pages/forgot-password";
+import LoginPage from "./pages/auth/LoginPage";
+import SignupPage from "./pages/auth/SignupPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import FeaturesPage from "./pages/features";
 import AboutUsPage from "./pages/aboutus";
 import DocumentsPage from "./pages/documents";
@@ -28,8 +28,8 @@ import ErrorPage from "./pages/ErrorPage";
 
 const router = createBrowserRouter([
   { path: "/", element: <Home /> },
-  { path: "/login", element: <Login /> },
-  { path: "/signup", element: <SignUp /> },
+  { path: "/login", element: <LoginPage /> },
+  { path: "/signup", element: <SignupPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/features", element: <FeaturesPage /> },
   { path: "/aboutus", element: <AboutUsPage /> },

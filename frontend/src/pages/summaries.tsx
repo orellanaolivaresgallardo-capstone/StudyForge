@@ -390,23 +390,25 @@ export default function SummariesPage() {
             title="Confirmar eliminación"
             size="sm"
           >
-            <div className="space-y-4">
-              <p className="text-slate-300">
-                ¿Estás seguro de que quieres eliminar el resumen <strong>"{deleteModal.title}"</strong>?
-              </p>
-              <p className="text-sm text-slate-400">
-                Esta acción no se puede deshacer.
-              </p>
-              <div className="flex gap-3 justify-end">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <p className="text-white/80">
+                  ¿Estás seguro de que quieres eliminar el resumen <strong>"{deleteModal.title}"</strong>?
+                </p>
+                <p className="text-sm text-white/60">
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setDeleteModal(null)}
-                  className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={confirmDeleteSummary}
-                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+                  className="flex-1 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors"
                 >
                   Eliminar
                 </button>
@@ -416,164 +418,130 @@ export default function SummariesPage() {
         )}
 
         {/* Create Summary Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={() => setShowCreateModal(false)}
-            ></div>
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Crear resumen"
+          size="lg"
+        >
+          <div className="space-y-6">
+            {/* Title */}
+            <div>
+              <label className="block text-white/80 font-semibold mb-2">
+                Título (opcional)
+              </label>
+              <input
+                type="text"
+                value={summaryTitle}
+                onChange={(e) => setSummaryTitle(e.target.value)}
+                placeholder="Ej: Resumen de Matemáticas"
+                className="w-full bg-slate-900/50 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-violet-500 transition-colors"
+              />
+            </div>
 
-            {/* Modal */}
-            <div className="relative bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-              {/* Header */}
-              <div className="p-6 border-b border-white/10">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-white">Crear resumen</h2>
-                  <button
-                    onClick={() => setShowCreateModal(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+            {/* Expertise Level */}
+            <div>
+              <label className="block text-white/80 font-semibold mb-2">
+                Nivel de experiencia
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(["basico", "medio", "avanzado"] as ExpertiseLevel[]).map(
+                  (level) => (
+                    <button
+                      key={level}
+                      onClick={() => setExpertiseLevel(level)}
+                      className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                        expertiseLevel === level
+                          ? "bg-violet-600 text-white"
+                          : "bg-white/5 text-white/60 border border-white/10 hover:border-violet-400/50"
+                      }`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 overflow-y-auto flex-1">
-                <div className="space-y-6">
-                  {/* Title */}
-                  <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      Título (opcional)
-                    </label>
-                    <input
-                      type="text"
-                      value={summaryTitle}
-                      onChange={(e) => setSummaryTitle(e.target.value)}
-                      placeholder="Ej: Resumen de Matemáticas"
-                      className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-violet-400"
-                    />
-                  </div>
-
-                  {/* Expertise Level */}
-                  <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      Nivel de experiencia
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {(["basico", "medio", "avanzado"] as ExpertiseLevel[]).map(
-                        (level) => (
-                          <button
-                            key={level}
-                            onClick={() => setExpertiseLevel(level)}
-                            className={`px-4 py-3 rounded-xl font-medium transition-all ${
-                              expertiseLevel === level
-                                ? "bg-violet-600 text-white"
-                                : "bg-white/5 text-white/60 border border-white/10 hover:border-violet-400/50"
-                            }`}
-                          >
-                            {getExpertiseLevelLabel(level)}
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Document Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      Selecciona documentos ({selectedDocIds.length} / {maxDocs})
-                    </label>
-                    {documents.length === 0 ? (
-                      <div className="text-center py-8 text-white/60">
-                        No tienes documentos. Sube algunos primero.
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {documents.map((doc) => (
-                          <div
-                            key={doc.id}
-                            onClick={() => toggleDocumentSelection(doc.id)}
-                            className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                              selectedDocIds.includes(doc.id)
-                                ? "bg-violet-500/20 border-violet-500/50"
-                                : "bg-white/5 border-white/10 hover:border-violet-400/30"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                  selectedDocIds.includes(doc.id)
-                                    ? "bg-violet-500 border-violet-500"
-                                    : "border-white/30"
-                                }`}
-                              >
-                                {selectedDocIds.includes(doc.id) && (
-                                  <svg
-                                    className="w-3 h-3 text-white"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={3}
-                                      d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-white font-medium">
-                                  {doc.title}
-                                </p>
-                                <p className="text-xs text-white/60">
-                                  {doc.file_type.toUpperCase()} •{" "}
-                                  {(doc.file_size_bytes / 1024).toFixed(1)} KB
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 border-t border-white/10 flex gap-3">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 font-medium transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCreateSummary}
-                  disabled={isCreating || selectedDocIds.length === 0}
-                  className="flex-1 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCreating ? "Generando..." : "Generar resumen"}
-                </button>
+                      {getExpertiseLevelLabel(level)}
+                    </button>
+                  )
+                )}
               </div>
             </div>
+
+            {/* Document Selection */}
+            <div>
+              <label className="block text-white/80 font-semibold mb-2">
+                Selecciona documentos ({selectedDocIds.length} / {maxDocs})
+              </label>
+              {documents.length === 0 ? (
+                <div className="text-center py-8 text-white/60">
+                  No tienes documentos. Sube algunos primero.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      onClick={() => toggleDocumentSelection(doc.id)}
+                      className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                        selectedDocIds.includes(doc.id)
+                          ? "bg-violet-500/20 border-violet-500/50"
+                          : "bg-white/5 border-white/10 hover:border-violet-400/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                            selectedDocIds.includes(doc.id)
+                              ? "bg-violet-500 border-violet-500"
+                              : "border-white/30"
+                          }`}
+                        >
+                          {selectedDocIds.includes(doc.id) && (
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-white font-medium">
+                            {doc.title}
+                          </p>
+                          <p className="text-xs text-white/60">
+                            {doc.file_type.toUpperCase()} •{" "}
+                            {(doc.file_size_bytes / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="flex-1 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateSummary}
+                disabled={isCreating || selectedDocIds.length === 0}
+                className="flex-1 px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreating ? "Generando..." : "Generar resumen"}
+              </button>
+            </div>
           </div>
-        )}
+        </Modal>
 
       </main>
 

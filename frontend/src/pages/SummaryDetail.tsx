@@ -6,6 +6,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Toast, { ToastType } from "../components/Toast";
+import Modal from "../components/Modal";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { getSummary, deleteSummary, createQuizFromSummary } from "../services/api";
 import type { SummaryDetailResponse, ExpertiseLevel } from "../types/api.types";
 
@@ -15,7 +18,7 @@ export default function SummaryDetailPage() {
 
   const [summary, setSummary] = useState<SummaryDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState(10);
@@ -34,16 +37,15 @@ export default function SummaryDetailPage() {
       setSummary(data);
     } catch (error) {
       console.error("Error loading summary:", error);
-      showToast("No se pudo cargar el resumen");
+      showToast("No se pudo cargar el resumen", "error");
       setTimeout(() => navigate("/summaries"), 2000);
     } finally {
       setIsLoading(false);
     }
   }
 
-  function showToast(msg: string, ms = 3000) {
-    setToast(msg);
-    setTimeout(() => setToast(null), ms);
+  function showToast(msg: string, type: ToastType = "info") {
+    setToast({ message: msg, type });
   }
 
   async function handleDelete() {
@@ -51,11 +53,11 @@ export default function SummaryDetailPage() {
 
     try {
       await deleteSummary(id);
-      showToast("Resumen eliminado");
+      showToast("Resumen eliminado", "success");
       setTimeout(() => navigate("/summaries"), 1000);
     } catch (error) {
       console.error("Error deleting summary:", error);
-      showToast("No se pudo eliminar el resumen");
+      showToast("No se pudo eliminar el resumen", "error");
     } finally {
       setShowDeleteConfirm(false);
     }
@@ -71,7 +73,7 @@ export default function SummaryDetailPage() {
 
     // Validación client-side
     if (quizQuestions < 5 || quizQuestions > 30) {
-      showToast("El número de preguntas debe estar entre 5 y 30");
+      showToast("El número de preguntas debe estar entre 5 y 30", "warning");
       return;
     }
 
@@ -81,14 +83,15 @@ export default function SummaryDetailPage() {
         summary_id: id,
         max_questions: quizQuestions,
       });
-      showToast("Quiz generado exitosamente");
+      showToast("Quiz generado exitosamente", "success");
       setShowQuizModal(false);
       // Redirigir a la página de tomar el quiz
       setTimeout(() => navigate(`/quizzes/${quiz.id}/attempt`), 1000);
     } catch (error: any) {
       console.error("Error generating quiz:", error);
       showToast(
-        error.response?.data?.detail || "Error al generar el cuestionario"
+        error.response?.data?.detail || "Error al generar el cuestionario",
+        "error"
       );
     } finally {
       setIsGeneratingQuiz(false);
@@ -124,27 +127,29 @@ export default function SummaryDetailPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden text-slate-50">
-      {/* Aurora background */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background: `
-          radial-gradient(1200px 600px at 20% -20%, rgba(139,92,246,0.10), transparent 55%),
-          radial-gradient(900px 500px at 120% 10%, rgba(34,211,238,0.10), transparent 55%),
-          #0b1220
-        `,
-        }}
-      ></div>
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
 
       {/* Navbar */}
       <Navbar />
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       <main className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-8">
         {/* Back Button */}
         <button
           onClick={() => navigate("/summaries")}
-          className="flex items-center gap-2 text-slate-400 hover:text-violet-400 transition-colors"
+          className="flex items-center gap-2 text-white/60 hover:text-violet-400 transition-colors"
         >
           <svg
             className="w-5 h-5"
@@ -163,20 +168,13 @@ export default function SummaryDetailPage() {
         </button>
 
         {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-500 border-t-transparent"></div>
-              <p className="mt-4 text-slate-300">Cargando resumen...</p>
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingSpinner message="Cargando resumen..." />}
 
         {/* Content */}
         {!isLoading && summary && (
           <>
             {/* Header Card */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8">
+            <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <h1 className="text-3xl font-extrabold tracking-tight mb-3">
@@ -212,7 +210,7 @@ export default function SummaryDetailPage() {
               </div>
 
               {/* Metadata */}
-              <div className="flex items-center gap-4 text-sm text-slate-400 mb-6">
+              <div className="flex items-center gap-4 text-sm text-white/60 mb-6">
                 <span className="flex items-center gap-1">
                   <svg
                     className="w-4 h-4"
@@ -256,7 +254,7 @@ export default function SummaryDetailPage() {
               <div className="flex gap-3">
                 <button
                   onClick={handleOpenQuizModal}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center gap-2"
+                  className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors flex items-center gap-2"
                 >
                   <svg
                     className="w-5 h-5"
@@ -278,7 +276,7 @@ export default function SummaryDetailPage() {
 
             {/* Documents Section */}
             {summary.documents.length > 0 && (
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+              <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <svg
                     className="w-6 h-6 text-violet-400"
@@ -300,7 +298,7 @@ export default function SummaryDetailPage() {
                     <button
                       key={doc.id}
                       onClick={() => navigate(`/documents`)}
-                      className="p-4 rounded-xl bg-slate-900/50 border border-slate-700/50 hover:border-violet-500/50 transition-all text-left group"
+                      className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-violet-500 hover:bg-white/10 transition-all text-left group"
                     >
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-violet-500/20">
@@ -322,13 +320,13 @@ export default function SummaryDetailPage() {
                           <p className="font-semibold text-white group-hover:text-violet-400 transition-colors truncate">
                             {doc.title}
                           </p>
-                          <p className="text-sm text-slate-400 mt-1">
+                          <p className="text-sm text-white/60 mt-1">
                             {doc.file_type.toUpperCase()} •{" "}
                             {(doc.file_size_bytes / 1024).toFixed(1)} KB
                           </p>
                         </div>
                         <svg
-                          className="w-5 h-5 text-slate-500 group-hover:text-violet-400 transition-colors flex-shrink-0"
+                          className="w-5 h-5 text-white/50 group-hover:text-violet-400 transition-colors flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -349,7 +347,7 @@ export default function SummaryDetailPage() {
 
             {/* Topics Section */}
             {summary.topics && summary.topics.length > 0 && (
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+              <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <svg
                     className="w-6 h-6 text-violet-400"
@@ -381,10 +379,10 @@ export default function SummaryDetailPage() {
 
             {/* Key Concepts Section */}
             {summary.key_concepts && summary.key_concepts.length > 0 && (
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+              <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <svg
-                    className="w-6 h-6 text-pink-400"
+                    className="w-6 h-6 text-violet-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -403,13 +401,13 @@ export default function SummaryDetailPage() {
                   {summary.key_concepts.map((item, idx) => (
                     <div
                       key={idx}
-                      className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 hover:border-pink-500/30 transition-colors"
+                      className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-violet-500/50 transition-colors"
                     >
-                      <h3 className="text-lg font-semibold text-pink-300 mb-2 flex items-center gap-2">
-                        <span className="text-pink-400">•</span>
+                      <h3 className="text-lg font-semibold text-violet-300 mb-2 flex items-center gap-2">
+                        <span className="text-violet-400">•</span>
                         {item.concept}
                       </h3>
-                      <p className="text-slate-300 leading-relaxed pl-6">
+                      <p className="text-white/80 leading-relaxed pl-6">
                         {item.definition}
                       </p>
                     </div>
@@ -419,10 +417,10 @@ export default function SummaryDetailPage() {
             )}
 
             {/* Summary Content */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8">
+            <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8">
               <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <svg
-                  className="w-6 h-6 text-cyan-400"
+                  className="w-6 h-6 text-violet-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -437,7 +435,7 @@ export default function SummaryDetailPage() {
                 Resumen
               </h2>
               <div className="prose prose-invert prose-slate max-w-none">
-                <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">
+                <p className="text-white/90 leading-relaxed whitespace-pre-wrap">
                   {summary.content.summary || "No hay contenido disponible"}
                 </p>
               </div>
@@ -446,143 +444,107 @@ export default function SummaryDetailPage() {
         )}
 
         {/* Quiz Generation Modal */}
-        {showQuizModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={() => setShowQuizModal(false)}
-            ></div>
+        <Modal
+          isOpen={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          title="Generar cuestionario"
+          size="md"
+        >
+          <div className="space-y-6">
+            <p className="text-white/80">
+              Se generará un cuestionario basado en este resumen para evaluar
+              tu comprensión del material.
+            </p>
 
-            {/* Modal */}
-            <div className="relative bg-slate-800/95 backdrop-blur-md rounded-2xl border border-slate-700/50 max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold">Generar cuestionario</h3>
-                <button
-                  onClick={() => setShowQuizModal(false)}
-                  className="p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <p className="text-slate-300 mb-6">
-                Se generará un cuestionario basado en este resumen para evaluar
-                tu comprensión del material.
+            {/* Number of Questions */}
+            <div>
+              <label className="block text-white/80 font-semibold mb-2">
+                Número de preguntas
+              </label>
+              <input
+                type="number"
+                min="5"
+                max="30"
+                value={quizQuestions}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    setQuizQuestions(10);
+                    return;
+                  }
+                  const num = Number(value);
+                  if (!isNaN(num)) {
+                    setQuizQuestions(Math.min(30, Math.max(5, num)));
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = Number(e.target.value);
+                  if (isNaN(value) || value < 5) {
+                    setQuizQuestions(5);
+                  } else if (value > 30) {
+                    setQuizQuestions(30);
+                  }
+                }}
+                className="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-white/20 text-white focus:outline-none focus:border-violet-500 transition-colors"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Entre 5 y 30 preguntas (recomendado: 10)
               </p>
+            </div>
 
-              {/* Number of Questions */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Número de preguntas
-                </label>
-                <input
-                  type="number"
-                  min="5"
-                  max="30"
-                  value={quizQuestions}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '') {
-                      setQuizQuestions(10);
-                      return;
-                    }
-                    const num = Number(value);
-                    if (!isNaN(num)) {
-                      setQuizQuestions(Math.min(30, Math.max(5, num)));
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const value = Number(e.target.value);
-                    if (isNaN(value) || value < 5) {
-                      setQuizQuestions(5);
-                    } else if (value > 30) {
-                      setQuizQuestions(30);
-                    }
-                  }}
-                  className="w-full px-4 py-2 rounded-xl bg-slate-900/50 border border-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-                <p className="text-xs text-slate-400 mt-1">
-                  Entre 5 y 30 preguntas (recomendado: 10)
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowQuizModal(false)}
-                  disabled={isGeneratingQuiz}
-                  className="flex-1 px-4 py-2 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 font-medium transition-colors disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleGenerateQuiz}
-                  disabled={isGeneratingQuiz}
-                  className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGeneratingQuiz ? "Generando..." : "Generar"}
-                </button>
-              </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowQuizModal(false)}
+                disabled={isGeneratingQuiz}
+                className="flex-1 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleGenerateQuiz}
+                disabled={isGeneratingQuiz}
+                className="flex-1 px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingQuiz ? "Generando..." : "Generar"}
+              </button>
             </div>
           </div>
-        )}
+        </Modal>
 
         {/* Delete Confirmation Modal */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={() => setShowDeleteConfirm(false)}
-            ></div>
-
-            {/* Modal */}
-            <div className="relative bg-slate-800/95 backdrop-blur-md rounded-2xl border border-slate-700/50 max-w-md w-full p-6">
-              <h3 className="text-xl font-bold mb-4">Confirmar eliminación</h3>
-              <p className="text-slate-300 mb-6">
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          title="Confirmar eliminación"
+          size="sm"
+        >
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <p className="text-white/80">
                 ¿Estás seguro de que deseas eliminar este resumen? Esta acción
                 no se puede deshacer.
               </p>
-              <p className="text-sm text-slate-400 mb-6">
+              <p className="text-sm text-white/60">
                 Los documentos asociados <strong>no se eliminarán</strong> y
                 podrás usarlos en otros resúmenes.
               </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 font-medium transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 font-semibold transition-colors"
-                >
-                  Eliminar
-                </button>
-              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors"
+              >
+                Eliminar
+              </button>
             </div>
           </div>
-        )}
-
-        {/* Toast Notification */}
-        {toast && (
-          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-slate-800/95 backdrop-blur-md border border-slate-700/50 rounded-xl shadow-2xl">
-            <p className="text-white">{toast}</p>
-          </div>
-        )}
+        </Modal>
       </main>
     </div>
   );

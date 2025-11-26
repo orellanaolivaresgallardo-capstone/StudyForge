@@ -6,6 +6,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Toast, { ToastType } from "../components/Toast";
+import Modal from "../components/Modal";
+import LoadingSpinner from "../components/LoadingSpinner";
+import EmptyState from "../components/EmptyState";
 import {
   listStudySpaces,
   createStudySpace,
@@ -20,7 +24,7 @@ export default function StudySpacesPage() {
   // Estado de espacios
   const [spaces, setSpaces] = useState<StudySpaceResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   // Estado de modal (crear/editar)
   const [showModal, setShowModal] = useState(false);
@@ -42,15 +46,14 @@ export default function StudySpacesPage() {
       setSpaces(response.items);
     } catch (error) {
       console.error("Error loading study spaces:", error);
-      showToast("No se pudieron cargar los espacios de estudio");
+      showToast("No se pudieron cargar los espacios de estudio", "error");
     } finally {
       setIsLoading(false);
     }
   }
 
-  function showToast(msg: string, ms = 3000) {
-    setToast(msg);
-    setTimeout(() => setToast(null), ms);
+  function showToast(msg: string, type: ToastType = "info") {
+    setToast({ message: msg, type });
   }
 
   function handleOpenCreateModal() {
@@ -73,7 +76,7 @@ export default function StudySpacesPage() {
 
   async function handleSaveSpace() {
     if (!spaceName.trim()) {
-      showToast("El nombre del espacio es obligatorio");
+      showToast("El nombre del espacio es obligatorio", "warning");
       return;
     }
 
@@ -86,7 +89,7 @@ export default function StudySpacesPage() {
           description: spaceDescription || null,
           color: spaceColor,
         });
-        showToast("Espacio actualizado exitosamente");
+        showToast("Espacio actualizado exitosamente", "success");
       } else {
         // Crear nuevo espacio
         await createStudySpace({
@@ -94,7 +97,7 @@ export default function StudySpacesPage() {
           description: spaceDescription || null,
           color: spaceColor,
         });
-        showToast("Espacio creado exitosamente");
+        showToast("Espacio creado exitosamente", "success");
       }
       setShowModal(false);
       loadSpaces();
@@ -111,7 +114,7 @@ export default function StudySpacesPage() {
         "detail" in error.response.data
           ? String(error.response.data.detail)
           : "Error al guardar el espacio";
-      showToast(errorMessage);
+      showToast(errorMessage, "error");
     } finally {
       setIsSaving(false);
     }
@@ -122,11 +125,11 @@ export default function StudySpacesPage() {
 
     try {
       await deleteStudySpace(spaceId);
-      showToast("Espacio eliminado");
+      showToast("Espacio eliminado", "success");
       setSpaces(spaces.filter((s) => s.id !== spaceId));
     } catch (error) {
       console.error("Error deleting study space:", error);
-      showToast("No se pudo eliminar el espacio");
+      showToast("No se pudo eliminar el espacio", "error");
     }
   }
 
@@ -146,29 +149,36 @@ export default function StudySpacesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        aria-hidden="true"
+      />
+
       <Navbar />
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-pink-500 text-white px-6 py-3 rounded-lg shadow-xl z-50 animate-bounce">
-          {toast}
-        </div>
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300">
+            <h1 className="text-4xl font-bold text-white">
               Espacios de Estudio
             </h1>
-            <p className="text-slate-400 mt-2">
+            <p className="text-white/60 mt-2">
               Organiza tus documentos y resúmenes en espacios temáticos
             </p>
           </div>
           <button
             onClick={handleOpenCreateModal}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
           >
             + Crear Espacio
           </button>
@@ -176,24 +186,37 @@ export default function StudySpacesPage() {
 
         {/* Lista de espacios */}
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
-          </div>
+          <LoadingSpinner message="Cargando espacios de estudio..." />
         ) : spaces.length === 0 ? (
-          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-12 text-center">
-            <p className="text-slate-400 text-lg">
-              No tienes espacios de estudio aún
-            </p>
-            <p className="text-slate-500 mt-2">
-              Crea tu primer espacio para comenzar a organizar tu estudio
-            </p>
-          </div>
+          <EmptyState
+            icon={
+              <svg
+                className="w-8 h-8 text-white/60"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                />
+              </svg>
+            }
+            title="No tienes espacios de estudio aún"
+            description="Crea tu primer espacio para comenzar a organizar tu estudio"
+            action={{
+              label: "+ Crear Espacio",
+              onClick: handleOpenCreateModal,
+            }}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {spaces.map((space) => (
               <div
                 key={space.id}
-                className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 hover:bg-slate-800/70 transition-all duration-200 cursor-pointer group"
+                className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 hover:bg-white/10 transition-all duration-200 cursor-pointer group"
                 onClick={() => handleViewSpace(space.id)}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -221,7 +244,7 @@ export default function StudySpacesPage() {
                         e.stopPropagation();
                         handleOpenEditModal(space);
                       }}
-                      className="text-slate-400 hover:text-pink-400 transition-colors"
+                      className="text-white/60 hover:text-violet-400 transition-colors"
                     >
                       <svg
                         className="w-5 h-5"
@@ -242,7 +265,7 @@ export default function StudySpacesPage() {
                         e.stopPropagation();
                         handleDeleteSpace(space.id, space.name);
                       }}
-                      className="text-slate-400 hover:text-red-400 transition-colors"
+                      className="text-white/60 hover:text-red-400 transition-colors"
                     >
                       <svg
                         className="w-5 h-5"
@@ -261,17 +284,17 @@ export default function StudySpacesPage() {
                   </div>
                 </div>
 
-                <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-pink-300 transition-colors">
+                <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-violet-300 transition-colors">
                   {space.name}
                 </h3>
 
                 {space.description && (
-                  <p className="text-slate-400 text-sm mb-4 line-clamp-2">
+                  <p className="text-white/60 text-sm mb-4 line-clamp-2">
                     {space.description}
                   </p>
                 )}
 
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-white/50">
                   Creado el {new Date(space.created_at).toLocaleDateString()}
                 </div>
               </div>
@@ -281,83 +304,82 @@ export default function StudySpacesPage() {
       </main>
 
       {/* Modal Crear/Editar */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-2xl w-full shadow-2xl">
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300 mb-6">
-              {isEditing ? "Editar Espacio" : "Crear Nuevo Espacio"}
-            </h2>
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={isEditing ? "Editar Espacio" : "Crear Nuevo Espacio"}
+        size="lg"
+      >
+        <div className="space-y-6">
+          {/* Nombre */}
+          <div>
+            <label className="block text-white/80 font-semibold mb-2">
+              Nombre del Espacio *
+            </label>
+            <input
+              type="text"
+              value={spaceName}
+              onChange={(e) => setSpaceName(e.target.value)}
+              placeholder="Ej: Matemáticas Avanzadas"
+              className="w-full bg-slate-900/50 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors"
+            />
+          </div>
 
-            {/* Nombre */}
-            <div className="mb-6">
-              <label className="block text-slate-300 font-semibold mb-2">
-                Nombre del Espacio *
-              </label>
-              <input
-                type="text"
-                value={spaceName}
-                onChange={(e) => setSpaceName(e.target.value)}
-                placeholder="Ej: Matemáticas Avanzadas"
-                className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500 transition-colors"
-              />
-            </div>
+          {/* Descripción */}
+          <div>
+            <label className="block text-white/80 font-semibold mb-2">
+              Descripción (opcional)
+            </label>
+            <textarea
+              value={spaceDescription}
+              onChange={(e) => setSpaceDescription(e.target.value)}
+              placeholder="Describe el contenido de este espacio..."
+              rows={3}
+              className="w-full bg-slate-900/50 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors resize-none"
+            />
+          </div>
 
-            {/* Descripción */}
-            <div className="mb-6">
-              <label className="block text-slate-300 font-semibold mb-2">
-                Descripción (opcional)
-              </label>
-              <textarea
-                value={spaceDescription}
-                onChange={(e) => setSpaceDescription(e.target.value)}
-                placeholder="Describe el contenido de este espacio..."
-                rows={3}
-                className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500 transition-colors resize-none"
-              />
-            </div>
-
-            {/* Color */}
-            <div className="mb-8">
-              <label className="block text-slate-300 font-semibold mb-3">
-                Color del Espacio
-              </label>
-              <div className="grid grid-cols-6 gap-3">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => setSpaceColor(color.value)}
-                    className={`h-12 rounded-xl transition-all duration-200 ${
-                      spaceColor === color.value
-                        ? "ring-4 ring-white ring-offset-2 ring-offset-slate-800 scale-110"
-                        : "hover:scale-105"
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Botones */}
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={isSaving}
-                className="flex-1 bg-slate-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-600 transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveSpace}
-                disabled={isSaving}
-                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50"
-              >
-                {isSaving ? "Guardando..." : isEditing ? "Actualizar" : "Crear"}
-              </button>
+          {/* Color */}
+          <div>
+            <label className="block text-white/80 font-semibold mb-3">
+              Color del Espacio
+            </label>
+            <div className="grid grid-cols-6 gap-3">
+              {colorOptions.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => setSpaceColor(color.value)}
+                  className={`h-12 rounded-xl transition-all duration-200 ${
+                    spaceColor === color.value
+                      ? "ring-4 ring-white ring-offset-2 ring-offset-slate-800 scale-110"
+                      : "hover:scale-105"
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
             </div>
           </div>
+
+          {/* Botones */}
+          <div className="flex gap-4 pt-2">
+            <button
+              onClick={() => setShowModal(false)}
+              disabled={isSaving}
+              className="flex-1 bg-white/10 text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/20 transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSaveSpace}
+              disabled={isSaving}
+              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50"
+            >
+              {isSaving ? "Guardando..." : isEditing ? "Actualizar" : "Crear"}
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
