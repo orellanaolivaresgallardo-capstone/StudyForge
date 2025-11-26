@@ -33,12 +33,17 @@ Todos los modelos usan UUID como clave primaria y están en el schema `studyforg
   - title, file_name, file_type, file_size_bytes
   - file_content (bytea), extracted_text (text)
 
+- ✅ **StudySpace** ([study_space.py](../backend/app/models/study_space.py)) - Espacios de estudio
+  - name, description, color
+  - Relaciones many-to-many con summaries y documents
+  - Relación one-to-many con quizzes
+
 ### 2. **Schemas, Repositories, Services, Routers**
 
-- ✅ Schemas Pydantic completos (user, auth, summary, quiz, quiz_attempt, document)
-- ✅ Repositories con CRUD operations (user, summary, quiz, quiz_attempt, document)
-- ✅ Services con lógica de negocio (auth, file_processor, openai, summary, quiz)
-- ✅ Routers con API REST completa (auth, summaries, quizzes, quiz_attempts, stats, documents)
+- ✅ Schemas Pydantic completos (user, auth, summary, quiz, quiz_attempt, document, study_space)
+- ✅ Repositories con CRUD operations (user, summary, quiz, quiz_attempt, document, study_space)
+- ✅ Services con lógica de negocio (auth, file_processor, openai, summary, quiz, study_space)
+- ✅ Routers con API REST completa (auth, summaries, quizzes, quiz_attempts, stats, documents, study_spaces)
 
 ### 3. **Configuración y Seguridad**
 
@@ -65,12 +70,15 @@ Todos los modelos usan UUID como clave primaria y están en el schema `studyforg
 - Logging estructurado
 
 ### Frontend ✅
-- Autenticación (login/signup)
+- Autenticación (login/signup/forgot password)
+- Landing page para usuarios no autenticados
 - Gestión de documentos con drag-and-drop
 - Sistema de resúmenes (lista, creación, detalle)
 - Sistema de quizzes (lista, generación, toma, resultados)
-- Dashboard de estadísticas
+- Espacios de estudio (organización de recursos por tema)
+- Dashboard de estadísticas con visualizaciones (Recharts)
 - Diseño responsivo con Tailwind CSS
+- Estructura modular por features
 
 ---
 

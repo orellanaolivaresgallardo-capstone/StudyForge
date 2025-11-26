@@ -7,13 +7,13 @@ StudyForge es una aplicación web de acompañamiento y apoyo para el aprendizaje
 ## Stack Tecnológico
 
 ### Backend
-- **Python**: 3.14
+- **Python**: 3.11.14
 - **Framework**: FastAPI
 - **Base de datos**: PostgreSQL 18
 - **ORM**: SQLAlchemy 2.x
 - **Migraciones**: Alembic
-- **Autenticación**: JWT (python-jose)
-- **IA**: OpenAI API (GPT-4)
+- **Autenticación**: JWT (python-jose + Argon2)
+- **IA**: OpenAI API (GPT-4o-mini)
 - **Procesamiento de archivos**:
   - PDF: PyPDF2, pdfplumber
   - DOCX: python-docx
@@ -21,13 +21,14 @@ StudyForge es una aplicación web de acompañamiento y apoyo para el aprendizaje
   - TXT: nativo Python
 
 ### Frontend
-- **Node**: 24
+- **Node**: 22.21.1
 - **Bundler**: Vite
 - **Framework**: React 19
 - **Lenguaje**: TypeScript 5.8
 - **Estilos**: Tailwind CSS
 - **Gestor de paquetes**: pnpm
 - **HTTP Client**: Axios
+- **Visualización de datos**: Recharts
 
 ### Deployment
 - **Hosting**: Render / GCP
@@ -58,7 +59,9 @@ backend/
 │   │   ├── summary.py      # Resumen
 │   │   ├── quiz.py         # Cuestionario (con preguntas en JSON)
 │   │   ├── quiz_attempt.py # Intento de cuestionario (con respuestas en JSON)
-│   │   └── document.py     # Documento almacenado
+│   │   ├── document.py     # Documento almacenado
+│   │   ├── study_space.py  # Espacio de estudio
+│   │   └── summary_document.py # Relación many-to-many
 │   │
 │   ├── schemas/            # Pydantic schemas (validación)
 │   │   ├── __init__.py
@@ -71,9 +74,12 @@ backend/
 │   ├── routers/            # Endpoints de API
 │   │   ├── __init__.py
 │   │   ├── auth.py         # Login, registro
+│   │   ├── documents.py    # Gestión de documentos
 │   │   ├── summaries.py    # CRUD de resúmenes
 │   │   ├── quizzes.py      # Generación y gestión de cuestionarios
 │   │   ├── quiz_attempts.py# Realizar cuestionarios
+│   │   ├── study_spaces.py # Espacios de estudio
+│   │   ├── stats.py        # Estadísticas
 │   │   └── health.py       # Health check
 │   │
 │   ├── services/           # Lógica de negocio
@@ -87,9 +93,11 @@ backend/
 │   ├── repositories/       # Acceso a datos
 │   │   ├── __init__.py
 │   │   ├── user_repository.py
+│   │   ├── document_repository.py
 │   │   ├── summary_repository.py
 │   │   ├── quiz_repository.py
-│   │   └── quiz_attempt_repository.py
+│   │   ├── quiz_attempt_repository.py
+│   │   └── study_space_repository.py
 │   │
 │   └── utils/              # Utilidades
 │       ├── __init__.py
@@ -114,32 +122,28 @@ frontend/
 │   ├── index.css        # Estilos globales (Tailwind + custom CSS)
 │   │
 │   ├── components/      # Componentes reutilizables
-│   │   ├── Navbar.tsx          # Barra de navegación con menú responsive
-│   │   ├── LandingPage.tsx     # ✨ Landing page para usuarios no autenticados
-│   │   ├── ProtectedRoute.tsx  # HOC para rutas protegidas
-│   │   └── QuotaWidget.tsx     # Widget de cuota de almacenamiento
+│   │   ├── auth/             # Componentes de autenticación
+│   │   ├── features/         # Componentes de features
+│   │   ├── layout/           # Navbar, PublicHeader, etc.
+│   │   ├── ui/               # Componentes UI reutilizables
+│   │   ├── LandingPage.tsx   # Landing page para usuarios no autenticados
+│   │   └── UploadDocumentModal.tsx  # Modal de carga de documentos
 │   │
 │   ├── pages/           # Páginas/vistas de la aplicación
-│   │   ├── Home.tsx             # ♻️ Maneja landing/redirect según autenticación
-│   │   ├── login.tsx            # Página de login
-│   │   ├── signup.tsx           # Página de registro
-│   │   ├── forgot-password.tsx  # ✨ Recuperación de contraseña
-│   │   ├── features.tsx         # ✨ Página de características (marketing)
-│   │   ├── aboutus.tsx          # ✨ Página sobre nosotros (marketing)
-│   │   ├── documents.tsx        # Gestión de documentos
-│   │   ├── summaries.tsx        # Lista de resúmenes
-│   │   ├── SummaryDetail.tsx    # Detalle de resumen
-│   │   ├── Quizzes.tsx          # Lista de quizzes
-│   │   ├── QuizAttempt.tsx      # Realizar quiz
-│   │   ├── QuizResults.tsx      # Resultados de quiz
-│   │   ├── Stats.tsx            # Estadísticas del usuario
-│   │   └── ErrorPage.tsx        # ♻️ Página 404 styled con Link de React Router
+│   │   ├── auth/             # LoginPage, SignupPage, ForgotPasswordPage
+│   │   ├── documents/        # Gestión de documentos
+│   │   ├── summaries/        # Lista y detalle de resúmenes
+│   │   ├── quizzes/          # Lista, toma y resultados de quizzes
+│   │   ├── study-spaces/     # Espacios de estudio
+│   │   ├── stats/            # Estadísticas del usuario
+│   │   ├── public/           # Páginas públicas (features, about)
+│   │   └── ErrorPage.tsx     # Página 404
 │   │
 │   ├── context/         # Context API para estado global
 │   │   └── AuthContext.tsx  # Estado de autenticación (user, login, logout)
 │   │
 │   ├── services/        # Capa de servicios HTTP
-│   │   └── api.ts       # Cliente Axios con interceptors JWT
+│   │   └── api/             # Módulos de API por dominio
 │   │
 │   ├── types/           # Definiciones TypeScript
 │   │   └── api.types.ts # Tipos para requests/responses de API
@@ -357,6 +361,8 @@ VITE_API_BASE=http://localhost:8000  # URL del backend
 - **Summaries**: Resúmenes generados con IA (contenido en JSONB)
 - **Quizzes**: Cuestionarios con preguntas en JSONB (no tablas relacionales)
 - **QuizAttempts**: Intentos de quiz con respuestas randomizadas por intento
+- **StudySpaces**: Espacios de organización para documentos, resúmenes y quizzes
+- **Tablas junction**: summary_documents, study_space_documents, study_space_summaries
 
 **Ver detalles completos** (modelo de datos, índices, migraciones): **[DATABASE.md](DATABASE.md)**
 
@@ -461,6 +467,17 @@ Algoritmo adaptativo → Ajusta nivel de dificultad futuro
 ### Estadísticas
 - `GET /stats/progress` - Progreso del usuario por tema
 - `GET /stats/performance` - Desempeño histórico
+- `GET /stats/summary` - Resumen general de actividad
+
+### Espacios de Estudio
+- `POST /study-spaces` - Crear espacio de estudio
+- `GET /study-spaces` - Listar espacios del usuario
+- `GET /study-spaces/{id}` - Obtener espacio específico
+- `PUT /study-spaces/{id}` - Actualizar espacio
+- `DELETE /study-spaces/{id}` - Eliminar espacio
+- `POST /study-spaces/{id}/resources` - Agregar recursos al espacio
+- `DELETE /study-spaces/{id}/resources` - Quitar recursos del espacio
+- `POST /study-spaces/{id}/quizzes` - Generar quiz desde espacio
 
 ## Seguridad
 

@@ -31,30 +31,38 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 - Estadísticas de desempeño por tema
 - Adaptación automática de dificultad según resultados
 
+### 4. **Espacios de Estudio (Study Spaces)**
+- Organización de documentos, resúmenes y quizzes por tema o materia
+- Gestión visual con códigos de color personalizables
+- Vinculación many-to-many de recursos
+- Generación de quizzes desde espacios completos
+- Estadísticas por espacio de estudio
+
 ---
 
 ## 🛠️ Stack Tecnológico
 
 ### Backend
-- **Python**: 3.14
+- **Python**: 3.11.14
 - **Framework**: FastAPI
 - **Base de datos**: PostgreSQL 18
 - **ORM**: SQLAlchemy 2.0
 - **Migraciones**: Alembic
 - **Autenticación**: JWT (python-jose + Argon2)
 - **IA**: OpenAI API (GPT-4o-mini)
-- **Procesamiento de archivos**: 
+- **Procesamiento de archivos**:
   - PDF: PyPDF2, pdfplumber
   - Office (DOCX, PPTX): python-docx, python-pptx
   - Texto: Nativo Python
 
 ### Frontend
-- **Node**: 24
+- **Node**: 22.21.1
 - **Bundler**: Vite
 - **Framework**: React 19
 - **Lenguaje**: TypeScript 5.8
 - **Estilos**: Tailwind CSS
 - **Gestor de paquetes**: pnpm
+- **Visualización de datos**: Recharts
 
 ### Deployment
 - **Hosting**: Render / Google Cloud Platform
@@ -64,9 +72,9 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 
 ## 📋 Requisitos
 
-- **Python 3.14**
+- **Python 3.11+**
 - **PostgreSQL 18**
-- **Node.js 24**
+- **Node.js 22+**
 - **pnpm 10+**
 - **OpenAI API Key**
 
@@ -207,9 +215,21 @@ StudyForge/
 │   ├── public/               # Archivos estáticos
 │   ├── src/
 │   │   ├── components/       # Componentes reutilizables
-│   │   ├── context/          # Estado global (Context API)
+│   │   │   ├── auth/         # Componentes de autenticación
+│   │   │   ├── features/     # Componentes de features
+│   │   │   ├── layout/       # Navbar, headers, etc.
+│   │   │   └── ui/           # Componentes UI reutilizables
 │   │   ├── pages/            # Páginas principales (React Router)
+│   │   │   ├── auth/         # Login, signup, forgot password
+│   │   │   ├── documents/    # Gestión de documentos
+│   │   │   ├── summaries/    # Resúmenes
+│   │   │   ├── quizzes/      # Cuestionarios
+│   │   │   ├── study-spaces/ # Espacios de estudio
+│   │   │   ├── stats/        # Estadísticas
+│   │   │   └── public/       # Páginas públicas (features, about)
+│   │   ├── context/          # Estado global (Context API)
 │   │   ├── services/         # Capa de servicios HTTP
+│   │   │   └── api/          # Módulos de API por dominio
 │   │   ├── types/            # Definiciones TypeScript
 │   │   ├── assets/           # Imágenes, íconos
 │   │   ├── main.tsx          # Entry point + configuración de rutas
@@ -266,9 +286,11 @@ La API REST de StudyForge ofrece endpoints para autenticación, gestión de res�
 
 **Recursos principales:**
 - **Autenticación** (`/auth`): Registro, login, perfil de usuario
+- **Documentos** (`/documents`): Upload, gestión y almacenamiento de archivos
 - **Resúmenes** (`/summaries`): Crear, listar, obtener, eliminar resúmenes
 - **Cuestionarios** (`/quizzes`): Generar y gestionar cuestionarios
 - **Intentos** (`/quiz-attempts`): Realizar cuestionarios y obtener resultados
+- **Espacios de Estudio** (`/study-spaces`): Organizar recursos por tema/materia
 - **Estadísticas** (`/stats`): Progreso, desempeño y resumen de actividad
 
 **Documentación completa**: Ver [docs/API.md](docs/API.md) para detalles de todos los endpoints, parámetros, respuestas y ejemplos.
@@ -324,16 +346,18 @@ Ver documentación en `docs/deployment/gcp.md` (próximamente)
 - [x] API documentada con Swagger/OpenAPI
 
 ### Frontend MVP ✅
-- [x] Sistema de autenticación (login/signup)
+- [x] Sistema de autenticación (login/signup/forgot password)
 - [x] Gestión de documentos con drag-and-drop
 - [x] Sistema de resúmenes (lista, creación, detalle)
 - [x] Sistema de quizzes (lista, generación, toma, resultados)
-- [x] Dashboard de estadísticas
+- [x] Espacios de estudio (organización de recursos)
+- [x] Dashboard de estadísticas con gráficos
 - [x] Diseño responsivo con Tailwind CSS
 - [x] Integración completa con API backend
+- [x] Landing page para usuarios no autenticados
 
 ### Pendiente 📋
-- [ ] Página de perfil de usuario
+- [ ] Página de perfil de usuario editable
 - [ ] Tests unitarios
 - [ ] Tests de integración
 - [ ] Tests E2E
