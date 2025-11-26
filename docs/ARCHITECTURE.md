@@ -7,7 +7,7 @@ StudyForge es una aplicación web de acompañamiento y apoyo para el aprendizaje
 ## Stack Tecnológico
 
 ### Backend
-- **Python**: 3.11.14
+- **Python**: 3.14
 - **Framework**: FastAPI
 - **Base de datos**: PostgreSQL 18
 - **ORM**: SQLAlchemy 2.x
@@ -21,7 +21,7 @@ StudyForge es una aplicación web de acompañamiento y apoyo para el aprendizaje
   - TXT: nativo Python
 
 ### Frontend
-- **Node**: 22.21.1
+- **Node**: 24
 - **Bundler**: Vite
 - **Framework**: React 19
 - **Lenguaje**: TypeScript 5.8

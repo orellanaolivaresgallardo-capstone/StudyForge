@@ -43,7 +43,7 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 ## 🛠️ Stack Tecnológico
 
 ### Backend
-- **Python**: 3.11.14
+- **Python**: 3.14
 - **Framework**: FastAPI
 - **Base de datos**: PostgreSQL 18
 - **ORM**: SQLAlchemy 2.0
@@ -56,7 +56,7 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
   - Texto: Nativo Python
 
 ### Frontend
-- **Node**: 22.21.1
+- **Node**: 24
 - **Bundler**: Vite
 - **Framework**: React 19
 - **Lenguaje**: TypeScript 5.8
@@ -72,9 +72,9 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 
 ## 📋 Requisitos
 
-- **Python 3.11+**
+- **Python 3.14**
 - **PostgreSQL 18**
-- **Node.js 22+**
+- **Node.js 24**
 - **pnpm 10+**
 - **OpenAI API Key**
 
