@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { QuizResponse } from '../types';
+import type { QuizResponse } from '@/types';
 import SpaceBadge from './SpaceBadge';
 import TopicBadge from './TopicBadge';
 

@@ -1,5 +1,6 @@
+// frontend/src/pages/public/FeaturesPage.tsx
 import { Link } from "react-router-dom";
-import PublicHeader from "../components/PublicHeader";
+import { PublicHeader } from "@/components";
 
 export default function FeaturesPage() {
   return (

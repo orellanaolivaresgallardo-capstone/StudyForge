@@ -1,11 +1,11 @@
-// frontend/src/components/QuotaWidget.tsx
+// frontend/src/components/features/QuotaWidget.tsx
 /**
  * Widget de cuota de almacenamiento con diseño aurora.
  * Muestra el uso de almacenamiento del usuario con una barra de progreso estilizada.
  */
 import { useEffect, useState } from "react";
-import { getStorageInfo } from "../services/api";
-import type { StorageInfo } from "../types/api.types";
+import { getStorageInfo } from "@/services/api";
+import type { StorageInfo } from "@/types/api.types";
 
 interface QuotaWidgetProps {
   className?: string;

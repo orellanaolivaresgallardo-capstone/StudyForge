@@ -8,26 +8,26 @@ import {
 } from "react-router-dom";
 import "./index.css";
 import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Home from "./pages/Home";
+import { ProtectedRoute } from "@/components";
+import HomePage from "./pages/public/HomePage";
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import FeaturesPage from "./pages/features";
-import AboutUsPage from "./pages/aboutus";
-import DocumentsPage from "./pages/documents";
-import SummariesPage from "./pages/summaries";
-import SummaryDetailPage from "./pages/SummaryDetail";
-import StudySpacesPage from "./pages/StudySpaces";
-import StudySpaceDetailPage from "./pages/StudySpaceDetail";
-import QuizzesPage from "./pages/Quizzes";
-import QuizAttemptPage from "./pages/QuizAttempt";
-import QuizResultsPage from "./pages/QuizResults";
-import StatsPage from "./pages/Stats";
+import FeaturesPage from "./pages/public/FeaturesPage";
+import AboutUsPage from "./pages/public/AboutUsPage";
+import DocumentsPage from "./pages/documents/DocumentsPage";
+import SummariesPage from "./pages/summaries/SummariesPage";
+import SummaryDetailPage from "./pages/summaries/SummaryDetailPage";
+import StudySpacesPage from "./pages/study-spaces/StudySpacesPage";
+import StudySpaceDetailPage from "./pages/study-spaces/StudySpaceDetailPage";
+import QuizzesPage from "./pages/quizzes/QuizzesPage";
+import QuizAttemptPage from "./pages/quizzes/QuizAttemptPage";
+import QuizResultsPage from "./pages/quizzes/QuizResultsPage";
+import StatsPage from "./pages/stats/StatsPage";
 import ErrorPage from "./pages/ErrorPage";
 
 const router = createBrowserRouter([
-  { path: "/", element: <Home /> },
+  { path: "/", element: <HomePage /> },
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },

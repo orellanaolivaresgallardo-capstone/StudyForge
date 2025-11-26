@@ -1,26 +1,25 @@
-// frontend/src/pages/summaries.tsx
+// frontend/src/pages/summaries/SummariesPage.tsx
 /**
  * Página de gestión de resúmenes.
  * Permite crear resúmenes desde documentos existentes y visualizar todos los resúmenes.
  */
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Toast, { ToastType } from "../components/Toast";
-import Modal from "../components/Modal";
+import { Navbar, Toast, Modal } from "@/components";
+import type { ToastType } from "@/components";
 import {
   listSummaries,
   createSummaryFromDocuments,
   deleteSummary,
   listDocuments,
   getCurrentUser,
-} from "../services/api";
+} from "@/services/api";
 import type {
   SummaryResponse,
   DocumentResponse,
   ExpertiseLevel,
-} from "../types/api.types";
+} from "@/types/api.types";
 
 export default function SummariesPage() {
   const { user } = useAuth();

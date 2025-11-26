@@ -1,19 +1,18 @@
-// frontend/src/pages/documents.tsx
+// frontend/src/pages/documents/DocumentsPage.tsx
 /**
  * Página principal de gestión de documentos.
  * Conserva el diseño aurora del HTML original.
  */
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import Navbar from "../components/Navbar";
-import Toast, { ToastType } from "../components/Toast";
-import Modal from "../components/Modal";
+import { useAuth } from "@/context/AuthContext";
+import { Navbar, Toast, Modal } from "@/components";
+import type { ToastType } from "@/components";
 import {
   listDocuments,
   uploadDocument as apiUploadDocument,
   deleteDocument as apiDeleteDocument,
-} from "../services/api";
-import type { DocumentResponse } from "../types/api.types";
+} from "@/services/api";
+import type { DocumentResponse } from "@/types/api.types";
 
 export default function DocumentsPage() {
   const { user } = useAuth();

@@ -1,16 +1,16 @@
-// frontend/src/pages/QuizResults.tsx
+// frontend/src/pages/quizzes/QuizResultsPage.tsx
 /**
  * Página de resultados del cuestionario con desglose detallado.
  * Muestra score final, respuestas correctas/incorrectas y recomendaciones.
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import { getQuizAttemptResults } from "../services/api";
+import { Navbar } from "@/components";
+import { getQuizAttemptResults } from "@/services/api";
 import type {
   QuizResultResponse,
   CorrectOption,
-} from "../types/api.types";
+} from "@/types/api.types";
 
 export default function QuizResultsPage() {
   const { id } = useParams<{ id: string }>();

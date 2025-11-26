@@ -1,15 +1,14 @@
-// frontend/src/pages/Quizzes.tsx
+// frontend/src/pages/quizzes/QuizzesPage.tsx
 /**
  * Página de lista de cuestionarios.
  * Muestra todos los quizzes disponibles con información de tema y dificultad.
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Toast, { ToastType } from "../components/Toast";
-import QuizCard from "../components/QuizCard";
-import { listQuizzes } from "../services/api";
-import type { QuizResponse } from "../types/api.types";
+import { Navbar, Toast, QuizCard } from "@/components";
+import type { ToastType } from "@/components";
+import { listQuizzes } from "@/services/api";
+import type { QuizResponse } from "@/types/api.types";
 
 export default function QuizzesPage() {
   const navigate = useNavigate();

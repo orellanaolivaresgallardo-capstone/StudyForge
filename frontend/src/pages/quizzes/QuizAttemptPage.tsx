@@ -1,23 +1,23 @@
-// frontend/src/pages/QuizAttempt.tsx
+// frontend/src/pages/quizzes/QuizAttemptPage.tsx
 /**
  * Página para tomar un cuestionario con feedback inmediato.
  * Muestra una pregunta a la vez con navegación y progreso visual.
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import { Navbar } from "@/components";
 import {
   getQuiz,
   createQuizAttempt,
   answerQuestion,
   completeQuizAttempt,
-} from "../services/api";
+} from "@/services/api";
 import type {
   QuizResponse,
   QuizAttemptWithQuestionsResponse,
   CorrectOption,
   QuizAttemptAnswerFeedback,
-} from "../types/api.types";
+} from "@/types/api.types";
 
 export default function QuizAttemptPage() {
   const { id } = useParams<{ id: string }>();

@@ -1,22 +1,22 @@
+// frontend/src/pages/stats/StatsPage.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Toast, { ToastType } from "../components/Toast";
-import PerformanceChart from "../components/PerformanceChart";
+import { Navbar, Toast, PerformanceChart } from "@/components";
+import type { ToastType } from "@/components";
 import {
   getUserProgress,
   getUserPerformance,
   getStatsSummary,
   getProgressBySpace,
-} from "../services/api";
+} from "@/services/api";
 import type {
   UserProgress,
   UserPerformance,
   StatsSummary,
   StudySpaceStatsResponse,
-} from "../types/api.types";
+} from "@/types/api.types";
 
-export default function Stats() {
+export default function StatsPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<StatsSummary | null>(null);

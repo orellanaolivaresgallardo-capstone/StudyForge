@@ -1,16 +1,14 @@
-// frontend/src/pages/SummaryDetail.tsx
+// frontend/src/pages/summaries/SummaryDetailPage.tsx
 /**
  * Página de detalle de resumen con documentos asociados.
  * Vista completa del resumen generado por IA.
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Toast, { ToastType } from "../components/Toast";
-import Modal from "../components/Modal";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { getSummary, deleteSummary, createQuizFromSummary } from "../services/api";
-import type { SummaryDetailResponse, ExpertiseLevel } from "../types/api.types";
+import { Navbar, Toast, Modal, LoadingSpinner } from "@/components";
+import type { ToastType } from "@/components";
+import { getSummary, deleteSummary, createQuizFromSummary } from "@/services/api";
+import type { SummaryDetailResponse, ExpertiseLevel } from "@/types/api.types";
 
 export default function SummaryDetailPage() {
   const { id } = useParams<{ id: string }>();

@@ -1,22 +1,19 @@
-// frontend/src/pages/StudySpaces.tsx
+// frontend/src/pages/study-spaces/StudySpacesPage.tsx
 /**
  * Página de gestión de espacios de estudio.
  * Permite crear, editar y eliminar espacios de estudio.
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Toast, { ToastType } from "../components/Toast";
-import Modal from "../components/Modal";
-import LoadingSpinner from "../components/LoadingSpinner";
-import EmptyState from "../components/EmptyState";
+import { Navbar, Toast, Modal, LoadingSpinner, EmptyState } from "@/components";
+import type { ToastType } from "@/components";
 import {
   listStudySpaces,
   createStudySpace,
   deleteStudySpace,
   updateStudySpace,
-} from "../services/api";
-import type { StudySpaceResponse } from "../types/api.types";
+} from "@/services/api";
+import type { StudySpaceResponse } from "@/types/api.types";
 
 export default function StudySpacesPage() {
   const navigate = useNavigate();

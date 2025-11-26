@@ -1,12 +1,12 @@
-// frontend/src/components/Navbar.tsx
+// frontend/src/components/layout/Navbar.tsx
 /**
  * Barra de navegación con estado autenticado y quota widget.
  * Muestra diferentes opciones según el estado de autenticación del usuario.
  */
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import QuotaWidget from "./QuotaWidget";
+import { useAuth } from "@/context/AuthContext";
+import { QuotaWidget } from "@/components";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();

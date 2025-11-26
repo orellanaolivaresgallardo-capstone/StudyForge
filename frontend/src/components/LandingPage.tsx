@@ -4,7 +4,7 @@
  * Uses shared PublicHeader and consistent styling with features/aboutus pages.
  */
 import { Link } from "react-router-dom";
-import PublicHeader from "./PublicHeader";
+import { PublicHeader } from "./layout";
 
 export default function LandingPage() {
   const currentYear = new Date().getFullYear();

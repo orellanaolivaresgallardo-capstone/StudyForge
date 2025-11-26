@@ -1,14 +1,14 @@
-// frontend/src/pages/Home.tsx
+// frontend/src/pages/public/HomePage.tsx
 /**
  * Home page - Página de inicio.
  * Muestra la landing page para usuarios no autenticados.
  * Redirige a /documents para usuarios autenticados.
  */
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import LandingPage from "../components/LandingPage";
+import { useAuth } from "@/context/AuthContext";
+import LandingPage from "@/components/LandingPage";
 
-export default function Home() {
+export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
 
   // Show loading state while checking authentication

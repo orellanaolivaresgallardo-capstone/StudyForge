@@ -1,16 +1,12 @@
-// frontend/src/pages/StudySpaceDetail.tsx
+// frontend/src/pages/study-spaces/StudySpaceDetailPage.tsx
 /**
  * Página de detalle de espacio de estudio.
  * Muestra documentos, resúmenes, quizzes y estadísticas del espacio.
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Toast, { ToastType } from "../components/Toast";
-import Modal from "../components/Modal";
-import LoadingSpinner from "../components/LoadingSpinner";
-import EmptyState from "../components/EmptyState";
-import QuizCard from "../components/QuizCard";
+import { Navbar, Toast, Modal, LoadingSpinner, EmptyState, QuizCard } from "@/components";
+import type { ToastType } from "@/components";
 import {
   getStudySpace,
   getStudySpaceStats,
@@ -23,7 +19,7 @@ import {
   listSummaries,
   listDocuments,
   createQuizFromSpace,
-} from "../services/api";
+} from "@/services/api";
 import type {
   StudySpaceDetailResponse,
   StudySpaceStatsResponse,
@@ -31,7 +27,7 @@ import type {
   SummaryResponse,
   DocumentResponse,
   QuizResponse,
-} from "../types/api.types";
+} from "@/types/api.types";
 
 export default function StudySpaceDetailPage() {
   const { id } = useParams<{ id: string }>();

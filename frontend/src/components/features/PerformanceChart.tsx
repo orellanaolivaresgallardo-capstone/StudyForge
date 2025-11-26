@@ -9,7 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import type { RecentAttempt } from '../types';
+import type { RecentAttempt } from '@/types';
 
 export interface PerformanceChartProps {
   attempts: RecentAttempt[];
