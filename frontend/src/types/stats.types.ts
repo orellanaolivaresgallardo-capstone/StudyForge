@@ -24,6 +24,7 @@ export interface RecentAttempt {
   difficulty_level: number;
   score: number;
   completed_at: string;
+  study_space_id?: string | null;
 }
 
 export interface UserPerformance {

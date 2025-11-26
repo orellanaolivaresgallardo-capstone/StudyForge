@@ -118,10 +118,13 @@ export default function StudySpacesPage() {
   }
 
   async function handleDeleteSpace(spaceId: string, name: string) {
-    if (!confirm(`¿Eliminar el espacio "${name}"?`)) return;
+    const password = prompt(
+      `Para eliminar el espacio "${name}", por favor ingresa tu contraseña:`
+    );
+    if (!password) return;
 
     try {
-      await deleteStudySpace(spaceId);
+      await deleteStudySpace(spaceId, password);
       showToast("Espacio eliminado", "success");
       setSpaces(spaces.filter((s) => s.id !== spaceId));
     } catch (error) {

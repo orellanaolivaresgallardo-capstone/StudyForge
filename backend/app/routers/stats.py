@@ -98,7 +98,7 @@ def get_user_performance(
     """
     # Obtener intentos recientes con información del quiz
     recent_attempts = (
-        db.query(QuizAttempt, Quiz.title, Quiz.topic, Quiz.difficulty_level)
+        db.query(QuizAttempt, Quiz.title, Quiz.topic, Quiz.difficulty_level, Quiz.study_space_id)
         .join(Quiz, QuizAttempt.quiz_id == Quiz.id)
         .filter(
             QuizAttempt.user_id == current_user.id,
@@ -111,7 +111,7 @@ def get_user_performance(
 
     # Formatear resultados
     performance_history = []
-    for attempt, quiz_title, quiz_topic, difficulty_level in recent_attempts:
+    for attempt, quiz_title, quiz_topic, difficulty_level, study_space_id in recent_attempts:
         performance_history.append({
             "attempt_id": str(attempt.id),
             "quiz_id": str(attempt.quiz_id),
@@ -120,6 +120,7 @@ def get_user_performance(
             "difficulty_level": difficulty_level,
             "score": round(attempt.score, 2) if attempt.score else 0,
             "completed_at": attempt.completed_at.isoformat(),
+            "study_space_id": str(study_space_id) if study_space_id else None,
         })
 
     return {
