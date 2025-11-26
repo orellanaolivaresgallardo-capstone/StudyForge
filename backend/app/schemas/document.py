@@ -22,6 +22,7 @@ class DocumentResponse(BaseModel):
     file_size_bytes: int
     created_at: datetime
     updated_at: datetime
+    study_space_names: list[str] = Field(default_factory=list, description="Nombres de espacios a los que pertenece")
 
     class Config:
         from_attributes = True

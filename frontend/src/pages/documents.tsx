@@ -6,6 +6,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
+import Toast, { ToastType } from "../components/Toast";
+import Modal from "../components/Modal";
 import {
   listDocuments,
   uploadDocument as apiUploadDocument,
@@ -17,11 +19,14 @@ export default function DocumentsPage() {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   // Estado de upload
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Estado de modal de confirmación
+  const [deleteModal, setDeleteModal] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => {
     loadDocuments();
@@ -34,15 +39,14 @@ export default function DocumentsPage() {
       setDocuments(response.items);
     } catch (error) {
       console.error("Error loading documents:", error);
-      showToast("No se pudieron cargar los documentos");
+      setToast({ message: "No se pudieron cargar los documentos", type: "error" });
     } finally {
       setIsLoading(false);
     }
   }
 
-  function showToast(msg: string, ms = 2200) {
-    setToast(msg);
-    setTimeout(() => setToast(null), ms);
+  function showToast(msg: string, type: ToastType = "info") {
+    setToast({ message: msg, type });
   }
 
   async function handleFileUpload(file: File) {
@@ -52,40 +56,40 @@ export default function DocumentsPage() {
     const allowedTypes = ["pdf", "docx", "pptx", "txt"];
     const fileExt = file.name.split(".").pop()?.toLowerCase();
     if (!fileExt || !allowedTypes.includes(fileExt)) {
-      showToast("Solo se permiten archivos PDF, DOCX, PPTX y TXT");
+      showToast("Solo se permiten archivos PDF, DOCX, PPTX y TXT", "warning");
       return;
     }
 
     try {
       setIsUploading(true);
       await apiUploadDocument(file);
-      showToast("Documento subido con éxito ✅");
+      showToast("Documento subido con éxito", "success");
       await loadDocuments();
     } catch (error: any) {
       console.error("Error uploading document:", error);
       if (error?.response?.status === 413) {
-        showToast("El archivo es demasiado grande");
+        showToast("El archivo es demasiado grande", "error");
       } else if (error?.response?.status === 507) {
-        showToast("No tienes suficiente espacio de almacenamiento");
+        showToast("No tienes suficiente espacio de almacenamiento", "error");
       } else {
-        showToast("No se pudo subir el documento");
+        showToast("No se pudo subir el documento", "error");
       }
     } finally {
       setIsUploading(false);
     }
   }
 
-  async function handleDeleteDocument(id: string, title: string) {
-    const confirmed = confirm(`¿Borrar "${title}"? Esta acción no se puede deshacer.`);
-    if (!confirmed) return;
+  async function confirmDeleteDocument() {
+    if (!deleteModal) return;
 
     try {
-      await apiDeleteDocument(id);
-      showToast("Documento eliminado 🗑️");
+      await apiDeleteDocument(deleteModal.id);
+      showToast("Documento eliminado", "success");
       await loadDocuments();
+      setDeleteModal(null);
     } catch (error) {
       console.error("Error deleting document:", error);
-      showToast("No se pudo eliminar el documento");
+      showToast("No se pudo eliminar el documento", "error");
     }
   }
 
@@ -222,9 +226,34 @@ export default function DocumentsPage() {
                         {" • "}
                         {new Date(doc.created_at).toLocaleDateString("es-ES")}
                       </p>
+                      {doc.study_space_names && doc.study_space_names.length > 0 && (
+                        <div className="flex gap-2 flex-wrap mt-2">
+                          {doc.study_space_names.map((spaceName, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-block px-2 py-1 rounded-lg text-xs font-medium bg-pink-500/20 text-pink-300 border border-pink-500/30"
+                            >
+                              <svg
+                                className="w-3 h-3 inline mr-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                                />
+                              </svg>
+                              {spaceName}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <button
-                      onClick={() => handleDeleteDocument(doc.id, doc.title)}
+                      onClick={() => setDeleteModal({ id: doc.id, title: doc.title })}
                       className="shrink-0 rounded-lg px-3 py-1.5 text-sm text-rose-400 hover:bg-rose-500/10 transition-colors"
                     >
                       Borrar
@@ -237,11 +266,46 @@ export default function DocumentsPage() {
         </section>
       </main>
 
-      {/* Toast */}
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <Modal
+          isOpen={!!deleteModal}
+          onClose={() => setDeleteModal(null)}
+          title="Confirmar eliminación"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-slate-300">
+              ¿Estás seguro de que quieres eliminar <strong>"{deleteModal.title}"</strong>?
+            </p>
+            <p className="text-sm text-slate-400">
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteModal(null)}
+                className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteDocument}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Toast Notification */}
       {toast && (
-        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl px-4 py-3 text-sm text-white shadow-lg">
-          {toast}
-        </div>
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

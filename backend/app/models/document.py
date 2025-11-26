@@ -31,6 +31,8 @@ class Document(Base):
     user = relationship("User", back_populates="documents")
     # Relación muchos-a-muchos con Summary a través de tabla intermedia
     summaries = relationship("Summary", secondary="studyforge.summary_documents", back_populates="documents")
+    # Relación muchos-a-muchos con espacios de estudio
+    study_spaces = relationship("StudySpace", secondary="studyforge.study_space_documents", back_populates="documents")
 
     def __repr__(self):
         size_mb = self.file_size_bytes / (1024 * 1024)

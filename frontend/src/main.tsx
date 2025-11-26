@@ -18,6 +18,8 @@ import AboutUsPage from "./pages/aboutus";
 import DocumentsPage from "./pages/documents";
 import SummariesPage from "./pages/summaries";
 import SummaryDetailPage from "./pages/SummaryDetail";
+import StudySpacesPage from "./pages/StudySpaces";
+import StudySpaceDetailPage from "./pages/StudySpaceDetail";
 import QuizzesPage from "./pages/Quizzes";
 import QuizAttemptPage from "./pages/QuizAttempt";
 import QuizResultsPage from "./pages/QuizResults";
@@ -54,6 +56,24 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <SummaryDetailPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/study-spaces",
+    element: (
+      <ProtectedRoute>
+        <StudySpacesPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/study-spaces/:id",
+    element: (
+      <ProtectedRoute>
+        <StudySpaceDetailPage />
       </ProtectedRoute>
     ),
     errorElement: <ErrorPage />,

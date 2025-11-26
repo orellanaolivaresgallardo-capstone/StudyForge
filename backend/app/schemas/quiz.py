@@ -44,6 +44,12 @@ class QuizCreate(BaseModel):
     file_type: Optional[str] = Field(None, description="Tipo de archivo")
 
 
+class QuizCreateFromSpace(BaseModel):
+    """Schema para crear un cuestionario desde un espacio de estudio."""
+    topic: str = Field("general", description="Tema específico o 'general'")
+    max_questions: Optional[int] = Field(None, ge=5, le=30, description="Número de preguntas (5-30)")
+
+
 class QuizResponse(BaseModel):
     """Schema para respuesta de cuestionario con preguntas en formato JSON."""
     model_config = ConfigDict(from_attributes=True)
@@ -51,6 +57,7 @@ class QuizResponse(BaseModel):
     id: UUID
     user_id: UUID
     summary_id: Optional[UUID]
+    study_space_id: Optional[UUID] = None
     title: str
     topic: str
     difficulty_level: int
@@ -58,6 +65,13 @@ class QuizResponse(BaseModel):
     questions: List[Dict[str, Any]] = Field(
         description="Lista de preguntas en formato JSON"
     )
+    # Campos calculados en el router (no vienen del modelo)
+    study_space_name: Optional[str] = None
+    summary_title: Optional[str] = None  # Título del resumen origen si existe
+    document_names: List[str] = []  # Nombres de documentos usados para generar quiz
+    source_type: str  # "file" | "summary" | "space"
+    num_questions: int  # Cantidad de preguntas
+    num_attempts: int  # Cantidad de intentos del usuario en este quiz
 
 
 class QuizListResponse(BaseModel):

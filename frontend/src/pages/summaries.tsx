@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Toast, { ToastType } from "../components/Toast";
+import Modal from "../components/Modal";
 import {
   listSummaries,
   createSummaryFromDocuments,
@@ -27,7 +29,7 @@ export default function SummariesPage() {
   // Estado de resúmenes
   const [summaries, setSummaries] = useState<SummaryResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   // Estado de creación de resumen
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -36,6 +38,9 @@ export default function SummariesPage() {
   const [expertiseLevel, setExpertiseLevel] = useState<ExpertiseLevel>("medio");
   const [summaryTitle, setSummaryTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  // Estado de modal de confirmación de eliminación
+  const [deleteModal, setDeleteModal] = useState<{ id: string; title: string } | null>(null);
 
   // Máximo de documentos permitidos
   const [maxDocs, setMaxDocs] = useState(2);
@@ -61,7 +66,7 @@ export default function SummariesPage() {
       setSummaries(response.items);
     } catch (error) {
       console.error("Error loading summaries:", error);
-      showToast("No se pudieron cargar los resúmenes");
+      setToast({ message: "No se pudieron cargar los resúmenes", type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -73,13 +78,12 @@ export default function SummariesPage() {
       setDocuments(response.items);
     } catch (error) {
       console.error("Error loading documents:", error);
-      showToast("No se pudieron cargar los documentos");
+      setToast({ message: "No se pudieron cargar los documentos", type: "error" });
     }
   }
 
-  function showToast(msg: string, ms = 3000) {
-    setToast(msg);
-    setTimeout(() => setToast(null), ms);
+  function showToast(msg: string, type: ToastType = "info") {
+    setToast({ message: msg, type });
   }
 
   function handleOpenCreateModal() {
@@ -95,7 +99,7 @@ export default function SummariesPage() {
       setSelectedDocIds(selectedDocIds.filter((id) => id !== docId));
     } else {
       if (selectedDocIds.length >= maxDocs) {
-        showToast(`Solo puedes seleccionar hasta ${maxDocs} documentos`);
+        showToast(`Solo puedes seleccionar hasta ${maxDocs} documentos`, "warning");
         return;
       }
       setSelectedDocIds([...selectedDocIds, docId]);
@@ -104,7 +108,7 @@ export default function SummariesPage() {
 
   async function handleCreateSummary() {
     if (selectedDocIds.length === 0) {
-      showToast("Debes seleccionar al menos un documento");
+      showToast("Debes seleccionar al menos un documento", "warning");
       return;
     }
 
@@ -115,7 +119,7 @@ export default function SummariesPage() {
         expertise_level: expertiseLevel,
         title: summaryTitle || undefined,
       });
-      showToast("Resumen creado exitosamente");
+      showToast("Resumen creado exitosamente", "success");
       setShowCreateModal(false);
       loadSummaries();
     } catch (error: unknown) {
@@ -124,22 +128,23 @@ export default function SummariesPage() {
         error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response !== null && 'data' in error.response && typeof error.response.data === 'object' && error.response.data !== null && 'detail' in error.response.data
           ? String(error.response.data.detail)
           : "Error al crear el resumen";
-      showToast(errorMessage);
+      showToast(errorMessage, "error");
     } finally {
       setIsCreating(false);
     }
   }
 
-  async function handleDeleteSummary(summaryId: string, title: string) {
-    if (!confirm(`¿Eliminar el resumen "${title}"?`)) return;
+  async function confirmDeleteSummary() {
+    if (!deleteModal) return;
 
     try {
-      await deleteSummary(summaryId);
-      showToast("Resumen eliminado");
-      setSummaries(summaries.filter((s) => s.id !== summaryId));
+      await deleteSummary(deleteModal.id);
+      showToast("Resumen eliminado", "success");
+      setSummaries(summaries.filter((s) => s.id !== deleteModal.id));
+      setDeleteModal(null);
     } catch (error) {
       console.error("Error deleting summary:", error);
-      showToast("No se pudo eliminar el resumen");
+      showToast("No se pudo eliminar el resumen", "error");
     }
   }
 
@@ -301,12 +306,12 @@ export default function SummariesPage() {
                       Conceptos clave:
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      {summary.key_concepts.slice(0, 3).map((concept, idx) => (
+                      {summary.key_concepts.slice(0, 3).map((item, idx) => (
                         <span
                           key={idx}
                           className="px-2 py-1 bg-pink-500/20 text-pink-300 rounded-lg text-xs"
                         >
-                          {concept}
+                          {item.concept}
                         </span>
                       ))}
                       {summary.key_concepts.length > 3 && (
@@ -314,6 +319,38 @@ export default function SummariesPage() {
                           +{summary.key_concepts.length - 3}
                         </span>
                       )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Study Spaces */}
+                {summary.study_space_names && summary.study_space_names.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs text-white/60 mb-2">
+                      Espacios de estudio:
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {summary.study_space_names.map((spaceName, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-block px-2 py-1 rounded-lg text-xs font-medium bg-pink-500/20 text-pink-300 border border-pink-500/30"
+                        >
+                          <svg
+                            className="w-3 h-3 inline mr-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                            />
+                          </svg>
+                          {spaceName}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -332,7 +369,7 @@ export default function SummariesPage() {
                     </button>
                     <button
                       onClick={() =>
-                        handleDeleteSummary(summary.id, summary.title)
+                        setDeleteModal({ id: summary.id, title: summary.title })
                       }
                       className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 text-xs font-medium transition-colors"
                     >
@@ -343,6 +380,39 @@ export default function SummariesPage() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModal && (
+          <Modal
+            isOpen={!!deleteModal}
+            onClose={() => setDeleteModal(null)}
+            title="Confirmar eliminación"
+            size="sm"
+          >
+            <div className="space-y-4">
+              <p className="text-slate-300">
+                ¿Estás seguro de que quieres eliminar el resumen <strong>"{deleteModal.title}"</strong>?
+              </p>
+              <p className="text-sm text-slate-400">
+                Esta acción no se puede deshacer.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteModal(null)}
+                  className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteSummary}
+                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </Modal>
         )}
 
         {/* Create Summary Modal */}
@@ -505,13 +575,16 @@ export default function SummariesPage() {
           </div>
         )}
 
-        {/* Toast Notification */}
-        {toast && (
-          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl">
-            <p className="text-white">{toast}</p>
-          </div>
-        )}
       </main>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

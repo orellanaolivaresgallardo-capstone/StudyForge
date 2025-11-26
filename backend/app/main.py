@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.core.logging import setup_logging, get_logger
 from app.core.rate_limiter import RateLimitMiddleware
-from app.routers import auth, documents, summaries, quizzes, quiz_attempts, stats
+from app.routers import auth, documents, summaries, quizzes, quiz_attempts, stats, study_spaces
 
 # Inicializar logging
 setup_logging()
@@ -64,6 +64,7 @@ app.include_router(summaries.router, prefix="/summaries", tags=["summaries"])
 app.include_router(quizzes.router, prefix="/quizzes", tags=["quizzes"])
 app.include_router(quiz_attempts.router, prefix="/quiz-attempts", tags=["quiz-attempts"])
 app.include_router(stats.router, prefix="/stats", tags=["stats"])
+app.include_router(study_spaces.router, prefix="/study-spaces", tags=["study-spaces"])
 
 
 if __name__ == "__main__":

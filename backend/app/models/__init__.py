@@ -8,6 +8,7 @@ from app.models.summary import Summary, ExpertiseLevel
 from app.models.quiz import Quiz
 from app.models.quiz_attempt import QuizAttempt
 from app.models.summary_document import summary_documents
+from app.models.study_space import StudySpace, study_space_summaries, study_space_documents
 
 __all__ = [
     "User",
@@ -16,5 +17,8 @@ __all__ = [
     "ExpertiseLevel",
     "Quiz",
     "QuizAttempt",
+    "StudySpace",
     "summary_documents",
+    "study_space_summaries",
+    "study_space_documents",
 ]

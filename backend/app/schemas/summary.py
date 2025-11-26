@@ -12,6 +12,12 @@ if TYPE_CHECKING:
     from app.schemas.document import DocumentResponse
 
 
+class KeyConceptItem(BaseModel):
+    """Schema para un concepto clave con su definición."""
+    concept: str = Field(..., min_length=1, max_length=200, description="Nombre del concepto")
+    definition: str = Field(..., min_length=1, max_length=500, description="Definición del concepto")
+
+
 class ExpertiseLevelEnum(str, Enum):
     """Niveles de expertise."""
     BASICO = "basico"
@@ -28,8 +34,8 @@ class SummaryCreate(BaseModel):
 
 
 class SummaryFromDocumentsRequest(BaseModel):
-    """Schema para crear resumen desde documentos existentes."""
-    document_ids: List[UUID] = Field(..., min_length=1, description="Lista de IDs de documentos a usar")
+    """Schema para crear resumen desde un documento existente."""
+    document_ids: List[UUID] = Field(..., min_length=1, max_length=1, description="ID del documento (debe ser exactamente 1)")
     expertise_level: ExpertiseLevelEnum = Field(..., description="Nivel de expertise del resumen")
 
 
@@ -43,9 +49,10 @@ class SummaryResponse(BaseModel):
     content: Dict[str, Any]  # Contenido estructurado
     expertise_level: str
     topics: List[str]
-    key_concepts: List[str]
+    key_concepts: List[KeyConceptItem]
     created_at: datetime
     updated_at: datetime
+    study_space_names: List[str] = Field(default_factory=list, description="Nombres de espacios a los que pertenece")
 
 
 class SummaryDetailResponse(SummaryResponse):

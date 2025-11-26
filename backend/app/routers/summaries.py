@@ -116,7 +116,25 @@ def list_summaries(
         skip=skip,
         limit=limit,
     )
-    return SummaryListResponse(items=summaries, total=total)
+
+    # Construir respuestas con study_space_names
+    summary_responses = []
+    for summary in summaries:
+        summary_dict = {
+            "id": summary.id,
+            "user_id": summary.user_id,
+            "title": summary.title,
+            "content": summary.content,
+            "expertise_level": summary.expertise_level.value if hasattr(summary.expertise_level, 'value') else summary.expertise_level,
+            "topics": summary.topics,
+            "key_concepts": summary.key_concepts,
+            "created_at": summary.created_at,
+            "updated_at": summary.updated_at,
+            "study_space_names": [space.name for space in summary.study_spaces]
+        }
+        summary_responses.append(SummaryResponse(**summary_dict))
+
+    return SummaryListResponse(items=summary_responses, total=total)
 
 
 @router.get("/{summary_id}", response_model=SummaryDetailResponse)

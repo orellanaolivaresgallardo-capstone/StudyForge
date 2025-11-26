@@ -54,8 +54,14 @@ class DocumentRepository:
 
     @staticmethod
     def get_by_id(db: Session, document_id: UUID) -> Optional[Document]:
-        """Obtiene un documento por su ID."""
-        return db.query(Document).filter(Document.id == document_id).first()
+        """Obtiene un documento por su ID con relaciones cargadas."""
+        from sqlalchemy.orm import joinedload
+        return (
+            db.query(Document)
+            .options(joinedload(Document.study_spaces))
+            .filter(Document.id == document_id)
+            .first()
+        )
 
     @staticmethod
     def get_by_user(
@@ -65,7 +71,7 @@ class DocumentRepository:
         limit: int = 100
     ) -> List[Document]:
         """
-        Obtiene documentos de un usuario con paginación.
+        Obtiene documentos de un usuario con paginación y relaciones cargadas.
 
         Args:
             db: Sesión de base de datos
@@ -76,12 +82,16 @@ class DocumentRepository:
         Returns:
             Lista de documentos
         """
-        return db.query(Document)\
-            .filter(Document.user_id == user_id)\
-            .order_by(Document.created_at.desc())\
-            .offset(skip)\
-            .limit(limit)\
+        from sqlalchemy.orm import joinedload
+        return (
+            db.query(Document)
+            .options(joinedload(Document.study_spaces))
+            .filter(Document.user_id == user_id)
+            .order_by(Document.created_at.desc())
+            .offset(skip)
+            .limit(limit)
             .all()
+        )
 
     @staticmethod
     def count_by_user(db: Session, user_id: UUID) -> int:

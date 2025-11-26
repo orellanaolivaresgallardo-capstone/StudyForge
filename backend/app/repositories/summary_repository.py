@@ -74,7 +74,7 @@ class SummaryRepository:
     @staticmethod
     def get_by_id(db: Session, summary_id: UUID) -> Optional[Summary]:
         """
-        Obtiene un resumen por su ID.
+        Obtiene un resumen por su ID con relaciones cargadas.
 
         Args:
             db: Sesión de base de datos
@@ -83,12 +83,18 @@ class SummaryRepository:
         Returns:
             Resumen si existe, None en caso contrario
         """
-        return db.query(Summary).filter(Summary.id == summary_id).first()
+        from sqlalchemy.orm import joinedload
+        return (
+            db.query(Summary)
+            .options(joinedload(Summary.study_spaces))
+            .filter(Summary.id == summary_id)
+            .first()
+        )
 
     @staticmethod
     def get_by_user(db: Session, user_id: UUID, skip: int = 0, limit: int = 100) -> List[Summary]:
         """
-        Obtiene todos los resúmenes de un usuario.
+        Obtiene todos los resúmenes de un usuario con relaciones cargadas.
 
         Args:
             db: Sesión de base de datos
@@ -99,8 +105,10 @@ class SummaryRepository:
         Returns:
             Lista de resúmenes del usuario
         """
+        from sqlalchemy.orm import joinedload
         return (
             db.query(Summary)
+            .options(joinedload(Summary.study_spaces))
             .filter(Summary.user_id == user_id)
             .order_by(Summary.created_at.desc())
             .offset(skip)

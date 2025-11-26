@@ -39,6 +39,8 @@ class Summary(Base):
     quizzes = relationship("Quiz", back_populates="summary")
     # Relación muchos-a-muchos con documentos (1-N documentos por resumen)
     documents = relationship("Document", secondary="studyforge.summary_documents", back_populates="summaries")
+    # Relación muchos-a-muchos con espacios de estudio
+    study_spaces = relationship("StudySpace", secondary="studyforge.study_space_summaries", back_populates="summaries")
 
     def __repr__(self):
         return f"<Summary {self.title} - {self.expertise_level.value}>"

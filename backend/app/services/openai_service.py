@@ -21,7 +21,7 @@ class OpenAIService:
         self.model = settings.OPENAI_MODEL
 
     def generate_summary(
-        self, text: str, expertise_level: str, max_tokens: int = 2000
+        self, text: str, expertise_level: str, max_tokens: int = 2000, space_context: str | None = None
     ) -> Dict[str, Any]:
         """
         Genera un resumen del texto según el nivel de expertise.
@@ -30,6 +30,7 @@ class OpenAIService:
             text: Texto a resumir
             expertise_level: Nivel de expertise (basico, medio, avanzado)
             max_tokens: Máximo de tokens para la respuesta
+            space_context: Contexto opcional del espacio de estudio para orientar la generación
 
         Returns:
             Diccionario con:
@@ -50,16 +51,30 @@ class OpenAIService:
 
         level_instruction = level_prompts.get(expertise_level, level_prompts["medio"])
 
+        # Agregar contexto del espacio si está disponible
+        context_instruction = ""
+        if space_context:
+            context_instruction = f"\n\nCONTEXTO: Este contenido es para un espacio de estudio enfocado en: {space_context}\nEnfoca el resumen y los conceptos clave en relación con este contexto."
+
         system_prompt = f"""Eres un asistente experto en crear resúmenes educativos.
-Debes generar un resumen del texto proporcionado con {level_instruction}.
+Debes generar un resumen del texto proporcionado con {level_instruction}.{context_instruction}
 
 Responde ÚNICAMENTE con un JSON válido con esta estructura:
 {{
     "title": "Título conciso del tema (máximo 10 palabras)",
     "summary": "Resumen del contenido (200-500 palabras)",
     "topics": ["tema1", "tema2", "tema3"],
-    "key_concepts": ["concepto1", "concepto2", "concepto3"]
-}}"""
+    "key_concepts": [
+        {{"concept": "concepto1", "definition": "definición clara y concisa (1-3 oraciones) del concepto1"}},
+        {{"concept": "concepto2", "definition": "definición clara y concisa (1-3 oraciones) del concepto2"}},
+        {{"concept": "concepto3", "definition": "definición clara y concisa (1-3 oraciones) del concepto3"}}
+    ]
+}}
+
+IMPORTANTE:
+- Genera 3-5 conceptos clave máximo
+- Cada definición debe tener 1-3 oraciones según el nivel de expertise ({expertise_level})
+- Las definiciones deben ser coherentes con el contenido y área de conocimiento del documento"""
 
         try:
             response = self.client.chat.completions.create(
@@ -103,6 +118,7 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
         topic: str,
         difficulty_level: int,
         num_questions: int,
+        space_context: str | None = None,
     ) -> List[Dict[str, Any]]:
         """
         Genera un cuestionario de opción múltiple a partir del texto.
@@ -112,6 +128,7 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
             topic: Tema específico o "general"
             difficulty_level: Nivel de dificultad (1-5)
             num_questions: Número de preguntas a generar
+            space_context: Contexto opcional del espacio de estudio para orientar la generación
 
         Returns:
             Lista de preguntas, cada una con:
@@ -134,8 +151,13 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
         difficulty_instruction = difficulty_desc.get(difficulty_level, difficulty_desc[3])
         topic_instruction = f"sobre el tema '{topic}'" if topic != "general" else "que cubran el contenido general"
 
+        # Agregar contexto del espacio si está disponible
+        context_instruction = ""
+        if space_context:
+            context_instruction = f"\n\nCONTEXTO: Este cuestionario es para un espacio de estudio enfocado en: {space_context}\nEnfoca las preguntas en relación con este contexto."
+
         system_prompt = f"""Eres un experto en crear preguntas educativas de opción múltiple.
-Genera {num_questions} preguntas {topic_instruction} con nivel de dificultad {difficulty_instruction}.
+Genera {num_questions} preguntas {topic_instruction} con nivel de dificultad {difficulty_instruction}.{context_instruction}
 
 IMPORTANTE:
 - Cada pregunta debe tener 4 opciones (A, B, C, D)

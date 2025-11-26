@@ -239,12 +239,12 @@ class SummaryService:
         expertise_level: ExpertiseLevel,
     ) -> Summary:
         """
-        Crea un resumen a partir de documentos ya almacenados.
+        Crea un resumen a partir de UN documento almacenado.
 
         Args:
             db: Sesión de base de datos
             user: Usuario autenticado
-            document_ids: Lista de IDs de documentos a usar
+            document_ids: Lista de IDs de documentos (debe contener solo 1)
             expertise_level: Nivel de expertise del resumen
 
         Returns:
@@ -254,33 +254,28 @@ class SummaryService:
             HTTPException: Si hay error al procesar o validación falla
         """
         try:
-            # 1. Validar número de documentos
+            # 1. Validar que sea exactamente un documento
             if len(document_ids) == 0:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Debe proporcionar al menos un documento"
+                    detail="Debe proporcionar un documento"
                 )
 
-            if len(document_ids) > user.max_documents_per_summary:  # type: ignore[operator]
+            if len(document_ids) > 1:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Máximo {user.max_documents_per_summary} documentos permitidos por resumen"
+                    detail="Los resúmenes solo pueden generarse desde un único documento"
                 )
 
-            # 2. Obtener y validar ownership de todos los documentos
+            # 2. Obtener y validar ownership del documento
             from app.core.dependencies import verify_document_ownership
 
-            documents = []
-            for doc_id in document_ids:
-                document = DocumentRepository.get_by_id(db, doc_id)
-                document = verify_document_ownership(document, user)
-                documents.append(document)
+            document_id = document_ids[0]
+            document = DocumentRepository.get_by_id(db, document_id)
+            document = verify_document_ownership(document, user)
 
-            # 3. Concatenar extracted_text de todos los documentos
-            combined_text = "\n\n---\n\n".join([
-                f"## {doc.title}\n{doc.extracted_text or ''}"
-                for doc in documents
-            ])
+            # 3. Usar texto del documento
+            combined_text = document.extracted_text or ""
 
             if not combined_text.strip():
                 raise HTTPException(
@@ -288,11 +283,20 @@ class SummaryService:
                     detail="Los documentos no contienen texto extraíble"
                 )
 
-            # 4. Generar resumen con OpenAI
+            # 3.5. Obtener contexto del espacio si el documento pertenece a un espacio
+            space_context = None
+            if len(document.study_spaces) > 0:
+                # Usar la descripción del primer espacio como contexto
+                first_space = document.study_spaces[0]
+                if first_space.description:
+                    space_context = first_space.description
+
+            # 4. Generar resumen con OpenAI (con contexto del espacio si está disponible)
             try:
                 summary_data = self.openai_service.generate_summary(
                     text=combined_text,
-                    expertise_level=expertise_level.value
+                    expertise_level=expertise_level.value,
+                    space_context=space_context
                 )
                 log_openai_request(
                     request_type="summary",
@@ -317,7 +321,7 @@ class SummaryService:
             summary = SummaryRepository.create(
                 db=db,
                 user_id=user.id,
-                title=summary_data.get("title", f"Resumen de {len(documents)} documentos"),
+                title=summary_data.get("title", document.title),
                 content={
                     "summary": summary_data.get("summary", ""),
                     "full_data": summary_data
@@ -327,13 +331,20 @@ class SummaryService:
                 key_concepts=summary_data.get("key_concepts", []),
             )
 
-            # 6. Asociar todos los documentos con el resumen
-            for document in documents:
-                SummaryRepository.add_document_to_summary(
-                    db=db,
-                    summary_id=summary.id,
-                    document_id=document.id
-                )
+            # 6. Asociar el documento con el resumen
+            SummaryRepository.add_document_to_summary(
+                db=db,
+                summary_id=summary.id,
+                document_id=document.id
+            )
+
+            # 7. Auto-asignar resumen al espacio si el documento pertenece a un espacio
+            from app.repositories.study_space_repository import StudySpaceRepository
+
+            if len(document.study_spaces) > 0:
+                # Asignar a todos los espacios del documento
+                for space in document.study_spaces:
+                    StudySpaceRepository.add_summary(db, space.id, summary.id)
 
             return summary
 

@@ -6,6 +6,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Toast, { ToastType } from "../components/Toast";
+import QuizCard from "../components/QuizCard";
 import { listQuizzes } from "../services/api";
 import type { QuizResponse } from "../types/api.types";
 
@@ -14,7 +16,7 @@ export default function QuizzesPage() {
 
   const [quizzes, setQuizzes] = useState<QuizResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
     loadQuizzes();
@@ -27,33 +29,14 @@ export default function QuizzesPage() {
       setQuizzes(response.items);
     } catch (error) {
       console.error("Error loading quizzes:", error);
-      showToast("No se pudieron cargar los cuestionarios");
+      showToast("No se pudieron cargar los cuestionarios", "error");
     } finally {
       setIsLoading(false);
     }
   }
 
-  function showToast(msg: string, ms = 3000) {
-    setToast(msg);
-    setTimeout(() => setToast(null), ms);
-  }
-
-  function handleStartQuiz(quizId: string) {
-    navigate(`/quizzes/${quizId}/attempt`);
-  }
-
-  function getDifficultyColor(difficulty: number) {
-    if (difficulty <= 2) return "bg-green-500/20 text-green-400 border-green-500/30";
-    if (difficulty <= 3) return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    return "bg-red-500/20 text-red-400 border-red-500/30";
-  }
-
-  function getDifficultyLabel(difficulty: number) {
-    if (difficulty === 1) return "Muy Fácil";
-    if (difficulty === 2) return "Fácil";
-    if (difficulty === 3) return "Medio";
-    if (difficulty === 4) return "Difícil";
-    return "Muy Difícil";
+  function showToast(msg: string, type: ToastType = "info") {
+    setToast({ message: msg, type });
   }
 
   return (
@@ -65,6 +48,15 @@ export default function QuizzesPage() {
 
       {/* Navbar */}
       <Navbar />
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       <main className="relative z-10 mx-auto max-w-6xl px-4 py-10 space-y-8">
         {/* Header */}
@@ -130,67 +122,30 @@ export default function QuizzesPage() {
               No tienes cuestionarios aún
             </h3>
             <p className="text-white/60 mb-6">
-              Crea tu primer cuestionario desde un resumen
+              Crea tu primer cuestionario desde un resumen o un espacio de estudio
             </p>
-            <button
-              onClick={() => navigate("/summaries")}
-              className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors"
-            >
-              Ir a resúmenes
-            </button>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => navigate("/summaries")}
+                className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors"
+              >
+                Ir a resúmenes
+              </button>
+              <button
+                onClick={() => navigate("/study-spaces")}
+                className="px-6 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 font-semibold transition-colors"
+              >
+                Ir a espacios
+              </button>
+            </div>
           </div>
         )}
 
         {/* Quizzes Grid */}
         {!isLoading && quizzes.length > 0 && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {quizzes.map((quiz) => (
-              <div
-                key={quiz.id}
-                className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 hover:border-violet-400/30 transition-all group"
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-violet-400 transition-colors line-clamp-2">
-                      {quiz.title}
-                    </h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`inline-block px-2 py-1 rounded-lg text-xs font-medium border ${getDifficultyColor(
-                          quiz.difficulty_level
-                        )}`}
-                      >
-                        {getDifficultyLabel(quiz.difficulty_level)}
-                      </span>
-                      <span className="inline-block px-2 py-1 rounded-lg text-xs font-medium bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                        {quiz.max_questions} preguntas
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Topic */}
-                <div className="mb-4">
-                  <p className="text-xs text-white/60 mb-1">Tema:</p>
-                  <p className="text-sm text-white font-medium">
-                    {quiz.topic}
-                  </p>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                  <span className="text-xs text-white/60">
-                    {new Date(quiz.created_at).toLocaleDateString("es-ES")}
-                  </span>
-                  <button
-                    onClick={() => handleStartQuiz(quiz.id)}
-                    className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-sm font-semibold transition-colors"
-                  >
-                    Iniciar
-                  </button>
-                </div>
-              </div>
+              <QuizCard key={quiz.id} quiz={quiz} />
             ))}
           </div>
         )}
@@ -226,13 +181,6 @@ export default function QuizzesPage() {
                 </p>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Toast Notification */}
-        {toast && (
-          <div className="fixed bottom-8 right-8 z-50 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl">
-            <p className="text-white">{toast}</p>
           </div>
         )}
       </main>

@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.security import decode_access_token
 from app.core.logging import log_ownership_validation
-from app.models import User, Document, Summary, Quiz, QuizAttempt
+from app.models import User, Document, Summary, Quiz, QuizAttempt, StudySpace
 
 # Esquema de autenticación Bearer
 security = HTTPBearer()
@@ -221,3 +221,40 @@ def verify_quiz_attempt_ownership(attempt: QuizAttempt | None, user: User) -> Qu
         )
 
     return attempt
+
+
+def verify_space_ownership(space: StudySpace | None, user: User) -> StudySpace:
+    """
+    Verifica que el espacio de estudio pertenezca al usuario autenticado.
+
+    Args:
+        space: Espacio de estudio a verificar
+        user: Usuario autenticado
+
+    Returns:
+        StudySpace si pertenece al usuario
+
+    Raises:
+        HTTPException 403: Si el espacio no pertenece al usuario
+        HTTPException 404: Si el espacio es None
+    """
+    if space is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Espacio de estudio no encontrado"
+        )
+
+    if space.user_id != user.id:  # type: ignore[comparison-overlap]
+        log_ownership_validation(
+            resource_type="study_space",
+            resource_id=str(space.id),
+            user_id=str(user.id),
+            owner_id=str(space.user_id),
+            status="denied"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para acceder a este espacio de estudio"
+        )
+
+    return space

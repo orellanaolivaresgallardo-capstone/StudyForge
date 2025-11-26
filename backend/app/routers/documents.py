@@ -120,7 +120,23 @@ def list_documents(
     documents = DocumentRepository.get_by_user(db, current_user.id, skip, limit)
     total = DocumentRepository.count_by_user(db, current_user.id)
 
-    return DocumentListResponse(items=documents, total=total, skip=skip, limit=limit)
+    # Construir respuestas con study_space_names
+    document_responses = []
+    for doc in documents:
+        doc_dict = {
+            "id": doc.id,
+            "user_id": doc.user_id,
+            "title": doc.title,
+            "file_name": doc.file_name,
+            "file_type": doc.file_type,
+            "file_size_bytes": doc.file_size_bytes,
+            "created_at": doc.created_at,
+            "updated_at": doc.updated_at,
+            "study_space_names": [space.name for space in doc.study_spaces]
+        }
+        document_responses.append(DocumentResponse(**doc_dict))
+
+    return DocumentListResponse(items=document_responses, total=total, skip=skip, limit=limit)
 
 
 @router.get("/storage", response_model=StorageInfo)

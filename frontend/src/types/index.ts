@@ -1,14 +1,8 @@
-// frontend/src/types/api.types.ts
 /**
- * Re-exportaciones desde archivos de tipos organizados por dominio.
- * Este archivo mantiene compatibilidad hacia atrás con importaciones existentes.
- *
- * Para nuevos archivos, se recomienda importar directamente desde:
- * - import type { ... } from '../types' (usa index.ts)
- * - import type { ... } from '../types/auth.types'
+ * Exportaciones centralizadas de tipos
  */
 
-// ==================== AUTH ====================
+// Auth
 export type {
   UserResponse,
   UserDetailResponse,
@@ -17,7 +11,7 @@ export type {
   Token,
 } from './auth.types';
 
-// ==================== DOCUMENTS ====================
+// Documents
 export type {
   DocumentResponse,
   DocumentDetailResponse,
@@ -26,7 +20,7 @@ export type {
   StorageInfo,
 } from './document.types';
 
-// ==================== SUMMARIES ====================
+// Summaries
 export type {
   ExpertiseLevel,
   KeyConceptItem,
@@ -36,7 +30,7 @@ export type {
   SummaryCreateFromDocuments,
 } from './summary.types';
 
-// ==================== QUIZZES ====================
+// Quizzes
 export type {
   CorrectOption,
   QuestionOptionsData,
@@ -48,7 +42,7 @@ export type {
   QuizCreateFromSummary,
 } from './quiz.types';
 
-// ==================== QUIZ ATTEMPTS ====================
+// Quiz Attempts
 export type {
   QuizAttemptResponse,
   QuizAttemptWithQuestionsResponse,
@@ -59,7 +53,7 @@ export type {
   QuizResultResponse,
 } from './quiz-attempt.types';
 
-// ==================== STUDY SPACES ====================
+// Study Spaces
 export type {
   StudySpaceCreate,
   StudySpaceUpdate,
@@ -70,7 +64,7 @@ export type {
   StudySpaceStatsResponse,
 } from './study-space.types';
 
-// ==================== STATS ====================
+// Stats
 export type {
   ProgressByTopic,
   UserProgress,
@@ -79,7 +73,7 @@ export type {
   StatsSummary,
 } from './stats.types';
 
-// ==================== HEALTH ====================
+// Health
 export type {
   HealthResponse,
 } from './health.types';

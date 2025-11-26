@@ -22,7 +22,41 @@ module.exports = {
           800: "#441090",
           900: "#300A66",
         }
-      }
+      },
+      keyframes: {
+        slideInRight: {
+          '0%': { transform: 'translateX(100%)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        slideOutRight: {
+          '0%': { transform: 'translateX(0)', opacity: '1' },
+          '100%': { transform: 'translateX(100%)', opacity: '0' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        scaleOut: {
+          '0%': { transform: 'scale(1)', opacity: '1' },
+          '100%': { transform: 'scale(0.95)', opacity: '0' },
+        },
+      },
+      animation: {
+        slideInRight: 'slideInRight 0.3s ease-out',
+        slideOutRight: 'slideOutRight 0.3s ease-in',
+        fadeIn: 'fadeIn 0.2s ease-out',
+        fadeOut: 'fadeOut 0.2s ease-in',
+        scaleIn: 'scaleIn 0.2s ease-out',
+        scaleOut: 'scaleOut 0.2s ease-in',
+      },
     },
   },
   plugins: [],

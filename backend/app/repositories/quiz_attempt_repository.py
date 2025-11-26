@@ -164,6 +164,31 @@ class QuizAttemptRepository:
         )
 
     @staticmethod
+    def count_attempts_by_quiz(db: Session, quiz_id: UUID, user_id: UUID) -> int:
+        """
+        Cuenta los intentos completados de un cuestionario para un usuario.
+
+        Args:
+            db: Sesión de base de datos
+            quiz_id: ID del cuestionario
+            user_id: ID del usuario
+
+        Returns:
+            Número de intentos completados
+        """
+        return (
+            db.query(QuizAttempt)
+            .filter(
+                and_(
+                    QuizAttempt.quiz_id == quiz_id,
+                    QuizAttempt.user_id == user_id,
+                    QuizAttempt.completed_at.isnot(None),
+                )
+            )
+            .count()
+        )
+
+    @staticmethod
     def record_answer(
         db: Session,
         attempt: QuizAttempt,

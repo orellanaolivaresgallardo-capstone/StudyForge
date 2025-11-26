@@ -9,11 +9,52 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.dependencies import get_current_user
 from app.services.quiz_service import QuizService
+from app.repositories.quiz_attempt_repository import QuizAttemptRepository
 from app.schemas.quiz import QuizResponse, QuizListResponse
 from app.models.user import User
 
 router = APIRouter()
 quiz_service = QuizService()
+
+
+def _enrich_quiz_response(quiz, db: Session, user_id: UUID) -> dict:
+    """
+    Enriquece un quiz con campos computados (metadata y origen).
+
+    Args:
+        quiz: Objeto Quiz de la base de datos
+        db: Sesión de base de datos
+        user_id: ID del usuario
+
+    Returns:
+        Diccionario con todos los campos para QuizResponse
+    """
+    # Determinar source_type
+    if quiz.study_space_id:
+        source_type = "space"
+    elif quiz.summary_id:
+        source_type = "summary"
+    else:
+        source_type = "file"
+
+    # Construir diccionario con campos computados
+    return {
+        "id": quiz.id,
+        "user_id": quiz.user_id,
+        "summary_id": quiz.summary_id,
+        "study_space_id": quiz.study_space_id,
+        "title": quiz.title,
+        "topic": quiz.topic,
+        "difficulty_level": quiz.difficulty_level,
+        "created_at": quiz.created_at,
+        "questions": quiz.questions,
+        "study_space_name": quiz.study_space.name if quiz.study_space else None,
+        "summary_title": quiz.summary.title if quiz.summary else None,
+        "document_names": [d.file_name for d in quiz.summary.documents] if quiz.summary else [],
+        "source_type": source_type,
+        "num_questions": len(quiz.questions),
+        "num_attempts": QuizAttemptRepository.count_attempts_by_quiz(db, quiz.id, user_id)
+    }
 
 
 @router.post("/generate-from-file", response_model=QuizResponse, status_code=status.HTTP_201_CREATED)
@@ -37,7 +78,7 @@ async def generate_quiz_from_file(
         db: Sesión de base de datos
 
     Returns:
-        Cuestionario generado con preguntas
+        Cuestionario generado con preguntas y metadata
     """
     quiz = await quiz_service.create_quiz_from_file(
         db=db,
@@ -46,7 +87,10 @@ async def generate_quiz_from_file(
         topic=topic,
         max_questions=max_questions,
     )
-    return quiz
+
+    # Enriquecer con metadata
+    quiz_dict = _enrich_quiz_response(quiz, db, current_user.id)
+    return QuizResponse(**quiz_dict)
 
 
 @router.post("/generate-from-summary/{summary_id}", response_model=QuizResponse, status_code=status.HTTP_201_CREATED)
@@ -68,7 +112,7 @@ def generate_quiz_from_summary(
         db: Sesión de base de datos
 
     Returns:
-        Cuestionario generado
+        Cuestionario generado con metadata
 
     Raises:
         HTTPException: Si el resumen no existe o no pertenece al usuario
@@ -80,7 +124,10 @@ def generate_quiz_from_summary(
         topic=topic,
         max_questions=max_questions,
     )
-    return quiz
+
+    # Enriquecer con metadata
+    quiz_dict = _enrich_quiz_response(quiz, db, current_user.id)
+    return QuizResponse(**quiz_dict)
 
 
 @router.get("", response_model=QuizListResponse)
@@ -91,7 +138,7 @@ def list_quizzes(
     db: Session = Depends(get_db),
 ):
     """
-    Lista todos los cuestionarios del usuario.
+    Lista todos los cuestionarios del usuario con metadata completa.
 
     Args:
         skip: Número de registros a saltar
@@ -100,7 +147,7 @@ def list_quizzes(
         db: Sesión de base de datos
 
     Returns:
-        Lista de cuestionarios
+        Lista de cuestionarios con metadata y origen
     """
     quizzes, total = quiz_service.get_quizzes(
         db=db,
@@ -108,7 +155,14 @@ def list_quizzes(
         skip=skip,
         limit=limit,
     )
-    return QuizListResponse(items=quizzes, total=total)
+
+    # Enriquecer cada quiz con metadata
+    enriched_quizzes = []
+    for quiz in quizzes:
+        quiz_dict = _enrich_quiz_response(quiz, db, current_user.id)
+        enriched_quizzes.append(QuizResponse(**quiz_dict))
+
+    return QuizListResponse(items=enriched_quizzes, total=total)
 
 
 @router.get("/{quiz_id}", response_model=QuizResponse)
@@ -118,7 +172,7 @@ def get_quiz(
     db: Session = Depends(get_db),
 ):
     """
-    Obtiene un cuestionario específico con sus preguntas.
+    Obtiene un cuestionario específico con sus preguntas y metadata completa.
 
     **Nota:** Las respuestas correctas NO se incluyen en este endpoint.
 
@@ -128,7 +182,7 @@ def get_quiz(
         db: Sesión de base de datos
 
     Returns:
-        Cuestionario con preguntas (sin respuestas correctas)
+        Cuestionario con preguntas, metadata y origen
 
     Raises:
         HTTPException: Si el cuestionario no existe o no pertenece al usuario
@@ -138,4 +192,7 @@ def get_quiz(
         quiz_id=quiz_id,
         user=current_user,
     )
-    return quiz
+
+    # Enriquecer con metadata
+    quiz_dict = _enrich_quiz_response(quiz, db, current_user.id)
+    return QuizResponse(**quiz_dict)
