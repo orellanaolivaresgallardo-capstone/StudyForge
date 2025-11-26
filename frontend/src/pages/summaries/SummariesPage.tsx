@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Navbar, Toast, Modal } from "@/components";
+import { Navbar, Toast, Modal, LoadingSpinner, EmptyState } from "@/components";
 import type { ToastType } from "@/components";
 import {
   listSummaries,
@@ -212,19 +212,12 @@ export default function SummariesPage() {
         </div>
 
         {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-400 border-t-transparent"></div>
-              <p className="mt-4 text-white/60">Cargando resúmenes...</p>
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingSpinner message="Cargando resúmenes..." />}
 
         {/* Empty State */}
         {!isLoading && summaries.length === 0 && (
-          <div className="text-center py-20">
-            <div className="inline-flex h-20 w-20 rounded-full bg-white/10 items-center justify-center mb-4">
+          <EmptyState
+            icon={
               <svg
                 className="w-10 h-10 text-white/60"
                 fill="none"
@@ -238,20 +231,14 @@ export default function SummariesPage() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">
-              No tienes resúmenes aún
-            </h3>
-            <p className="text-white/60 mb-6">
-              Crea tu primer resumen desde tus documentos
-            </p>
-            <button
-              onClick={handleOpenCreateModal}
-              className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-semibold transition-colors"
-            >
-              Crear resumen
-            </button>
-          </div>
+            }
+            title="No tienes resúmenes aún"
+            description="Crea tu primer resumen desde tus documentos"
+            action={{
+              label: "Crear resumen",
+              onClick: handleOpenCreateModal
+            }}
+          />
         )}
 
         {/* Summaries Grid */}

@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Navbar } from "@/components";
+import { Navbar, LoadingSpinner } from "@/components";
 import { getQuizAttemptResults } from "@/services/api";
 import type {
   QuizResultResponse,
@@ -100,14 +100,7 @@ export default function QuizResultsPage() {
         </button>
 
         {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-400 border-t-transparent"></div>
-              <p className="mt-4 text-white/60">Cargando resultados...</p>
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingSpinner message="Cargando resultados..." />}
 
         {/* Results Content */}
         {!isLoading && results && (

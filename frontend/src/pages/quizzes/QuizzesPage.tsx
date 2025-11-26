@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navbar, Toast, QuizCard } from "@/components";
+import { Navbar, Toast, QuizCard, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import { listQuizzes } from "@/services/api";
 import type { QuizResponse } from "@/types/api.types";
@@ -90,14 +90,7 @@ export default function QuizzesPage() {
         </div>
 
         {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-violet-400 border-t-transparent"></div>
-              <p className="mt-4 text-white/60">Cargando cuestionarios...</p>
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingSpinner message="Cargando cuestionarios..." />}
 
         {/* Empty State */}
         {!isLoading && quizzes.length === 0 && (

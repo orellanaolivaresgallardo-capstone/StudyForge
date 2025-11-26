@@ -1,7 +1,7 @@
 // frontend/src/pages/stats/StatsPage.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navbar, Toast, PerformanceChart } from "@/components";
+import { Navbar, Toast, PerformanceChart, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import {
   getUserProgress,
@@ -89,11 +89,8 @@ export default function StatsPage() {
           aria-hidden="true"
         />
         <Navbar />
-        <div className="relative flex items-center justify-center min-h-[calc(100vh-64px)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-violet-400 mx-auto"></div>
-            <p className="text-white/60 mt-4">Cargando estadísticas...</p>
-          </div>
+        <div className="relative min-h-[calc(100vh-64px)]">
+          <LoadingSpinner size="lg" message="Cargando estadísticas..." />
         </div>
       </div>
     );
