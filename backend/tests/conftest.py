@@ -1,0 +1,132 @@
+"""
+Fixtures compartidas para tests de StudyForge
+"""
+import pytest
+from uuid import uuid4
+from unittest.mock import Mock
+from datetime import datetime
+
+
+@pytest.fixture
+def fake_user():
+    """Usuario fake con cuota de almacenamiento"""
+    user = Mock()
+    user.id = uuid4()
+    user.email = "test@studyforge.com"
+    user.storage_quota_bytes = 10_000_000  # 10 MB
+    user.storage_used_bytes = 0
+    user.max_file_size_bytes = 5_000_000  # 5 MB
+    return user
+
+
+@pytest.fixture
+def fake_study_space(fake_user):
+    """Study space fake con relaciones vacías"""
+    space = Mock()
+    space.id = uuid4()
+    space.user_id = fake_user.id
+    space.name = "Test Space"
+    space.description = "Test description"
+    space.color = "#8B5CF6"
+    space.created_at = datetime.now()
+    space.updated_at = datetime.now()
+    space.documents = []
+    space.summaries = []
+    return space
+
+
+@pytest.fixture
+def fake_document(fake_user):
+    """Documento fake con texto extraído"""
+    doc = Mock()
+    doc.id = uuid4()
+    doc.user_id = fake_user.id
+    doc.title = "Test Document"
+    doc.file_name = "test.pdf"
+    doc.file_type = "pdf"
+    doc.file_size_bytes = 1024
+    doc.extracted_text = "This is extracted text. " * 10
+    doc.created_at = datetime.now()
+    doc.updated_at = datetime.now()
+    doc.study_spaces = []
+    return doc
+
+
+@pytest.fixture
+def fake_summary(fake_user):
+    """Resumen fake con JSONB content"""
+    summary = Mock()
+    summary.id = uuid4()
+    summary.user_id = fake_user.id
+    summary.title = "Test Summary"
+    summary.content = {
+        "summary": "Test summary content",
+        "full_data": {"title": "Test", "summary": "..."}
+    }
+    summary.expertise_level = "medio"
+    summary.topics = ["test", "topic"]
+    summary.key_concepts = [
+        {"concept": "Test", "definition": "A test concept"}
+    ]
+    summary.created_at = datetime.now()
+    summary.updated_at = datetime.now()
+    summary.documents = []
+    summary.study_spaces = []
+    return summary
+
+
+@pytest.fixture
+def fake_quiz(fake_user):
+    """Quiz fake con preguntas"""
+    quiz = Mock()
+    quiz.id = uuid4()
+    quiz.user_id = fake_user.id
+    quiz.title = "Test Quiz"
+    quiz.topic = "test"
+    quiz.difficulty_level = 3
+    quiz.questions = [
+        {
+            "question": "Test question?",
+            "options": {
+                "correct": "A",
+                "semi-correct": "B",
+                "incorrect1": "C",
+                "incorrect2": "D"
+            },
+            "explanation": "Test explanation"
+        }
+    ]
+    quiz.source_document_ids = []
+    quiz.source_summary_ids = []
+    quiz.study_space_id = None
+    quiz.summary_id = None
+    quiz.created_at = datetime.now()
+    return quiz
+
+
+@pytest.fixture
+def fake_db():
+    """Mock de database session"""
+    db = Mock()
+    db.commit = Mock()
+    db.refresh = Mock()
+    db.query = Mock()
+    return db
+
+
+@pytest.fixture
+def sample_pdf_content():
+    """Contenido de PDF válido para tests"""
+    return b"%PDF-1.4\n%fake pdf content for testing purposes only"
+
+
+def create_fake_quiz_attempt(quiz_id, user_id, score, completed=True):
+    """Helper para crear quiz attempt fake"""
+    attempt = Mock()
+    attempt.id = uuid4()
+    attempt.quiz_id = quiz_id
+    attempt.user_id = user_id
+    attempt.score = score if completed else None
+    attempt.completed_at = datetime.now() if completed else None
+    attempt.created_at = datetime.now()
+    return attempt

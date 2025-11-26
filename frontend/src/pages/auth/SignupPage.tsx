@@ -137,7 +137,7 @@ export default function SignupPage() {
               {/* Username (solo UI) */}
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-white">
-                  Nombre de usuario (opcional)
+                  Nombre de usuario
                 </label>
                 <input
                   id="username"

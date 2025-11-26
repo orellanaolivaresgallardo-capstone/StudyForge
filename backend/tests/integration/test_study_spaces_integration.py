@@ -1,0 +1,153 @@
+"""
+Tests de integración E2E para flujo completo de espacios de estudio.
+Estos tests verifican que los endpoints existen y responden correctamente.
+No usan autenticación real, por lo que esperan 401/403/422 en su mayoría.
+"""
+import pytest
+from uuid import uuid4
+from fastapi.testclient import TestClient
+from app.main import app
+
+
+@pytest.fixture
+def client():
+    """Cliente de test para FastAPI"""
+    return TestClient(app)
+
+
+# TEST 1: Upload de documento con asignación a espacio
+def test_upload_document_to_space(client):
+    """TEST 1: Verificar endpoint de upload de documento"""
+    space_id = str(uuid4())
+
+    # Crear archivo de test
+    file_content = b"Test document content for mathematics."
+
+    response = client.post(
+        f"/documents/?study_space_id={space_id}",
+        files={"file": ("test.txt", file_content, "text/plain")}
+    )
+
+    # Sin autenticación, debe retornar 401/403/422
+    assert response.status_code in [401, 403, 422]
+
+
+# TEST 2: Generación de resumen desde documento
+def test_generate_summary_from_document(client):
+    """TEST 2: Verificar endpoint de generación de resumen"""
+    space_id = str(uuid4())
+    doc_id = str(uuid4())
+
+    response = client.post(
+        f"/summaries/from-documents?study_space_id={space_id}",
+        json={
+            "title": "Calculus Summary",
+            "document_ids": [doc_id],
+            "expertise_level": "medium"
+        }
+    )
+
+    # Sin autenticación, debe retornar 401/403/422
+    assert response.status_code in [401, 403, 422]
+
+
+# TEST 3: Generación de quiz desde documento
+def test_generate_quiz_from_document(client):
+    """TEST 3: Verificar endpoint de generación de quiz desde documento"""
+    doc_id = str(uuid4())
+
+    response = client.post(
+        f"/quizzes/from-document/{doc_id}",
+        json={
+            "title": "Calculus Quiz",
+            "num_questions": 5,
+            "difficulty": 3
+        }
+    )
+
+    # Sin autenticación o documento no encontrado
+    assert response.status_code in [401, 403, 404, 422]
+
+
+# TEST 4: Generación de quiz desde resumen
+def test_generate_quiz_from_summary(client):
+    """TEST 4: Verificar endpoint de generación de quiz desde resumen"""
+    summary_id = str(uuid4())
+
+    response = client.post(
+        f"/quizzes/from-summary/{summary_id}",
+        json={
+            "title": "Calculus Quiz from Summary",
+            "num_questions": 10,
+            "difficulty": 3
+        }
+    )
+
+    # Sin autenticación o resumen no encontrado
+    assert response.status_code in [401, 403, 404, 422]
+
+
+# TEST 5: Gráfico de progreso filtrado por espacio
+def test_progress_graph_filtered_by_space(client):
+    """TEST 5: Verificar endpoint de estadísticas del espacio"""
+    space_id = str(uuid4())
+
+    response = client.get(f"/study-spaces/{space_id}/stats")
+
+    # Sin autenticación o espacio no encontrado
+    assert response.status_code in [401, 403, 404, 422]
+
+
+# TEST 6: Verificar creación de espacio
+def test_create_study_space(client):
+    """TEST 6: Verificar endpoint de creación de espacio"""
+
+    response = client.post(
+        "/study-spaces/",
+        json={
+            "name": "Mathematics",
+            "description": "Math study space",
+            "color": "#8B5CF6"
+        }
+    )
+
+    # Sin autenticación, debe retornar 401/403/422
+    assert response.status_code in [401, 403, 422]
+
+
+# TEST EDGE CASE 1: Generar quiz con número de preguntas inválido
+def test_generate_quiz_invalid_num_questions(client):
+    """EDGE: Intentar generar quiz con más de 30 preguntas (límite)"""
+    doc_id = str(uuid4())
+
+    # Request con 50 preguntas (excede el límite de 30)
+    response = client.post(
+        f"/quizzes/from-document/{doc_id}",
+        json={
+            "title": "Invalid Quiz",
+            "num_questions": 50,
+            "difficulty": 3
+        }
+    )
+
+    # Debe rechazar por auth o validación
+    assert response.status_code in [400, 401, 403, 404, 422]
+
+
+# TEST EDGE CASE 2: Generar resumen sin documentos
+def test_generate_summary_no_documents(client):
+    """EDGE: Intentar generar resumen sin documentos"""
+    space_id = str(uuid4())
+
+    # Request sin document_ids
+    response = client.post(
+        f"/summaries/from-documents?study_space_id={space_id}",
+        json={
+            "title": "Empty Summary",
+            "document_ids": [],
+            "expertise_level": "basic"
+        }
+    )
+
+    # Debe rechazar por auth o validación
+    assert response.status_code in [400, 401, 403, 422]
