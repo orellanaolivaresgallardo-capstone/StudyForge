@@ -13,7 +13,7 @@ import {
   deleteStudySpace,
   updateStudySpace,
 } from "@/services/api";
-import type { StudySpaceResponse } from "@/types/api.types";
+import type { StudySpaceResponse } from "@/types";
 
 export default function StudySpacesPage() {
   const navigate = useNavigate();

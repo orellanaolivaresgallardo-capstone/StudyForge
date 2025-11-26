@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { getStorageInfo } from "@/services/api";
-import type { StorageInfo } from "@/types/api.types";
+import type { StorageInfo } from "@/types";
 
 interface QuotaWidgetProps {
   className?: string;

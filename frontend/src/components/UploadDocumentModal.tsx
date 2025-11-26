@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from "react";
 import Modal from "./ui/Modal";
-import type { StudySpaceResponse } from "@/types/api.types";
+import type { StudySpaceResponse } from "@/types";
 
 interface UploadDocumentModalProps {
   isOpen: boolean;

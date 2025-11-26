@@ -34,7 +34,7 @@ import type {
   QuizResponse,
   UserPerformance,
   ExpertiseLevel,
-} from "@/types/api.types";
+} from "@/types";
 
 export default function StudySpaceDetailPage() {
   const { id } = useParams<{ id: string }>();

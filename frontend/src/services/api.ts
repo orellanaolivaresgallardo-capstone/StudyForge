@@ -47,7 +47,7 @@ import type {
   StatsSummary,
   // Health
   HealthResponse,
-} from "../types/api.types";
+} from "@/types";
 
 // ==================== CONFIGURACIÓN ====================
 

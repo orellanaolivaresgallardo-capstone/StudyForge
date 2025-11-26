@@ -17,7 +17,7 @@ import type {
   QuizAttemptWithQuestionsResponse,
   CorrectOption,
   QuizAttemptAnswerFeedback,
-} from "@/types/api.types";
+} from "@/types";
 
 export default function QuizAttemptPage() {
   const { id } = useParams<{ id: string }>();

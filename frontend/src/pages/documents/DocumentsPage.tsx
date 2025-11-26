@@ -14,7 +14,7 @@ import {
   listStudySpaces,
   createStudySpace,
 } from "@/services/api";
-import type { DocumentResponse, StudySpaceResponse } from "@/types/api.types";
+import type { DocumentResponse, StudySpaceResponse } from "@/types";
 
 export default function DocumentsPage() {
   const { user } = useAuth();

@@ -1,5 +1,5 @@
 // frontend/src/pages/study-spaces/components/SpaceHeader.tsx
-import type { StudySpaceResponse, StudySpaceStatsResponse } from "@/types/api.types";
+import type { StudySpaceResponse, StudySpaceStatsResponse } from "@/types";
 
 interface SpaceHeaderProps {
   space: StudySpaceResponse;

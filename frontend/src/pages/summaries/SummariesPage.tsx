@@ -19,7 +19,7 @@ import type {
   SummaryResponse,
   DocumentResponse,
   ExpertiseLevel,
-} from "@/types/api.types";
+} from "@/types";
 
 export default function SummariesPage() {
   const { user } = useAuth();

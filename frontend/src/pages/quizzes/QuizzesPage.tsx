@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { Navbar, Toast, QuizCard, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import { listQuizzes } from "@/services/api";
-import type { QuizResponse } from "@/types/api.types";
+import type { QuizResponse } from "@/types";
 
 export default function QuizzesPage() {
   const navigate = useNavigate();

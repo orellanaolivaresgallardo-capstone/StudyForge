@@ -8,7 +8,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Navbar, Toast, Modal, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import { getSummary, deleteSummary, createQuizFromSummary } from "@/services/api";
-import type { SummaryDetailResponse, ExpertiseLevel } from "@/types/api.types";
+import type { SummaryDetailResponse, ExpertiseLevel } from "@/types";
 
 export default function SummaryDetailPage() {
   const { id } = useParams<{ id: string }>();

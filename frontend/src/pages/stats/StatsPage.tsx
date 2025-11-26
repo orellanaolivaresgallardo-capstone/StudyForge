@@ -14,7 +14,7 @@ import type {
   UserPerformance,
   StatsSummary,
   StudySpaceStatsResponse,
-} from "@/types/api.types";
+} from "@/types";
 
 export default function StatsPage() {
   const navigate = useNavigate();

@@ -10,7 +10,7 @@ import { getQuizAttemptResults } from "@/services/api";
 import type {
   QuizResultResponse,
   CorrectOption,
-} from "@/types/api.types";
+} from "@/types";
 
 export default function QuizResultsPage() {
   const { id } = useParams<{ id: string }>();
