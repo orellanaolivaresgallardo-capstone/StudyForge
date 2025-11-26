@@ -15,6 +15,7 @@ import {
   createStudySpace,
 } from "@/services/api";
 import type { DocumentResponse, StudySpaceResponse } from "@/types";
+import { getErrorMessage } from "@/utils/errorHandler";
 
 export default function DocumentsPage() {
   const { user } = useAuth();
@@ -46,7 +47,7 @@ export default function DocumentsPage() {
       setStudySpaces(spacesResponse.items);
     } catch (error) {
       console.error("Error loading data:", error);
-      setToast({ message: "No se pudieron cargar los datos", type: "error" });
+      setToast({ message: getErrorMessage(error), type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -87,10 +88,8 @@ export default function DocumentsPage() {
         showToast("El archivo es demasiado grande", "error");
       } else if (error?.response?.status === 507) {
         showToast("No tienes suficiente espacio de almacenamiento", "error");
-      } else if (error?.response?.status === 400) {
-        showToast("Debes asignar el documento a un espacio de estudio", "error");
       } else {
-        showToast("No se pudo subir el documento", "error");
+        showToast(getErrorMessage(error), "error");
       }
       throw error;
     }
@@ -108,7 +107,7 @@ export default function DocumentsPage() {
       return newSpace;
     } catch (error: any) {
       console.error("Error creating space:", error);
-      showToast("No se pudo crear el espacio", "error");
+      showToast(getErrorMessage(error), "error");
       throw error;
     }
   }
@@ -123,7 +122,7 @@ export default function DocumentsPage() {
       setDeleteModal(null);
     } catch (error) {
       console.error("Error deleting document:", error);
-      showToast("No se pudo eliminar el documento", "error");
+      showToast(getErrorMessage(error), "error");
     }
   }
 

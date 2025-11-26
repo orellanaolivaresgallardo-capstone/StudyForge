@@ -71,8 +71,12 @@ export default function SignupPage() {
       }, 800);
     } catch (err: any) {
       console.error(err);
-      if (err?.response?.status === 409) {
-        showToast("Ese correo ya existe.");
+
+      // Priorizar mensaje del backend
+      const backendMessage = err?.response?.data?.detail;
+
+      if (backendMessage) {
+        showToast(backendMessage);
       } else if (err?.response?.status === 400) {
         showToast("Datos inválidos. Revisa el formulario.");
       } else {

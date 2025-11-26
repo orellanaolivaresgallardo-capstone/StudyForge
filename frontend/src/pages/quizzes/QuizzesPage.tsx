@@ -9,6 +9,7 @@ import { Navbar, Toast, QuizCard, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import { listQuizzes } from "@/services/api";
 import type { QuizResponse } from "@/types";
+import { getErrorMessage } from "@/utils/errorHandler";
 
 export default function QuizzesPage() {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function QuizzesPage() {
       setQuizzes(response.items);
     } catch (error) {
       console.error("Error loading quizzes:", error);
-      showToast("No se pudieron cargar los cuestionarios", "error");
+      showToast(getErrorMessage(error), "error");
     } finally {
       setIsLoading(false);
     }

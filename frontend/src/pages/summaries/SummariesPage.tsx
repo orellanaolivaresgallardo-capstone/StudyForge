@@ -15,6 +15,7 @@ import {
   listDocuments,
   getCurrentUser,
 } from "@/services/api";
+import { getErrorMessage } from "@/utils/errorHandler";
 import type {
   SummaryResponse,
   DocumentResponse,
@@ -65,7 +66,7 @@ export default function SummariesPage() {
       setSummaries(response.items);
     } catch (error) {
       console.error("Error loading summaries:", error);
-      setToast({ message: "No se pudieron cargar los resúmenes", type: "error" });
+      setToast({ message: getErrorMessage(error), type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +78,7 @@ export default function SummariesPage() {
       setDocuments(response.items);
     } catch (error) {
       console.error("Error loading documents:", error);
-      setToast({ message: "No se pudieron cargar los documentos", type: "error" });
+      setToast({ message: getErrorMessage(error), type: "error" });
     }
   }
 
@@ -123,10 +124,7 @@ export default function SummariesPage() {
       loadSummaries();
     } catch (error: unknown) {
       console.error("Error creating summary:", error);
-      const errorMessage =
-        error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response !== null && 'data' in error.response && typeof error.response.data === 'object' && error.response.data !== null && 'detail' in error.response.data
-          ? String(error.response.data.detail)
-          : "Error al crear el resumen";
+      const errorMessage = getErrorMessage(error);
       showToast(errorMessage, "error");
     } finally {
       setIsCreating(false);
@@ -143,7 +141,7 @@ export default function SummariesPage() {
       setDeleteModal(null);
     } catch (error) {
       console.error("Error deleting summary:", error);
-      showToast("No se pudo eliminar el resumen", "error");
+      showToast(getErrorMessage(error), "error");
     }
   }
 

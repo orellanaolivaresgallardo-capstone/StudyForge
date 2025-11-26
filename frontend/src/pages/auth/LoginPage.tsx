@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { getErrorMessage } from "@/utils/errorHandler";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -51,13 +52,7 @@ export default function LoginPage() {
       }, 700);
     } catch (err: unknown) {
       console.error(err);
-      if (err && typeof err === 'object' && 'response' in err &&
-          err.response && typeof err.response === 'object' && 'status' in err.response &&
-          err.response.status === 401) {
-        showToast("Correo o contraseña incorrectos.");
-      } else {
-        showToast("No se pudo iniciar sesión. Intenta nuevamente.");
-      }
+      showToast(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
