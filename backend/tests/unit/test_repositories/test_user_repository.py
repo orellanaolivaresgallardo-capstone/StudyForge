@@ -80,7 +80,7 @@ def test_get_by_id_found():
     mock_user.id = user_id
     mock_user.email = "found@example.com"
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_user
 
     # Act
     result = UserRepository.get_by_id(mock_db, user_id)
@@ -88,7 +88,7 @@ def test_get_by_id_found():
     # Assert
     assert result == mock_user
     assert result.id == user_id
-    mock_db.query.assert_called_once_with(User)
+    mock_db.execute.assert_called_once()
 
 
 def test_get_by_id_not_found():
@@ -96,7 +96,7 @@ def test_get_by_id_not_found():
     mock_db = MagicMock()
     user_id = str(uuid4())
 
-    mock_db.query.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = UserRepository.get_by_id(mock_db, user_id)
 
@@ -107,7 +107,7 @@ def test_get_by_id_with_invalid_uuid():
     """get_by_id debe manejar UUIDs inválidos"""
     mock_db = MagicMock()
 
-    mock_db.query.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = UserRepository.get_by_id(mock_db, "invalid-uuid")
 
@@ -126,7 +126,7 @@ def test_get_by_email_found():
     mock_user.email = "test@example.com"
     mock_user.id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_user
 
     result = UserRepository.get_by_email(mock_db, "test@example.com")
 
@@ -138,7 +138,7 @@ def test_get_by_email_not_found():
     """get_by_email debe retornar None cuando el email no existe"""
     mock_db = MagicMock()
 
-    mock_db.query.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = UserRepository.get_by_email(mock_db, "nonexistent@example.com")
 
@@ -153,7 +153,7 @@ def test_get_by_email_case_sensitive():
     mock_user = Mock(spec=User)
     mock_user.email = "test@example.com"
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_user
 
     result = UserRepository.get_by_email(mock_db, "test@example.com")
 
@@ -169,7 +169,7 @@ def test_get_by_email_with_plus_addressing():
     mock_user = Mock(spec=User)
     mock_user.email = "user+tag@example.com"
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_user
 
     result = UserRepository.get_by_email(mock_db, "user+tag@example.com")
 
@@ -189,7 +189,7 @@ def test_get_by_username_found():
     mock_user.username = "testuser"
     mock_user.id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_user
 
     result = UserRepository.get_by_username(mock_db, "testuser")
 
@@ -201,7 +201,7 @@ def test_get_by_username_not_found():
     """get_by_username debe retornar None cuando el username no existe"""
     mock_db = MagicMock()
 
-    mock_db.query.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = UserRepository.get_by_username(mock_db, "nonexistentuser")
 
@@ -215,7 +215,7 @@ def test_get_by_username_with_special_chars():
     mock_user = Mock(spec=User)
     mock_user.username = "user_name-123"
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_user
 
     result = UserRepository.get_by_username(mock_db, "user_name-123")
 
@@ -304,7 +304,7 @@ def test_create_and_retrieve_flow():
     )
 
     # Simular búsqueda posterior
-    mock_db.query.return_value.filter.return_value.first.return_value = created_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = created_user
 
     found_user = UserRepository.get_by_email(mock_db, "flow@example.com")
 

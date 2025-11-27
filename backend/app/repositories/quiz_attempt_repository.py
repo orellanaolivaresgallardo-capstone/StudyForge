@@ -6,8 +6,8 @@ from typing import List, Optional, Dict, Any, Tuple
 from uuid import UUID
 from datetime import datetime, timezone
 import random
+from sqlalchemy import select, func, and_
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 from app.models.quiz_attempt import QuizAttempt
 from app.models.quiz import Quiz
 
@@ -129,7 +129,8 @@ class QuizAttemptRepository:
         Returns:
             Intento si existe, None en caso contrario
         """
-        return db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id).first()
+        stmt = select(QuizAttempt).where(QuizAttempt.id == attempt_id)
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def get_attempts_by_user(
@@ -147,14 +148,14 @@ class QuizAttemptRepository:
         Returns:
             Lista de intentos
         """
-        return (
-            db.query(QuizAttempt)
-            .filter(QuizAttempt.user_id == user_id)
+        stmt = (
+            select(QuizAttempt)
+            .where(QuizAttempt.user_id == user_id)
             .order_by(QuizAttempt.started_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        return list(db.execute(stmt).scalars().all())
 
     @staticmethod
     def get_attempts_by_quiz(db: Session, quiz_id: UUID, user_id: UUID) -> List[QuizAttempt]:
@@ -169,17 +170,17 @@ class QuizAttemptRepository:
         Returns:
             Lista de intentos
         """
-        return (
-            db.query(QuizAttempt)
-            .filter(
+        stmt = (
+            select(QuizAttempt)
+            .where(
                 and_(
                     QuizAttempt.quiz_id == quiz_id,
                     QuizAttempt.user_id == user_id,
                 )
             )
             .order_by(QuizAttempt.started_at.desc())
-            .all()
         )
+        return list(db.execute(stmt).scalars().all())
 
     @staticmethod
     def count_attempts_by_quiz(db: Session, quiz_id: UUID, user_id: UUID) -> int:
@@ -194,17 +195,18 @@ class QuizAttemptRepository:
         Returns:
             Número de intentos completados
         """
-        return (
-            db.query(QuizAttempt)
-            .filter(
+        stmt = (
+            select(func.count())
+            .select_from(QuizAttempt)
+            .where(
                 and_(
                     QuizAttempt.quiz_id == quiz_id,
                     QuizAttempt.user_id == user_id,
                     QuizAttempt.completed_at.isnot(None),
                 )
             )
-            .count()
         )
+        return db.execute(stmt).scalar() or 0
 
     @staticmethod
     def record_answer(
@@ -308,10 +310,10 @@ class QuizAttemptRepository:
         """
         from app.models.quiz import Quiz
 
-        return (
-            db.query(QuizAttempt)
+        stmt = (
+            select(QuizAttempt)
             .join(Quiz)
-            .filter(
+            .where(
                 and_(
                     QuizAttempt.user_id == user_id,
                     Quiz.study_space_id == space_id,
@@ -320,5 +322,5 @@ class QuizAttemptRepository:
             )
             .order_by(QuizAttempt.completed_at.desc())
             .limit(limit)
-            .all()
         )
+        return list(db.execute(stmt).scalars().all())

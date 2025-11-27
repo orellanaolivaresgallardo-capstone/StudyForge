@@ -13,7 +13,7 @@ def test_adaptive_difficulty_no_history(mock_settings):
     mock_settings.OPENAI_MODEL = "gpt-4"
 
     mock_db = Mock()
-    mock_db.query.return_value.join.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     service = QuizService()
     difficulty = service.calculate_adaptive_difficulty(mock_db, "user-123", "mathematics")
@@ -37,7 +37,7 @@ def test_adaptive_difficulty_high_scores(mock_settings):
         Mock(score=93.0),
         Mock(score=91.0),
     ]
-    mock_db.query.return_value.join.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = attempts
+    mock_db.execute.return_value.scalars.return_value.all.return_value = attempts
 
     service = QuizService()
     difficulty = service.calculate_adaptive_difficulty(mock_db, "user-123", "mathematics")
@@ -60,7 +60,7 @@ def test_adaptive_difficulty_medium_scores(mock_settings):
         Mock(score=66.0),
         Mock(score=64.0),
     ]
-    mock_db.query.return_value.join.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = attempts
+    mock_db.execute.return_value.scalars.return_value.all.return_value = attempts
 
     service = QuizService()
     difficulty = service.calculate_adaptive_difficulty(mock_db, "user-123", "mathematics")
@@ -84,7 +84,7 @@ def test_adaptive_difficulty_low_scores(mock_settings):
         Mock(score=28.0),
         Mock(score=35.0),
     ]
-    mock_db.query.return_value.join.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = attempts
+    mock_db.execute.return_value.scalars.return_value.all.return_value = attempts
 
     service = QuizService()
     difficulty = service.calculate_adaptive_difficulty(mock_db, "user-123", "mathematics")
@@ -107,7 +107,7 @@ def test_adaptive_difficulty_with_less_than_5_attempts(mock_settings):
         Mock(score=82.0),
         Mock(score=78.0),
     ]
-    mock_db.query.return_value.join.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = attempts
+    mock_db.execute.return_value.scalars.return_value.all.return_value = attempts
 
     service = QuizService()
     difficulty = service.calculate_adaptive_difficulty(mock_db, "user-123", "mathematics")

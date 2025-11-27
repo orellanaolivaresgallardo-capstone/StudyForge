@@ -3,7 +3,7 @@
 Configuración central de la aplicación.
 Gestiona variables de entorno y configuraciones globales.
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 
@@ -46,10 +46,11 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = 100  # Requests por ventana
     RATE_LIMIT_WINDOW: int = 60  # Ventana en segundos
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True
+    )
 
 
 # Instancia global de configuración

@@ -4,6 +4,7 @@ Repositorio para manejo de documentos.
 """
 from typing import List, Optional
 from uuid import UUID
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from app.models import Document
 
@@ -60,12 +61,12 @@ class DocumentRepository:
     def get_by_id(db: Session, document_id: UUID) -> Optional[Document]:
         """Obtiene un documento por su ID con relaciones cargadas."""
         from sqlalchemy.orm import joinedload
-        return (
-            db.query(Document)
+        stmt = (
+            select(Document)
             .options(joinedload(Document.study_spaces))
-            .filter(Document.id == document_id)
-            .first()
+            .where(Document.id == document_id)
         )
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def get_by_user(
@@ -87,20 +88,21 @@ class DocumentRepository:
             Lista de documentos
         """
         from sqlalchemy.orm import joinedload
-        return (
-            db.query(Document)
+        stmt = (
+            select(Document)
             .options(joinedload(Document.study_spaces))
-            .filter(Document.user_id == user_id)
+            .where(Document.user_id == user_id)
             .order_by(Document.created_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        return list(db.execute(stmt).scalars().all())
 
     @staticmethod
     def count_by_user(db: Session, user_id: UUID) -> int:
         """Cuenta el número total de documentos de un usuario."""
-        return db.query(Document).filter(Document.user_id == user_id).count()
+        stmt = select(func.count()).select_from(Document).where(Document.user_id == user_id)
+        return db.execute(stmt).scalar() or 0
 
     @staticmethod
     def delete(db: Session, document_id: UUID) -> bool:
@@ -114,7 +116,8 @@ class DocumentRepository:
         Returns:
             True si se eliminó, False si no se encontró
         """
-        document = db.query(Document).filter(Document.id == document_id).first()
+        stmt = select(Document).where(Document.id == document_id)
+        document = db.execute(stmt).scalar_one_or_none()
         if document:
             db.delete(document)
             db.commit()
@@ -134,7 +137,8 @@ class DocumentRepository:
         Returns:
             Documento actualizado o None si no se encontró
         """
-        document = db.query(Document).filter(Document.id == document_id).first()
+        stmt = select(Document).where(Document.id == document_id)
+        document = db.execute(stmt).scalar_one_or_none()
         if document:
             document.title = new_title
             db.commit()
@@ -154,8 +158,6 @@ class DocumentRepository:
         Returns:
             Tamaño total en bytes
         """
-        from sqlalchemy import func
-        result = db.query(func.sum(Document.file_size_bytes))\
-            .filter(Document.user_id == user_id)\
-            .scalar()
+        stmt = select(func.sum(Document.file_size_bytes)).where(Document.user_id == user_id)
+        result = db.execute(stmt).scalar()
         return result or 0

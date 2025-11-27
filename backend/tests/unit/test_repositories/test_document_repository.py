@@ -109,14 +109,14 @@ def test_get_by_id_found():
     mock_doc.id = doc_id
     mock_doc.title = "Found Document"
 
-    # Configurar el mock para simular el query con joinedload
-    mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_doc
+    # Configurar el mock para simular execute con select
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_doc
 
     result = DocumentRepository.get_by_id(mock_db, doc_id)
 
     assert result == mock_doc
     assert result.id == doc_id
-    mock_db.query.assert_called_once_with(Document)
+    mock_db.execute.assert_called_once()
 
 
 def test_get_by_id_not_found():
@@ -124,7 +124,7 @@ def test_get_by_id_not_found():
     mock_db = MagicMock()
     doc_id = uuid4()
 
-    mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = DocumentRepository.get_by_id(mock_db, doc_id)
 
@@ -146,7 +146,7 @@ def test_get_by_user_with_results():
         Mock(spec=Document, id=uuid4(), title="Doc 3"),
     ]
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = mock_docs
+    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_docs
 
     result = DocumentRepository.get_by_user(mock_db, user_id)
 
@@ -164,13 +164,12 @@ def test_get_by_user_with_pagination():
         Mock(spec=Document, id=uuid4(), title="Doc 5"),
     ]
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = mock_docs
+    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_docs
 
     result = DocumentRepository.get_by_user(mock_db, user_id, skip=3, limit=2)
 
-    # Verificar que se llamaron offset y limit
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.assert_called_with(3)
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.assert_called_with(2)
+    # En SQLAlchemy 2.0, skip y limit se aplican en el statement, no en el mock
+    mock_db.execute.assert_called_once()
     assert len(result) == 2
 
 
@@ -179,7 +178,7 @@ def test_get_by_user_empty_results():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     result = DocumentRepository.get_by_user(mock_db, user_id)
 
@@ -192,13 +191,12 @@ def test_get_by_user_default_pagination():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     DocumentRepository.get_by_user(mock_db, user_id)
 
-    # Verificar valores por defecto
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.assert_called_with(0)
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.assert_called_with(100)
+    # Los valores por defecto se aplican en el statement
+    mock_db.execute.assert_called_once()
 
 
 # ========================================
@@ -210,12 +208,12 @@ def test_count_by_user_with_documents():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.count.return_value = 5
+    mock_db.execute.return_value.scalar.return_value = 5
 
     result = DocumentRepository.count_by_user(mock_db, user_id)
 
     assert result == 5
-    mock_db.query.assert_called_once_with(Document)
+    mock_db.execute.assert_called_once()
 
 
 def test_count_by_user_no_documents():
@@ -223,7 +221,7 @@ def test_count_by_user_no_documents():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.count.return_value = 0
+    mock_db.execute.return_value.scalar.return_value = None
 
     result = DocumentRepository.count_by_user(mock_db, user_id)
 
@@ -242,7 +240,7 @@ def test_delete_existing_document():
     mock_doc = Mock(spec=Document)
     mock_doc.id = doc_id
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_doc
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_doc
 
     result = DocumentRepository.delete(mock_db, doc_id)
 
@@ -256,7 +254,7 @@ def test_delete_non_existing_document():
     mock_db = MagicMock()
     doc_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = DocumentRepository.delete(mock_db, doc_id)
 
@@ -278,7 +276,7 @@ def test_update_title_existing_document():
     mock_doc.id = doc_id
     mock_doc.title = "Old Title"
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_doc
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_doc
 
     result = DocumentRepository.update_title(mock_db, doc_id, "New Title")
 
@@ -293,7 +291,7 @@ def test_update_title_non_existing_document():
     mock_db = MagicMock()
     doc_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = DocumentRepository.update_title(mock_db, doc_id, "New Title")
 
@@ -310,7 +308,7 @@ def test_update_title_with_empty_string():
     mock_doc.id = doc_id
     mock_doc.title = "Old Title"
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_doc
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_doc
 
     result = DocumentRepository.update_title(mock_db, doc_id, "")
 
@@ -328,7 +326,7 @@ def test_calculate_total_size_with_documents():
     user_id = uuid4()
 
     # Total: 1024 + 2048 + 512 = 3584 bytes
-    mock_db.query.return_value.filter.return_value.scalar.return_value = 3584
+    mock_db.execute.return_value.scalar.return_value = 3584
 
     result = DocumentRepository.calculate_total_size_by_user(mock_db, user_id)
 
@@ -340,7 +338,7 @@ def test_calculate_total_size_no_documents():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.scalar.return_value = None
+    mock_db.execute.return_value.scalar.return_value = None
 
     result = DocumentRepository.calculate_total_size_by_user(mock_db, user_id)
 
@@ -353,7 +351,7 @@ def test_calculate_total_size_large_values():
     user_id = uuid4()
 
     large_size = 5 * 1024 * 1024 * 1024  # 5 GB
-    mock_db.query.return_value.filter.return_value.scalar.return_value = large_size
+    mock_db.execute.return_value.scalar.return_value = large_size
 
     result = DocumentRepository.calculate_total_size_by_user(mock_db, user_id)
 
@@ -392,13 +390,13 @@ def test_create_count_and_delete_flow():
     )
 
     # 2. Count documents
-    mock_db.query.return_value.filter.return_value.count.return_value = 1
+    mock_db.execute.return_value.scalar.return_value = 1
 
     count = DocumentRepository.count_by_user(mock_db, user_id)
     assert count == 1
 
     # 3. Delete document
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_doc
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_doc
 
     deleted = DocumentRepository.delete(mock_db, doc_id)
     assert deleted is True

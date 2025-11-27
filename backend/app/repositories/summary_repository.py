@@ -4,6 +4,7 @@ Repository para operaciones de base de datos relacionadas con resúmenes.
 """
 from typing import List, Optional
 from uuid import UUID
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from app.models.summary import Summary, ExpertiseLevel
 
@@ -84,12 +85,12 @@ class SummaryRepository:
             Resumen si existe, None en caso contrario
         """
         from sqlalchemy.orm import joinedload
-        return (
-            db.query(Summary)
+        stmt = (
+            select(Summary)
             .options(joinedload(Summary.study_spaces))
-            .filter(Summary.id == summary_id)
-            .first()
+            .where(Summary.id == summary_id)
         )
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def get_by_user(db: Session, user_id: UUID, skip: int = 0, limit: int = 100) -> List[Summary]:
@@ -106,15 +107,15 @@ class SummaryRepository:
             Lista de resúmenes del usuario
         """
         from sqlalchemy.orm import joinedload
-        return (
-            db.query(Summary)
+        stmt = (
+            select(Summary)
             .options(joinedload(Summary.study_spaces))
-            .filter(Summary.user_id == user_id)
+            .where(Summary.user_id == user_id)
             .order_by(Summary.created_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        return list(db.execute(stmt).scalars().all())
 
     @staticmethod
     def count_by_user(db: Session, user_id: UUID) -> int:
@@ -128,7 +129,8 @@ class SummaryRepository:
         Returns:
             Número total de resúmenes
         """
-        return db.query(Summary).filter(Summary.user_id == user_id).count()
+        stmt = select(func.count()).select_from(Summary).where(Summary.user_id == user_id)
+        return db.execute(stmt).scalar() or 0
 
     @staticmethod
     def delete(db: Session, summary: Summary) -> None:

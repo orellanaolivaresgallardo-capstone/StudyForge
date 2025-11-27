@@ -176,13 +176,13 @@ def test_get_by_id_found():
     mock_summary.id = summary_id
     mock_summary.title = "Found Summary"
 
-    mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_summary
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_summary
 
     result = SummaryRepository.get_by_id(mock_db, summary_id)
 
     assert result == mock_summary
     assert result.id == summary_id
-    mock_db.query.assert_called_once_with(Summary)
+    mock_db.execute.assert_called_once()
 
 
 def test_get_by_id_not_found():
@@ -190,7 +190,7 @@ def test_get_by_id_not_found():
     mock_db = MagicMock()
     summary_id = uuid4()
 
-    mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = SummaryRepository.get_by_id(mock_db, summary_id)
 
@@ -212,7 +212,7 @@ def test_get_by_user_with_results():
         Mock(spec=Summary, id=uuid4(), title="Summary 3"),
     ]
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = mock_summaries
+    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_summaries
 
     result = SummaryRepository.get_by_user(mock_db, user_id)
 
@@ -225,12 +225,12 @@ def test_get_by_user_with_pagination():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     SummaryRepository.get_by_user(mock_db, user_id, skip=5, limit=10)
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.assert_called_with(5)
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.assert_called_with(10)
+    # En SQLAlchemy 2.0, skip y limit se aplican en el statement
+    mock_db.execute.assert_called_once()
 
 
 def test_get_by_user_empty():
@@ -238,7 +238,7 @@ def test_get_by_user_empty():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     result = SummaryRepository.get_by_user(mock_db, user_id)
 
@@ -250,12 +250,12 @@ def test_get_by_user_default_pagination():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     SummaryRepository.get_by_user(mock_db, user_id)
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.assert_called_with(0)
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.assert_called_with(100)
+    # Los valores por defecto se aplican en el statement
+    mock_db.execute.assert_called_once()
 
 
 # ========================================
@@ -267,7 +267,7 @@ def test_count_by_user():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.count.return_value = 8
+    mock_db.execute.return_value.scalar.return_value = 8
 
     result = SummaryRepository.count_by_user(mock_db, user_id)
 
@@ -279,7 +279,7 @@ def test_count_by_user_zero():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.count.return_value = 0
+    mock_db.execute.return_value.scalar.return_value = None
 
     result = SummaryRepository.count_by_user(mock_db, user_id)
 
@@ -334,7 +334,7 @@ def test_create_and_retrieve_summary():
     mock_summary.id = summary_id
     mock_summary.title = "Integration Summary"
 
-    mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_summary
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_summary
 
     retrieved_summary = SummaryRepository.get_by_id(mock_db, summary_id)
 

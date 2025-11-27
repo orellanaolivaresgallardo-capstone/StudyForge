@@ -3,6 +3,7 @@
 Repository para operaciones de base de datos relacionadas con usuarios.
 """
 from typing import Optional
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.models.user import User
 
@@ -46,7 +47,8 @@ class UserRepository:
         Returns:
             Usuario si existe, None en caso contrario
         """
-        return db.query(User).filter(User.id == user_id).first()
+        stmt = select(User).where(User.id == user_id)
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def get_by_email(db: Session, email: str) -> Optional[User]:
@@ -60,7 +62,8 @@ class UserRepository:
         Returns:
             Usuario si existe, None en caso contrario
         """
-        return db.query(User).filter(User.email == email).first()
+        stmt = select(User).where(User.email == email)
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def get_by_username(db: Session, username: str) -> Optional[User]:
@@ -74,7 +77,8 @@ class UserRepository:
         Returns:
             Usuario si existe, None en caso contrario
         """
-        return db.query(User).filter(User.username == username).first()
+        stmt = select(User).where(User.username == username)
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def update(db: Session, user: User) -> User:

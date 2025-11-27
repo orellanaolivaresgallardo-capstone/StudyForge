@@ -4,6 +4,7 @@ Repository para operaciones de base de datos relacionadas con espacios de estudi
 """
 from typing import List, Optional, Tuple, Dict, Any
 from uuid import UUID
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from app.models.study_space import StudySpace, study_space_summaries, study_space_documents
 
@@ -35,12 +36,12 @@ class StudySpaceRepository:
     def get_by_id(db: Session, space_id: UUID) -> Optional[StudySpace]:
         """Obtener espacio de estudio por ID con relaciones cargadas."""
         from sqlalchemy.orm import joinedload
-        return (
-            db.query(StudySpace)
+        stmt = (
+            select(StudySpace)
             .options(joinedload(StudySpace.summaries), joinedload(StudySpace.documents))
-            .filter(StudySpace.id == space_id)
-            .first()
+            .where(StudySpace.id == space_id)
         )
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def get_by_user(
@@ -50,19 +51,20 @@ class StudySpaceRepository:
         limit: int = 100
     ) -> List[StudySpace]:
         """Obtener todos los espacios de estudio de un usuario."""
-        return (
-            db.query(StudySpace)
-            .filter(StudySpace.user_id == user_id)
+        stmt = (
+            select(StudySpace)
+            .where(StudySpace.user_id == user_id)
             .order_by(StudySpace.updated_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        return list(db.execute(stmt).scalars().all())
 
     @staticmethod
     def count_by_user(db: Session, user_id: UUID) -> int:
         """Contar espacios de estudio de un usuario."""
-        return db.query(StudySpace).filter(StudySpace.user_id == user_id).count()
+        stmt = select(func.count()).select_from(StudySpace).where(StudySpace.user_id == user_id)
+        return db.execute(stmt).scalar() or 0
 
     @staticmethod
     def update(
@@ -155,27 +157,29 @@ class StudySpaceRepository:
         from app.models import Quiz
 
         # 1. Contar total (sin paginación)
-        total = db.query(StudySpace).filter(StudySpace.user_id == user_id).count()
+        count_stmt = select(func.count()).select_from(StudySpace).where(StudySpace.user_id == user_id)
+        total = db.execute(count_stmt).scalar() or 0
 
         # 2. Obtener espacios con paginación y relaciones cargadas
-        spaces = (
-            db.query(StudySpace)
+        spaces_stmt = (
+            select(StudySpace)
             .options(
                 joinedload(StudySpace.documents),
                 joinedload(StudySpace.summaries)
             )
-            .filter(StudySpace.user_id == user_id)
+            .where(StudySpace.user_id == user_id)
             .order_by(StudySpace.updated_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        spaces = list(db.execute(spaces_stmt).scalars().all())
 
         # 3. Para cada espacio, calcular stats
         result = []
         for space in spaces:
             # Contar quizzes del espacio
-            num_quizzes = db.query(Quiz).filter(Quiz.study_space_id == space.id).count()
+            quiz_count_stmt = select(func.count()).select_from(Quiz).where(Quiz.study_space_id == space.id)
+            num_quizzes = db.execute(quiz_count_stmt).scalar() or 0
 
             # Calcular promedio usando mismo método que adaptive difficulty
             recent_attempts = QuizAttemptRepository.get_recent_attempts_by_space(

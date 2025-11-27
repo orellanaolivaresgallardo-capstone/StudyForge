@@ -4,7 +4,7 @@ Schemas de Pydantic para documentos.
 """
 from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class DocumentUpload(BaseModel):
@@ -24,16 +24,14 @@ class DocumentResponse(BaseModel):
     updated_at: datetime
     study_space_names: list[str] = Field(default_factory=list, description="Nombres de espacios a los que pertenece")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentDetailResponse(DocumentResponse):
     """Schema para respuesta detallada de documento (con texto extraído)."""
     extracted_text: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentListResponse(BaseModel):

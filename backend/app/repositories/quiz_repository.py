@@ -4,6 +4,7 @@ Repository para operaciones de base de datos relacionadas con cuestionarios.
 """
 from typing import List, Optional, Dict, Any
 from uuid import UUID
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session, joinedload
 from app.models.quiz import Quiz
 from app.models.summary import Summary
@@ -66,15 +67,15 @@ class QuizRepository:
         Returns:
             Cuestionario si existe, None en caso contrario
         """
-        return (
-            db.query(Quiz)
-            .filter(Quiz.id == quiz_id)
+        stmt = (
+            select(Quiz)
+            .where(Quiz.id == quiz_id)
             .options(
                 joinedload(Quiz.study_space),
                 joinedload(Quiz.summary).joinedload(Summary.documents)
             )
-            .first()
         )
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def get_quizzes_by_user(db: Session, user_id: UUID, skip: int = 0, limit: int = 100) -> List[Quiz]:
@@ -90,9 +91,9 @@ class QuizRepository:
         Returns:
             Lista de cuestionarios
         """
-        return (
-            db.query(Quiz)
-            .filter(Quiz.user_id == user_id)
+        stmt = (
+            select(Quiz)
+            .where(Quiz.user_id == user_id)
             .options(
                 joinedload(Quiz.study_space),
                 joinedload(Quiz.summary).joinedload(Summary.documents)
@@ -100,8 +101,8 @@ class QuizRepository:
             .order_by(Quiz.created_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        return list(db.execute(stmt).scalars().all())
 
     @staticmethod
     def count_quizzes_by_user(db: Session, user_id: UUID) -> int:
@@ -115,7 +116,8 @@ class QuizRepository:
         Returns:
             Número total de cuestionarios
         """
-        return db.query(Quiz).filter(Quiz.user_id == user_id).count()
+        stmt = select(func.count()).select_from(Quiz).where(Quiz.user_id == user_id)
+        return db.execute(stmt).scalar() or 0
 
     @staticmethod
     def get_quizzes_by_space(
@@ -138,10 +140,10 @@ class QuizRepository:
         Returns:
             Lista de cuestionarios del espacio
         """
-        return (
-            db.query(Quiz)
-            .filter(Quiz.study_space_id == space_id)
-            .filter(Quiz.user_id == user_id)
+        stmt = (
+            select(Quiz)
+            .where(Quiz.study_space_id == space_id)
+            .where(Quiz.user_id == user_id)
             .options(
                 joinedload(Quiz.study_space),
                 joinedload(Quiz.summary).joinedload(Summary.documents)
@@ -149,8 +151,8 @@ class QuizRepository:
             .order_by(Quiz.created_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        return list(db.execute(stmt).scalars().all())
 
     @staticmethod
     def count_quizzes_by_space(db: Session, space_id: UUID, user_id: UUID) -> int:
@@ -165,9 +167,10 @@ class QuizRepository:
         Returns:
             Número total de cuestionarios en el espacio
         """
-        return (
-            db.query(Quiz)
-            .filter(Quiz.study_space_id == space_id)
-            .filter(Quiz.user_id == user_id)
-            .count()
+        stmt = (
+            select(func.count())
+            .select_from(Quiz)
+            .where(Quiz.study_space_id == space_id)
+            .where(Quiz.user_id == user_id)
         )
+        return db.execute(stmt).scalar() or 0

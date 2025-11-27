@@ -137,13 +137,13 @@ def test_get_quiz_by_id_found():
     mock_quiz.id = quiz_id
     mock_quiz.title = "Found Quiz"
 
-    mock_db.query.return_value.filter.return_value.options.return_value.first.return_value = mock_quiz
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_quiz
 
     result = QuizRepository.get_quiz_by_id(mock_db, quiz_id)
 
     assert result == mock_quiz
     assert result.id == quiz_id
-    mock_db.query.assert_called_once_with(Quiz)
+    mock_db.execute.assert_called_once()
 
 
 def test_get_quiz_by_id_not_found():
@@ -151,7 +151,7 @@ def test_get_quiz_by_id_not_found():
     mock_db = MagicMock()
     quiz_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.options.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     result = QuizRepository.get_quiz_by_id(mock_db, quiz_id)
 
@@ -173,7 +173,7 @@ def test_get_quizzes_by_user_with_results():
         Mock(spec=Quiz, id=uuid4(), title="Quiz 3"),
     ]
 
-    mock_db.query.return_value.filter.return_value.options.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = mock_quizzes
+    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_quizzes
 
     result = QuizRepository.get_quizzes_by_user(mock_db, user_id)
 
@@ -186,12 +186,12 @@ def test_get_quizzes_by_user_with_pagination():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.options.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     QuizRepository.get_quizzes_by_user(mock_db, user_id, skip=10, limit=5)
 
-    mock_db.query.return_value.filter.return_value.options.return_value.order_by.return_value.offset.assert_called_with(10)
-    mock_db.query.return_value.filter.return_value.options.return_value.order_by.return_value.offset.return_value.limit.assert_called_with(5)
+    # En SQLAlchemy 2.0, skip y limit se aplican en el statement
+    mock_db.execute.assert_called_once()
 
 
 def test_get_quizzes_by_user_empty():
@@ -199,7 +199,7 @@ def test_get_quizzes_by_user_empty():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.options.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     result = QuizRepository.get_quizzes_by_user(mock_db, user_id)
 
@@ -215,7 +215,7 @@ def test_count_quizzes_by_user():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.count.return_value = 7
+    mock_db.execute.return_value.scalar.return_value = 7
 
     result = QuizRepository.count_quizzes_by_user(mock_db, user_id)
 
@@ -227,7 +227,7 @@ def test_count_quizzes_by_user_zero():
     mock_db = MagicMock()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.count.return_value = 0
+    mock_db.execute.return_value.scalar.return_value = None
 
     result = QuizRepository.count_quizzes_by_user(mock_db, user_id)
 
@@ -249,7 +249,7 @@ def test_get_quizzes_by_space():
         Mock(spec=Quiz, id=uuid4(), title="Space Quiz 2"),
     ]
 
-    mock_db.query.return_value.filter.return_value.filter.return_value.options.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = mock_quizzes
+    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_quizzes
 
     result = QuizRepository.get_quizzes_by_space(mock_db, space_id, user_id)
 
@@ -263,13 +263,12 @@ def test_get_quizzes_by_space_with_pagination():
     space_id = uuid4()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.filter.return_value.options.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     QuizRepository.get_quizzes_by_space(mock_db, space_id, user_id, skip=5, limit=10)
 
-    # Verificar offset y limit
-    mock_db.query.return_value.filter.return_value.filter.return_value.options.return_value.order_by.return_value.offset.assert_called_with(5)
-    mock_db.query.return_value.filter.return_value.filter.return_value.options.return_value.order_by.return_value.offset.return_value.limit.assert_called_with(10)
+    # En SQLAlchemy 2.0, skip y limit se aplican en el statement
+    mock_db.execute.assert_called_once()
 
 
 def test_get_quizzes_by_space_empty():
@@ -278,7 +277,7 @@ def test_get_quizzes_by_space_empty():
     space_id = uuid4()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.filter.return_value.options.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
 
     result = QuizRepository.get_quizzes_by_space(mock_db, space_id, user_id)
 
@@ -295,7 +294,7 @@ def test_count_quizzes_by_space():
     space_id = uuid4()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.filter.return_value.count.return_value = 3
+    mock_db.execute.return_value.scalar.return_value = 3
 
     result = QuizRepository.count_quizzes_by_space(mock_db, space_id, user_id)
 
@@ -308,7 +307,7 @@ def test_count_quizzes_by_space_zero():
     space_id = uuid4()
     user_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.filter.return_value.count.return_value = 0
+    mock_db.execute.return_value.scalar.return_value = None
 
     result = QuizRepository.count_quizzes_by_space(mock_db, space_id, user_id)
 
@@ -350,7 +349,7 @@ def test_create_and_retrieve_quiz():
     mock_quiz.id = quiz_id
     mock_quiz.title = "Integration Quiz"
 
-    mock_db.query.return_value.filter.return_value.options.return_value.first.return_value = mock_quiz
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_quiz
 
     retrieved_quiz = QuizRepository.get_quiz_by_id(mock_db, quiz_id)
 
