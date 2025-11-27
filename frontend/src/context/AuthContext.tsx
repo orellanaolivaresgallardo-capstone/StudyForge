@@ -17,7 +17,7 @@ import {
   setToken,
   clearToken,
   getToken,
-} from "../services/api";
+} from "@/services/api";
 import type { UserDetailResponse, UserLogin, UserCreate } from "@/types";
 
 // ==================== TYPES ====================

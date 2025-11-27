@@ -53,10 +53,7 @@ const Modal: React.FC<ModalProps> = ({
   }, [isOpen]);
 
   const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onClose();
-    }, 200);
+    onClose();
   };
 
   // Handle click outside modal
