@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Navbar, Toast, Modal, LoadingSpinner } from "@/components";
+import { Navbar, Toast, Modal, LoadingSpinner, QuizConfigModal } from "@/components";
 import type { ToastType } from "@/components";
 import { getSummary, deleteSummary, createQuizFromSummary } from "@/services/api";
 import type { SummaryDetailResponse, ExpertiseLevel } from "@/types";
@@ -19,7 +19,6 @@ export default function SummaryDetailPage() {
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
-  const [quizQuestions, setQuizQuestions] = useState(10);
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
   useEffect(() => {
@@ -63,23 +62,16 @@ export default function SummaryDetailPage() {
 
   function handleOpenQuizModal() {
     setShowQuizModal(true);
-    setQuizQuestions(10);
   }
 
-  async function handleGenerateQuiz() {
+  async function handleGenerateQuiz(numQuestions: number) {
     if (!id) return;
-
-    // Validación client-side
-    if (quizQuestions < 5 || quizQuestions > 30) {
-      showToast("El número de preguntas debe estar entre 5 y 30", "warning");
-      return;
-    }
 
     try {
       setIsGeneratingQuiz(true);
       const quiz = await createQuizFromSummary({
         summary_id: id,
-        max_questions: quizQuestions,
+        max_questions: numQuestions,
       });
       showToast("Quiz generado exitosamente", "success");
       setShowQuizModal(false);
@@ -91,6 +83,7 @@ export default function SummaryDetailPage() {
         error.response?.data?.detail || "Error al generar el cuestionario",
         "error"
       );
+      throw error; // Re-throw para que el modal pueda manejarlo
     } finally {
       setIsGeneratingQuiz(false);
     }
@@ -442,72 +435,13 @@ export default function SummaryDetailPage() {
         )}
 
         {/* Quiz Generation Modal */}
-        <Modal
+        <QuizConfigModal
           isOpen={showQuizModal}
           onClose={() => setShowQuizModal(false)}
-          title="Generar cuestionario"
-          size="md"
-        >
-          <div className="space-y-6">
-            <p className="text-white/80">
-              Se generará un cuestionario basado en este resumen para evaluar
-              tu comprensión del material.
-            </p>
-
-            {/* Number of Questions */}
-            <div>
-              <label className="block text-white/80 font-semibold mb-2">
-                Número de preguntas
-              </label>
-              <input
-                type="number"
-                min="5"
-                max="30"
-                value={quizQuestions}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === '') {
-                    setQuizQuestions(10);
-                    return;
-                  }
-                  const num = Number(value);
-                  if (!isNaN(num)) {
-                    setQuizQuestions(Math.min(30, Math.max(5, num)));
-                  }
-                }}
-                onBlur={(e) => {
-                  const value = Number(e.target.value);
-                  if (isNaN(value) || value < 5) {
-                    setQuizQuestions(5);
-                  } else if (value > 30) {
-                    setQuizQuestions(30);
-                  }
-                }}
-                className="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-white/20 text-white focus:outline-none focus:border-violet-500 transition-colors"
-              />
-              <p className="text-xs text-white/50 mt-1">
-                Entre 5 y 30 preguntas (recomendado: 10)
-              </p>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setShowQuizModal(false)}
-                disabled={isGeneratingQuiz}
-                className="flex-1 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleGenerateQuiz}
-                disabled={isGeneratingQuiz}
-                className="flex-1 px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGeneratingQuiz ? "Generando..." : "Generar"}
-              </button>
-            </div>
-          </div>
-        </Modal>
+          onGenerate={handleGenerateQuiz}
+          isGenerating={isGeneratingQuiz}
+          description="Se generará un cuestionario basado en este resumen para evaluar tu comprensión del material."
+        />
 
         {/* Delete Confirmation Modal */}
         <Modal

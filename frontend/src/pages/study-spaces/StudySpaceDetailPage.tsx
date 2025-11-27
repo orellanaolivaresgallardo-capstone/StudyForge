@@ -5,9 +5,9 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Navbar, Toast, Modal, LoadingSpinner, EmptyState, QuizCard, PerformanceChart } from "@/components";
+import { Navbar, Toast, Modal, LoadingSpinner, EmptyState, QuizCard, PerformanceChart, QuizConfigModal } from "@/components";
 import type { ToastType } from "@/components";
-import { SpaceHeader } from "./components";
+import { SpaceHeader } from "@/components";
 import {
   getStudySpace,
   getStudySpaceStats,
@@ -68,6 +68,13 @@ export default function StudySpaceDetailPage() {
 
   // Estado para crear quiz
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
+
+  // Modal de configuración de quiz (unificado para todos los orígenes)
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [quizSource, setQuizSource] = useState<{
+    type: 'space' | 'document' | 'summary';
+    data: DocumentResponse | SummaryResponse | null;
+  } | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -156,38 +163,101 @@ export default function StudySpaceDetailPage() {
     }
   }
 
-  // ========== Crear Quiz desde Documento ==========
-  async function handleCreateQuizFromDocument(document: DocumentResponse) {
-    try {
-      setIsCreatingQuiz(true);
-      const quiz = await createQuizFromDocument(document.id, 10);
-      showToast("Quiz creado exitosamente", "success");
-      loadStats(id!);
-      loadQuizzes(id!);
-      setTimeout(() => navigate(`/quizzes/${quiz.id}`), 1500);
-    } catch (error: any) {
-      console.error("Error creating quiz from document:", error);
-      showToast(error.response?.data?.detail || "Error al crear el quiz", "error");
-    } finally {
-      setIsCreatingQuiz(false);
+  // ========== Abrir Modal de Configuración de Quiz ==========
+  function handleOpenQuizModal(
+    type: 'space' | 'document' | 'summary',
+    resource?: DocumentResponse | SummaryResponse
+  ) {
+    // Validación específica por tipo
+    if (type === 'space' && (!space?.summaries || space.summaries.length === 0)) {
+      showToast("Necesitas al menos un resumen para crear un quiz desde el espacio", "warning");
+      return;
+    }
+
+    // Configurar origen del quiz
+    setQuizSource({
+      type,
+      data: resource || null,
+    });
+
+    // Abrir modal
+    setShowQuizModal(true);
+  }
+
+  // ========== Descripción del Modal según Origen ==========
+  function getQuizModalDescription() {
+    if (!quizSource) return "";
+
+    switch (quizSource.type) {
+      case 'space':
+        return "Se generará un cuestionario basado en los resúmenes de este espacio para evaluar tu comprensión del material.";
+
+      case 'document':
+        return (
+          <>
+            Se generará un cuestionario basado en el documento{' '}
+            <span className="font-semibold text-violet-400">
+              {(quizSource.data as DocumentResponse)?.title}
+            </span>.
+          </>
+        );
+
+      case 'summary':
+        return (
+          <>
+            Se generará un cuestionario basado en el resumen{' '}
+            <span className="font-semibold text-violet-400">
+              {(quizSource.data as SummaryResponse)?.title}
+            </span>.
+          </>
+        );
+
+      default:
+        return "";
     }
   }
 
-  // ========== Crear Quiz desde Resumen ==========
-  async function handleCreateQuizFromSummary(summary: SummaryResponse) {
+  // ========== Generar Quiz (Unificado) ==========
+  async function handleGenerateQuiz(numQuestions: number) {
+    if (!id || !quizSource) return;
+
     try {
       setIsCreatingQuiz(true);
-      const quiz = await createQuizFromSummary({
-        summary_id: summary.id,
-        max_questions: 10,
-      });
+      let quiz;
+
+      // Llamar al endpoint apropiado según el tipo de origen
+      switch (quizSource.type) {
+        case 'space':
+          quiz = await createQuizFromSpace(id, { max_questions: numQuestions });
+          break;
+
+        case 'document':
+          if (!quizSource.data) return;
+          quiz = await createQuizFromDocument(
+            (quizSource.data as DocumentResponse).id,
+            numQuestions
+          );
+          break;
+
+        case 'summary':
+          if (!quizSource.data) return;
+          quiz = await createQuizFromSummary({
+            summary_id: (quizSource.data as SummaryResponse).id,
+            max_questions: numQuestions,
+          });
+          break;
+      }
+
       showToast("Quiz creado exitosamente", "success");
-      loadStats(id!);
-      loadQuizzes(id!);
-      setTimeout(() => navigate(`/quizzes/${quiz.id}`), 1500);
+      setShowQuizModal(false);
+      setQuizSource(null);
+      loadStats(id);
+      loadQuizzes(id);
+      setTimeout(() => navigate(`/quizzes/${quiz.id}`), 1000);
     } catch (error: any) {
-      console.error("Error creating quiz from summary:", error);
+      console.error("Error creating quiz:", error);
       showToast(error.response?.data?.detail || "Error al crear el quiz", "error");
+      throw error; // Re-throw para que el modal pueda manejarlo
     } finally {
       setIsCreatingQuiz(false);
     }
@@ -297,31 +367,6 @@ export default function StudySpaceDetailPage() {
     }
   }
 
-  async function handleCreateQuiz() {
-    if (!id) return;
-
-    if (!space?.summaries || space.summaries.length === 0) {
-      showToast("Necesitas al menos un resumen para crear un quiz", "warning");
-      return;
-    }
-
-    if (!confirm("¿Crear un quiz desde los resúmenes de este espacio?")) return;
-
-    try {
-      setIsCreatingQuiz(true);
-      const quiz = await createQuizFromSpace(id, { max_questions: 10 });
-      showToast("Quiz creado exitosamente", "success");
-      loadStats(id);
-      loadQuizzes(id);
-      setTimeout(() => navigate(`/quizzes/${quiz.id}`), 1500);
-    } catch (error: any) {
-      console.error("Error creating quiz:", error);
-      showToast(error.response?.data?.detail || "Error al crear el quiz", "error");
-    } finally {
-      setIsCreatingQuiz(false);
-    }
-  }
-
   if (isLoading || !space) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -398,7 +443,7 @@ export default function StudySpaceDetailPage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-white">Quizzes</h2>
             <button
-              onClick={handleCreateQuiz}
+              onClick={() => handleOpenQuizModal('space')}
               disabled={isCreatingQuiz || !space.summaries || space.summaries.length === 0}
               className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
@@ -445,7 +490,7 @@ export default function StudySpaceDetailPage() {
                 space.summaries && space.summaries.length > 0
                   ? {
                       label: "Crear Quiz",
-                      onClick: handleCreateQuiz,
+                      onClick: () => handleOpenQuizModal('space'),
                     }
                   : undefined
               }
@@ -531,7 +576,7 @@ export default function StudySpaceDetailPage() {
                       Resumen
                     </button>
                     <button
-                      onClick={() => handleCreateQuizFromDocument(doc)}
+                      onClick={() => handleOpenQuizModal('document', doc)}
                       disabled={isCreatingQuiz}
                       className="flex-1 bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/30 text-pink-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
                     >
@@ -635,7 +680,7 @@ export default function StudySpaceDetailPage() {
 
                   {/* Acción */}
                   <button
-                    onClick={() => handleCreateQuizFromSummary(summary)}
+                    onClick={() => handleOpenQuizModal('summary', summary)}
                     disabled={isCreatingQuiz}
                     className="w-full bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/30 text-pink-300 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                   >
@@ -835,6 +880,18 @@ export default function StudySpaceDetailPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal Unificado para Generar Quiz */}
+      <QuizConfigModal
+        isOpen={showQuizModal}
+        onClose={() => {
+          setShowQuizModal(false);
+          setQuizSource(null);
+        }}
+        onGenerate={handleGenerateQuiz}
+        isGenerating={isCreatingQuiz}
+        description={getQuizModalDescription()}
+      />
     </div>
   );
 }

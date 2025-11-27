@@ -12,7 +12,7 @@ export { Modal, Toast, LoadingSpinner, EmptyState } from './ui';
 export type { ToastType } from './ui';
 
 // Feature components
-export { QuizCard, PerformanceChart, QuotaWidget, SpaceBadge, TopicBadge } from './features';
+export { QuizCard, PerformanceChart, QuotaWidget, SpaceBadge, TopicBadge, QuizConfigModal } from './features';
 
 // Auth components
 export { ProtectedRoute } from './auth';
