@@ -25,6 +25,10 @@ class DocumentRepository:
         """
         Crea un nuevo documento.
 
+        IMPORTANTE: NO hace commit. El caller debe hacer commit explícitamente
+        para asegurar que las relaciones (espacios, resúmenes, etc.) se persistan
+        en la misma transacción.
+
         Args:
             db: Sesión de base de datos
             user_id: ID del usuario propietario
@@ -36,7 +40,7 @@ class DocumentRepository:
             extracted_text: Texto extraído (opcional)
 
         Returns:
-            Documento creado
+            Documento creado (NO comiteado aún)
         """
         document = Document(
             user_id=user_id,
@@ -48,7 +52,7 @@ class DocumentRepository:
             extracted_text=extracted_text
         )
         db.add(document)
-        db.commit()
+        db.flush()  # Genera el ID sin commitear
         db.refresh(document)
         return document
 
