@@ -42,6 +42,16 @@ class StudySpaceService:
         total = StudySpaceRepository.count_by_user(db, user_id)
         return spaces, total
 
+    def get_spaces_with_stats(
+        self,
+        db: Session,
+        user_id: UUID,
+        skip: int = 0,
+        limit: int = 100
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        """Obtiene espacios con estadísticas para página de listado."""
+        return StudySpaceRepository.get_by_user_with_stats(db, user_id, skip, limit)
+
     def get_space(self, db: Session, space_id: UUID, user: User) -> StudySpace:
         """Obtener espacio con verificación de ownership."""
         space = StudySpaceRepository.get_by_id(db, space_id)

@@ -63,6 +63,7 @@ export {
 export {
   createStudySpace,
   listStudySpaces,
+  listStudySpacesWithStats,
   getStudySpace,
   updateStudySpace,
   deleteStudySpace,

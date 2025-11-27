@@ -15,6 +15,8 @@ from app.schemas.study_space import (
     StudySpaceResponse,
     StudySpaceDetailResponse,
     StudySpaceListResponse,
+    StudySpaceWithStatsResponse,
+    StudySpaceListWithStatsResponse,
     AddResourceRequest,
     DeleteSpaceRequest,
     StudySpaceStatsResponse,
@@ -40,16 +42,34 @@ def create_study_space(
     )
 
 
-@router.get("", response_model=StudySpaceListResponse)
+@router.get("", response_model=StudySpaceListResponse | StudySpaceListWithStatsResponse)
 def list_study_spaces(
     skip: int = 0,
     limit: int = 100,
+    include_stats: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Listar espacios del usuario."""
-    spaces, total = service.get_spaces(db, current_user.id, skip, limit)
-    return StudySpaceListResponse(items=spaces, total=total)
+    """Listar espacios, opcionalmente con estadísticas."""
+    if include_stats:
+        spaces_data, total = service.get_spaces_with_stats(
+            db, current_user.id, skip, limit
+        )
+        items = [
+            StudySpaceWithStatsResponse(
+                **space['space'].__dict__,
+                num_documents=space['num_documents'],
+                num_summaries=space['num_summaries'],
+                num_quizzes=space['num_quizzes'],
+                avg_score=space['avg_score']
+            )
+            for space in spaces_data
+        ]
+        return StudySpaceListWithStatsResponse(items=items, total=total)
+    else:
+        # Comportamiento actual sin cambios
+        spaces, total = service.get_spaces(db, current_user.id, skip, limit)
+        return StudySpaceListResponse(items=spaces, total=total)
 
 
 @router.get("/{space_id}", response_model=StudySpaceDetailResponse)

@@ -2,7 +2,7 @@
 """
 Repository para operaciones de base de datos relacionadas con espacios de estudio.
 """
-from typing import List, Optional
+from typing import List, Optional, Tuple, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.study_space import StudySpace, study_space_summaries, study_space_documents
@@ -129,3 +129,67 @@ class StudySpaceRepository:
         )
         db.execute(stmt)
         db.commit()
+
+    @staticmethod
+    def get_by_user_with_stats(
+        db: Session,
+        user_id: UUID,
+        skip: int = 0,
+        limit: int = 100
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        """
+        Obtiene espacios con estadísticas agregadas.
+
+        Returns:
+            Tupla de (lista_espacios_con_stats, total_count)
+            Cada dict contiene: {
+                'space': StudySpace object,
+                'num_documents': int,
+                'num_summaries': int,
+                'num_quizzes': int,
+                'avg_score': float
+            }
+        """
+        from sqlalchemy.orm import joinedload
+        from app.repositories.quiz_attempt_repository import QuizAttemptRepository
+        from app.models import Quiz
+
+        # 1. Contar total (sin paginación)
+        total = db.query(StudySpace).filter(StudySpace.user_id == user_id).count()
+
+        # 2. Obtener espacios con paginación y relaciones cargadas
+        spaces = (
+            db.query(StudySpace)
+            .options(
+                joinedload(StudySpace.documents),
+                joinedload(StudySpace.summaries)
+            )
+            .filter(StudySpace.user_id == user_id)
+            .order_by(StudySpace.updated_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+        # 3. Para cada espacio, calcular stats
+        result = []
+        for space in spaces:
+            # Contar quizzes del espacio
+            num_quizzes = db.query(Quiz).filter(Quiz.study_space_id == space.id).count()
+
+            # Calcular promedio usando mismo método que adaptive difficulty
+            recent_attempts = QuizAttemptRepository.get_recent_attempts_by_space(
+                db, user_id, space.id, limit=5
+            )
+            scores = [a.score for a in recent_attempts if a.score is not None]
+            avg_score = round(sum(scores) / len(scores), 2) if scores else 0.0
+
+            result.append({
+                'space': space,
+                'num_documents': len(space.documents),
+                'num_summaries': len(space.summaries),
+                'num_quizzes': num_quizzes,
+                'avg_score': avg_score
+            })
+
+        return result, total

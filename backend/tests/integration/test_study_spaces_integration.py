@@ -151,3 +151,30 @@ def test_generate_summary_no_documents(client):
 
     # Debe rechazar por auth o validación
     assert response.status_code in [400, 401, 403, 422]
+
+
+# TEST: Listar espacios sin estadísticas (comportamiento por defecto)
+def test_list_study_spaces_without_stats(client):
+    """Verificar que endpoint de listado funciona sin include_stats"""
+    response = client.get("/study-spaces/")
+
+    # Sin autenticación, debe retornar 401/403
+    assert response.status_code in [401, 403]
+
+
+# TEST: Listar espacios con estadísticas (include_stats=true)
+def test_list_study_spaces_with_stats(client):
+    """Verificar que endpoint de listado funciona con include_stats=true"""
+    response = client.get("/study-spaces/?include_stats=true")
+
+    # Sin autenticación, debe retornar 401/403
+    assert response.status_code in [401, 403]
+
+
+# TEST: Listar espacios con include_stats=false explícito
+def test_list_study_spaces_with_stats_false(client):
+    """Verificar que endpoint de listado funciona con include_stats=false"""
+    response = client.get("/study-spaces/?include_stats=false")
+
+    # Sin autenticación, debe retornar 401/403
+    assert response.status_code in [401, 403]

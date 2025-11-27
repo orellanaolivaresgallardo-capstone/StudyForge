@@ -23,14 +23,16 @@ export function getErrorMessage(error: unknown): string {
 
   // Si es un AxiosError
   if (isAxiosError(error)) {
+    const responseData = error.response?.data as any;
+
     // 1. Prioridad: mensaje en response.data.detail (backend FastAPI)
-    if (error.response?.data?.detail) {
-      return error.response.data.detail;
+    if (responseData?.detail) {
+      return String(responseData.detail);
     }
 
     // 2. Mensaje en response.data.message
-    if (error.response?.data?.message) {
-      return error.response.data.message;
+    if (responseData?.message) {
+      return String(responseData.message);
     }
 
     // 3. Mensajes por código de estado
@@ -77,10 +79,11 @@ export function parseError(error: unknown): ApiError {
   const message = getErrorMessage(error);
 
   if (isAxiosError(error)) {
+    const responseData = error.response?.data as any;
     return {
       message,
       statusCode: error.response?.status,
-      detail: error.response?.data?.detail
+      detail: responseData?.detail ? String(responseData.detail) : undefined
     };
   }
 

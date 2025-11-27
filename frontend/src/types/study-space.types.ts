@@ -37,6 +37,18 @@ export interface StudySpaceListResponse {
   total: number;
 }
 
+export interface StudySpaceWithStatsResponse extends StudySpaceResponse {
+  num_documents: number;
+  num_summaries: number;
+  num_quizzes: number;
+  avg_score: number;
+}
+
+export interface StudySpaceListWithStatsResponse {
+  items: StudySpaceWithStatsResponse[];
+  total: number;
+}
+
 export interface AddResourceRequest {
   resource_id: string;
 }

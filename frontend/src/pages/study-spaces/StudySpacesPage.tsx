@@ -8,18 +8,18 @@ import { useNavigate } from "react-router-dom";
 import { Navbar, Toast, Modal, LoadingSpinner, EmptyState } from "@/components";
 import type { ToastType } from "@/components";
 import {
-  listStudySpaces,
+  listStudySpacesWithStats,
   createStudySpace,
   deleteStudySpace,
   updateStudySpace,
 } from "@/services/api";
-import type { StudySpaceResponse } from "@/types";
+import type { StudySpaceWithStatsResponse } from "@/types";
 
 export default function StudySpacesPage() {
   const navigate = useNavigate();
 
   // Estado de espacios
-  const [spaces, setSpaces] = useState<StudySpaceResponse[]>([]);
+  const [spaces, setSpaces] = useState<StudySpaceWithStatsResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
@@ -39,7 +39,7 @@ export default function StudySpacesPage() {
   async function loadSpaces() {
     try {
       setIsLoading(true);
-      const response = await listStudySpaces();
+      const response = await listStudySpacesWithStats();
       setSpaces(response.items);
     } catch (error) {
       console.error("Error loading study spaces:", error);
@@ -62,7 +62,7 @@ export default function StudySpacesPage() {
     setShowModal(true);
   }
 
-  function handleOpenEditModal(space: StudySpaceResponse) {
+  function handleOpenEditModal(space: StudySpaceWithStatsResponse) {
     setIsEditing(true);
     setEditingSpaceId(space.id);
     setSpaceName(space.name);
@@ -135,6 +135,13 @@ export default function StudySpacesPage() {
 
   function handleViewSpace(spaceId: string) {
     navigate(`/study-spaces/${spaceId}`);
+  }
+
+  // Helper: determinar color según el promedio de score
+  function getScoreColor(avgScore: number): string {
+    if (avgScore >= 75) return "text-green-400";
+    if (avgScore >= 60) return "text-yellow-400";
+    return "text-red-400";
   }
 
   // Colores predefinidos para selección rápida
@@ -293,6 +300,32 @@ export default function StudySpacesPage() {
                     {space.description}
                   </p>
                 )}
+
+                {/* Estadísticas */}
+                <div className="mb-4 space-y-3">
+                  {/* Promedio destacado */}
+                  <div className="flex items-center justify-center bg-white/5 rounded-xl py-3">
+                    <span className={`text-3xl font-bold ${getScoreColor(space.avg_score)}`}>
+                      {space.avg_score.toFixed(1)}%
+                    </span>
+                  </div>
+
+                  {/* Contadores */}
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-white/5 rounded-lg py-2">
+                      <div className="text-white/50 text-xs">📄 Docs</div>
+                      <div className="text-white font-semibold">{space.num_documents}</div>
+                    </div>
+                    <div className="bg-white/5 rounded-lg py-2">
+                      <div className="text-white/50 text-xs">📚 Resúm.</div>
+                      <div className="text-white font-semibold">{space.num_summaries}</div>
+                    </div>
+                    <div className="bg-white/5 rounded-lg py-2">
+                      <div className="text-white/50 text-xs">📝 Quizzes</div>
+                      <div className="text-white font-semibold">{space.num_quizzes}</div>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="text-xs text-white/50">
                   Creado el {new Date(space.created_at).toLocaleDateString()}

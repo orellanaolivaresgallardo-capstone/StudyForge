@@ -47,6 +47,20 @@ class StudySpaceListResponse(BaseModel):
     total: int
 
 
+class StudySpaceWithStatsResponse(StudySpaceResponse):
+    """Schema para espacio con estadísticas resumidas."""
+    num_documents: int = 0
+    num_summaries: int = 0
+    num_quizzes: int = 0
+    avg_score: float = 0.0
+
+
+class StudySpaceListWithStatsResponse(BaseModel):
+    """Schema para lista con estadísticas."""
+    items: List[StudySpaceWithStatsResponse]
+    total: int
+
+
 class AddResourceRequest(BaseModel):
     """Schema para agregar recurso a espacio."""
     resource_id: UUID = Field(..., description="ID del recurso a agregar")

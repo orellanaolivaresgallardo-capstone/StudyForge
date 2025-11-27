@@ -9,6 +9,7 @@ import type {
   StudySpaceResponse,
   StudySpaceDetailResponse,
   StudySpaceListResponse,
+  StudySpaceListWithStatsResponse,
   AddResourceRequest,
   StudySpaceStatsResponse,
   QuizListResponse,
@@ -33,6 +34,19 @@ export async function listStudySpaces(
     '/study-spaces',
     {
       params: { skip, limit },
+    }
+  );
+  return response.data;
+}
+
+export async function listStudySpacesWithStats(
+  skip: number = 0,
+  limit: number = 100
+): Promise<StudySpaceListWithStatsResponse> {
+  const response = await apiClient.get<StudySpaceListWithStatsResponse>(
+    '/study-spaces',
+    {
+      params: { skip, limit, include_stats: true },
     }
   );
   return response.data;

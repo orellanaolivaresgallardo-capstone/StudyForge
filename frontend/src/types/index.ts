@@ -60,14 +60,14 @@ export type {
   StudySpaceResponse,
   StudySpaceDetailResponse,
   StudySpaceListResponse,
+  StudySpaceWithStatsResponse,
+  StudySpaceListWithStatsResponse,
   AddResourceRequest,
   StudySpaceStatsResponse,
 } from './study-space.types';
 
 // Stats
 export type {
-  ProgressByTopic,
-  UserProgress,
   RecentAttempt,
   UserPerformance,
   StatsSummary,
