@@ -2,12 +2,16 @@
 Tests unitarios para QuizService
 """
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from app.services.quiz_service import QuizService
 
 
-def test_adaptive_difficulty_no_history():
+@patch('app.services.openai_service.settings')
+def test_adaptive_difficulty_no_history(mock_settings):
     """Sin historial previo retorna dificultad 2 (default)"""
+    mock_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_settings.OPENAI_MODEL = "gpt-4"
+
     mock_db = Mock()
     mock_db.query.return_value.join.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = []
 
@@ -17,8 +21,12 @@ def test_adaptive_difficulty_no_history():
     assert difficulty == 2
 
 
-def test_adaptive_difficulty_high_scores():
+@patch('app.services.openai_service.settings')
+def test_adaptive_difficulty_high_scores(mock_settings):
     """Scores altos (>=90%) retornan dificultad 5"""
+    mock_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_settings.OPENAI_MODEL = "gpt-4"
+
     mock_db = Mock()
 
     # Mock de 5 intentos con scores altos
@@ -37,8 +45,12 @@ def test_adaptive_difficulty_high_scores():
     assert difficulty == 5
 
 
-def test_adaptive_difficulty_medium_scores():
+@patch('app.services.openai_service.settings')
+def test_adaptive_difficulty_medium_scores(mock_settings):
     """Scores medios (60-74%) retornan dificultad 3"""
+    mock_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_settings.OPENAI_MODEL = "gpt-4"
+
     mock_db = Mock()
 
     attempts = [
@@ -57,8 +69,12 @@ def test_adaptive_difficulty_medium_scores():
     assert difficulty == 3
 
 
-def test_adaptive_difficulty_low_scores():
+@patch('app.services.openai_service.settings')
+def test_adaptive_difficulty_low_scores(mock_settings):
     """Scores bajos (<40%) retornan dificultad 1"""
+    mock_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_settings.OPENAI_MODEL = "gpt-4"
+
     mock_db = Mock()
 
     attempts = [
@@ -77,8 +93,12 @@ def test_adaptive_difficulty_low_scores():
     assert difficulty == 1
 
 
-def test_adaptive_difficulty_with_less_than_5_attempts():
+@patch('app.services.openai_service.settings')
+def test_adaptive_difficulty_with_less_than_5_attempts(mock_settings):
     """Con menos de 5 intentos, calcula promedio correctamente"""
+    mock_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_settings.OPENAI_MODEL = "gpt-4"
+
     mock_db = Mock()
 
     # Solo 3 intentos
