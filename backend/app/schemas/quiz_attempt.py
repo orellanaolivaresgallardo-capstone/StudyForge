@@ -32,7 +32,6 @@ class QuizSnapshotData(BaseModel):
     """Schema para snapshot de quiz."""
     id: str = Field(..., description="UUID del quiz")
     title: str = Field(..., description="Título del quiz")
-    topic: Optional[str] = Field(None, description="Tema del quiz (deprecado, solo para compatibilidad)")
     difficulty_level: int = Field(..., description="Nivel de dificultad")
 
 

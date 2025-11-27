@@ -117,7 +117,6 @@ class QuizService:
             summary_id=None,  # No hay resumen asociado
             study_space_id=None,  # No hay espacio asociado
             title=f"Cuestionario: {filename}",
-            topic="general",  # Se eliminará en migración, por ahora usar valor por defecto
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )
@@ -203,7 +202,6 @@ class QuizService:
             summary_id=None,  # No hay resumen asociado
             study_space_id=study_space_id,  # Auto-asignado al espacio si pertenece a uno
             title=f"Cuestionario: {document.title}",
-            topic="general",  # Se eliminará en migración, por ahora usar valor por defecto
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )
@@ -285,7 +283,6 @@ class QuizService:
             summary_id=summary_id,
             study_space_id=study_space_id,
             title=f"Cuestionario: {summary.title}",
-            topic="general",  # Se eliminará en migración, por ahora usar valor por defecto
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )
@@ -341,7 +338,6 @@ class QuizService:
         db: Session,
         user: User,
         space_id: UUID,
-        topic: str = "general",
         max_questions: Optional[int] = None,
     ) -> Quiz:
         """
@@ -351,7 +347,6 @@ class QuizService:
             db: Sesión de base de datos
             user: Usuario autenticado
             space_id: ID del espacio de estudio
-            topic: Tema específico o "general"
             max_questions: Número de preguntas (opcional)
 
         Returns:
@@ -419,7 +414,6 @@ class QuizService:
             summary_id=None,  # No está asociado a un resumen específico, sino al espacio
             study_space_id=space_id,  # Auto-asignado al espacio
             title=f"Cuestionario: {space.name}",
-            topic="general",  # Se eliminará en migración, por ahora usar valor por defecto
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )

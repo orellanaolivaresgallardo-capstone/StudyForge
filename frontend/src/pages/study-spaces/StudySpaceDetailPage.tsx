@@ -160,7 +160,7 @@ export default function StudySpaceDetailPage() {
   async function handleCreateQuizFromDocument(document: DocumentResponse) {
     try {
       setIsCreatingQuiz(true);
-      const quiz = await createQuizFromDocument(document.id, "general", 10);
+      const quiz = await createQuizFromDocument(document.id, 10);
       showToast("Quiz creado exitosamente", "success");
       loadStats(id!);
       loadQuizzes(id!);
@@ -309,7 +309,7 @@ export default function StudySpaceDetailPage() {
 
     try {
       setIsCreatingQuiz(true);
-      const quiz = await createQuizFromSpace(id, { topic: "general", max_questions: 10 });
+      const quiz = await createQuizFromSpace(id, { max_questions: 10 });
       showToast("Quiz creado exitosamente", "success");
       loadStats(id);
       loadQuizzes(id);

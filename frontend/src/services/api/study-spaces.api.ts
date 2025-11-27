@@ -132,7 +132,7 @@ export async function getStudySpaceQuizzes(
 
 export async function createQuizFromSpace(
   spaceId: string,
-  data: { topic?: string; max_questions?: number }
+  data: { max_questions?: number }
 ): Promise<QuizResponse> {
   const response = await apiClient.post<QuizResponse>(
     `/study-spaces/${spaceId}/quizzes`,

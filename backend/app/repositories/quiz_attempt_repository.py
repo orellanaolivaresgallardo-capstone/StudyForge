@@ -90,7 +90,6 @@ class QuizAttemptRepository:
         quiz_snapshot = {
             "id": str(quiz.id),
             "title": quiz.title,
-            "topic": quiz.topic,
             "difficulty_level": quiz.difficulty_level
         }
 

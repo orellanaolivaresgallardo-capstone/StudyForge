@@ -11,13 +11,11 @@ import type {
 
 export async function createQuizFromFile(
   file: File,
-  topic: string,
   maxQuestions: number = 10,
   difficultyLevel?: number
 ): Promise<QuizResponse> {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('topic', topic);
   formData.append('max_questions', maxQuestions.toString());
   if (difficultyLevel !== undefined) {
     formData.append('difficulty_level', difficultyLevel.toString());
@@ -57,11 +55,9 @@ export async function createQuizFromSummary(
 
 export async function createQuizFromDocument(
   documentId: string,
-  topic: string = 'general',
   maxQuestions?: number
 ): Promise<QuizResponse> {
   const formData = new FormData();
-  formData.append('topic', topic);
   if (maxQuestions !== undefined) {
     formData.append('max_questions', maxQuestions.toString());
   }

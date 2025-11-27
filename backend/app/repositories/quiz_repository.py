@@ -19,7 +19,6 @@ class QuizRepository:
         summary_id: Optional[UUID],
         study_space_id: Optional[UUID],
         title: str,
-        topic: str,
         difficulty_level: int,
         questions: List[Dict[str, Any]],
     ) -> Quiz:
@@ -32,7 +31,6 @@ class QuizRepository:
             summary_id: ID del resumen (opcional)
             study_space_id: ID del espacio de estudio (opcional)
             title: Título del cuestionario
-            topic: Tema del cuestionario
             difficulty_level: Nivel de dificultad (1-5)
             questions: Lista de preguntas en formato JSON
                 Cada pregunta debe tener:
@@ -48,7 +46,6 @@ class QuizRepository:
             summary_id=summary_id,
             study_space_id=study_space_id,
             title=title,
-            topic=topic,
             difficulty_level=difficulty_level,
             questions=questions,
         )

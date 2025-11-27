@@ -158,3 +158,48 @@
   - Paleta de colores `brand` (50-900) agregada a `tailwind.config.cjs`
   - Menú hamburguesa móvil funcional con estado local en `LandingPage.tsx`
   - Diseño responsive mobile-first (breakpoints: 320px, 640px, 768px, 1024px, 1280px+)
+
+## 2025-11-27 — Eliminación completa de topic tracking
+
+- **Decisión**: Completar migración de topic-based a space-based eliminando todas las referencias a `topic` en código.
+- **Contexto**:
+  - Migración BD `fbdf6cca3f23_remove_topic_tracking` había eliminado columna `topic` de tabla `quizzes`
+  - Código Python tenía 7 referencias obsoletas causando **2 errores críticos de producción**:
+    1. `QuizRepository.create_quiz()` intentaba asignar `topic=topic` a columna inexistente (SQLAlchemy error)
+    2. `QuizAttemptRepository.create_attempt()` intentaba leer `quiz.topic` (AttributeError)
+  - Frontend tenía 5 referencias enviando parámetros inútiles al backend
+  - Sistema no podía crear quizzes ni iniciar quiz attempts
+- **Razones**:
+  1. **Simplificar**: Un concepto organizador (space) en lugar de dos (topic + space)
+  2. **Evitar duplicación**: `space.description` proporciona más contexto que `topic` simple
+  3. **Mejor contexto IA**: Descripción rica del espacio vs topic plano para generación de contenido
+  4. **Eliminar código muerto**: topic no se usaba en lógica actual, solo causaba errores
+  5. **Completar migración**: La migración BD estaba incompleta sin limpieza de código
+- **Alternativas consideradas**:
+  - **Mantener topic como campo opcional**: Rechazado - aumenta complejidad sin valor agregado
+  - **Restaurar columna topic en BD**: Rechazado - regresión de arquitectura ya mejorada
+- **Implementación**:
+  - **Backend (7 ubicaciones)**:
+    - [quiz_repository.py:22](backend/app/repositories/quiz_repository.py): Eliminado parámetro `topic` de `create_quiz()`
+    - [quiz_repository.py:51](backend/app/repositories/quiz_repository.py): Eliminada asignación `topic=topic`
+    - [quiz_attempt_repository.py:93](backend/app/repositories/quiz_attempt_repository.py): Eliminado `"topic": quiz.topic` de snapshot
+    - [quiz_service.py:120,206,288,422](backend/app/services/quiz_service.py): Eliminado `topic="general"` de 4 llamadas a `create_quiz()`
+    - [quiz_service.py:344](backend/app/services/quiz_service.py): Eliminado parámetro `topic` de `create_quiz_from_space()`
+    - [quiz_attempt.py:35](backend/app/schemas/quiz_attempt.py): Eliminado campo `topic` de `QuizSnapshotData`
+    - [quiz_attempt.py:31](backend/app/models/quiz_attempt.py): Actualizado comentario de `quiz_snapshot`
+  - **Frontend (5 ubicaciones)**:
+    - [quiz-attempt.types.ts:10](frontend/src/types/quiz-attempt.types.ts): Eliminado `topic: string` de `QuizSnapshotData`
+    - [quizzes.api.ts:14,20,60,64](frontend/src/services/api/quizzes.api.ts): Eliminados parámetros `topic` de funciones API
+    - [StudySpaceDetailPage.tsx:312,163](frontend/src/pages/study-spaces/StudySpaceDetailPage.tsx): Eliminado `topic: "general"` de llamadas
+    - [study-spaces.api.ts:135](frontend/src/services/api/study-spaces.api.ts): Eliminado `topic?` de interface
+  - **Tests de regresión**: [test_topic_cleanup.py](backend/tests/test_topic_cleanup.py) con 5 tests
+- **Impacto**:
+  - **Fixes 2 errores críticos**: Sistema ahora puede crear quizzes y quiz attempts
+  - **66 tests pasan**: 61 tests originales + 5 tests nuevos de regresión
+  - **Snapshots históricos**: Pueden contener `topic` (será ignorado por Pydantic)
+  - **Sistema adaptativo**: Ya usa `study_space_id` para calcular dificultad (migrado previamente)
+  - **Generación IA**: Ya usa `space.description` como contexto (migrado previamente)
+- **Verificación**:
+  - Backend: TypeScript compilation sin errores
+  - Frontend: `npx tsc --noEmit` sin errores
+  - Tests: 66/66 passing (100%)

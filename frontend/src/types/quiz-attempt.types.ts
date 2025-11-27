@@ -7,7 +7,6 @@ import type { CorrectOption, QuestionWithRandomizedOptions } from './quiz.types'
 export interface QuizSnapshotData {
   id: string;
   title: string;
-  topic: string;
   difficulty_level: number;
 }
 

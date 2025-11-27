@@ -28,7 +28,7 @@ class QuizAttempt(Base):
     user_answers = Column(JSONB, nullable=False, default=list)  # ["A", "C", "C", "D", "A"] - Respuestas del usuario
 
     # Snapshots para preservar información después de eliminaciones
-    quiz_snapshot = Column(JSONB, nullable=True)  # {"id": "uuid", "title": "...", "topic": "...", "difficulty_level": 3}
+    quiz_snapshot = Column(JSONB, nullable=True)  # {"id": "uuid", "title": "...", "difficulty_level": 3}
     study_space_snapshot = Column(JSONB, nullable=True)  # {"id": "uuid", "name": "...", "color": "#8B5CF6"}
 
     # Relaciones
