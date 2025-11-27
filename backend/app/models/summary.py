@@ -3,7 +3,7 @@
 Modelo de Resumen.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, DateTime, ForeignKey, Enum, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -32,8 +32,8 @@ class Summary(Base):
     topics = Column(JSONB, nullable=False, default=list)  # Lista de temas identificados
     key_concepts = Column(JSONB, nullable=False, default=list)  # Conceptos clave
     deleted_documents_info = Column(JSONB, nullable=True)  # Info de documentos eliminados: [{"id": "uuid", "title": "...", "file_name": "..."}]
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relaciones
     user = relationship("User", back_populates="summaries")

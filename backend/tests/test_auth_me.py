@@ -1,6 +1,6 @@
 # tests/test_auth_me.py
 import types
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 from fastapi.testclient import TestClient
 from app.main import app
@@ -13,8 +13,8 @@ def fake_user():
         email="fake@example.com",
         username="fakeuser",
         is_active=True,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         storage_quota_bytes=5368709120,  # 5GB default
         storage_used_bytes=0,
         max_documents_per_summary=5,

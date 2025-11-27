@@ -3,8 +3,7 @@
 Configuración de la base de datos y sesiones.
 """
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
 from typing import Generator
 from app.config import settings
 
@@ -19,7 +18,9 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base para modelos
-Base = declarative_base()
+class Base(DeclarativeBase):
+    """Clase base para todos los modelos SQLAlchemy."""
+    pass
 
 
 def get_db() -> Generator[Session, None, None]:

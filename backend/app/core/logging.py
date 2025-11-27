@@ -7,7 +7,7 @@ Proporciona logging centralizado con niveles configurables y formato estructurad
 import logging
 import sys
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from app.config import settings
 
 
@@ -17,7 +17,7 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Formatea el log con información estructurada."""
         # Timestamp
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         # Nivel de log
         level = record.levelname

@@ -3,7 +3,7 @@
 Modelo de Cuestionario.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -25,7 +25,7 @@ class Quiz(Base):
     questions = Column(JSONB, nullable=False)  # Array de preguntas con opciones no aleatorizadas
     source_document_ids = Column(JSONB, nullable=True)  # IDs de documentos fuente: ["uuid-1", "uuid-2"]
     source_summary_ids = Column(JSONB, nullable=True)  # IDs de resúmenes fuente: ["uuid-1"]
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relaciones
     user = relationship("User", back_populates="quizzes")

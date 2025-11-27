@@ -4,7 +4,7 @@ Repository para operaciones de base de datos relacionadas con intentos de cuesti
 """
 from typing import List, Optional, Dict, Any, Tuple
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 import random
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -283,7 +283,7 @@ class QuizAttemptRepository:
         # Calcular score
         score = QuizAttemptRepository.calculate_score(attempt)
 
-        attempt.completed_at = datetime.utcnow()
+        attempt.completed_at = datetime.now(timezone.utc)
         attempt.score = score
         db.commit()
         db.refresh(attempt)

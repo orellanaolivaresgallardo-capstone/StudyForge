@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Navbar, Toast, Modal, LoadingSpinner, EmptyState, QuizCard, PerformanceChart, QuizConfigModal } from "@/components";
 import type { ToastType } from "@/components";
-import { SpaceHeader } from "@/components";
+import { SpaceHeader } from "./components";
 import {
   getStudySpace,
   getStudySpaceStats,

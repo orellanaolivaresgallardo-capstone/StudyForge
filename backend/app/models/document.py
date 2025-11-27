@@ -3,7 +3,7 @@
 Modelo de Documento - Almacena archivos cargados por usuarios.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, LargeBinary
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -24,8 +24,8 @@ class Document(Base):
     file_size_bytes = Column(Integer, nullable=False)  # Tamaño en bytes
     file_content = Column(LargeBinary, nullable=False)  # Contenido del archivo
     extracted_text = Column(String, nullable=True)  # Texto extraído (cache)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relaciones
     user = relationship("User", back_populates="documents")

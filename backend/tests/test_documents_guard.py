@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.core.dependencies import get_current_user
 from app.repositories.document_repository import DocumentRepository
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 import types
 
@@ -15,8 +15,8 @@ def fake_user():
         email="fake@example.com",
         username="fakeuser",
         is_active=True,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         storage_quota_bytes=5368709120,
         storage_used_bytes=0,
         max_documents_per_summary=5,
