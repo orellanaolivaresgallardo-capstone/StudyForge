@@ -115,7 +115,6 @@ IMPORTANTE:
     def generate_quiz(
         self,
         text: str,
-        topic: str,
         difficulty_level: int,
         num_questions: int,
         space_context: str | None = None,
@@ -125,7 +124,6 @@ IMPORTANTE:
 
         Args:
             text: Texto base para generar preguntas
-            topic: Tema específico o "general"
             difficulty_level: Nivel de dificultad (1-5)
             num_questions: Número de preguntas a generar
             space_context: Contexto opcional del espacio de estudio para orientar la generación
@@ -149,7 +147,6 @@ IMPORTANTE:
         }
 
         difficulty_instruction = difficulty_desc.get(difficulty_level, difficulty_desc[3])
-        topic_instruction = f"sobre el tema '{topic}'" if topic != "general" else "que cubran el contenido general"
 
         # Agregar contexto del espacio si está disponible
         context_instruction = ""
@@ -157,7 +154,7 @@ IMPORTANTE:
             context_instruction = f"\n\nCONTEXTO: Este cuestionario es para un espacio de estudio enfocado en: {space_context}\nEnfoca las preguntas en relación con este contexto."
 
         system_prompt = f"""Eres un experto en crear preguntas educativas de opción múltiple.
-Genera {num_questions} preguntas {topic_instruction} con nivel de dificultad {difficulty_instruction}.{context_instruction}
+Genera {num_questions} preguntas que cubran el contenido proporcionado con nivel de dificultad {difficulty_instruction}.{context_instruction}
 
 IMPORTANTE:
 - Cada pregunta debe tener 4 opciones (A, B, C, D)

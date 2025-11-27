@@ -54,7 +54,6 @@ export {
 
 // Stats
 export {
-  getUserProgress,
   getUserPerformance,
   getStatsSummary,
   getProgressBySpace,

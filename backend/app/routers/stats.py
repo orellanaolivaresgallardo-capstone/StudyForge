@@ -17,68 +17,6 @@ from app.schemas.study_space import StudySpaceStatsResponse
 router = APIRouter()
 
 
-@router.get("/progress")
-def get_user_progress(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Dict[str, Any]:
-    """
-    Obtiene estadísticas de progreso del usuario por tema.
-
-    Args:
-        current_user: Usuario autenticado
-        db: Sesión de base de datos
-
-    Returns:
-        Diccionario con progreso por tema
-    """
-    # Obtener estadísticas por tema
-    stats_by_topic = (
-        db.query(
-            Quiz.topic,
-            func.count(QuizAttempt.id).label("total_attempts"),
-            func.avg(QuizAttempt.score).label("avg_score"),
-            func.max(QuizAttempt.score).label("max_score"),
-            func.min(QuizAttempt.score).label("min_score"),
-        )
-        .join(QuizAttempt, Quiz.id == QuizAttempt.quiz_id)
-        .filter(
-            QuizAttempt.user_id == current_user.id,
-            QuizAttempt.completed_at.isnot(None),
-        )
-        .group_by(Quiz.topic)
-        .all()
-    )
-
-    # Formatear resultados
-    progress_by_topic = []
-    for stat in stats_by_topic:
-        progress_by_topic.append({
-            "topic": stat.topic,
-            "total_attempts": stat.total_attempts,
-            "avg_score": round(stat.avg_score, 2) if stat.avg_score else 0,
-            "max_score": round(stat.max_score, 2) if stat.max_score else 0,
-            "min_score": round(stat.min_score, 2) if stat.min_score else 0,
-        })
-
-    # Estadísticas generales
-    total_attempts = db.query(QuizAttempt).filter(
-        QuizAttempt.user_id == current_user.id,
-        QuizAttempt.completed_at.isnot(None),
-    ).count()
-
-    avg_score_overall = db.query(func.avg(QuizAttempt.score)).filter(
-        QuizAttempt.user_id == current_user.id,
-        QuizAttempt.completed_at.isnot(None),
-    ).scalar()
-
-    return {
-        "total_attempts": total_attempts,
-        "avg_score_overall": round(avg_score_overall, 2) if avg_score_overall else 0,
-        "progress_by_topic": progress_by_topic,
-    }
-
-
 @router.get("/performance")
 def get_user_performance(
     limit: int = 10,
@@ -98,7 +36,7 @@ def get_user_performance(
     """
     # Obtener intentos recientes con información del quiz
     recent_attempts = (
-        db.query(QuizAttempt, Quiz.title, Quiz.topic, Quiz.difficulty_level, Quiz.study_space_id)
+        db.query(QuizAttempt, Quiz.title, Quiz.difficulty_level, Quiz.study_space_id)
         .join(Quiz, QuizAttempt.quiz_id == Quiz.id)
         .filter(
             QuizAttempt.user_id == current_user.id,
@@ -111,12 +49,11 @@ def get_user_performance(
 
     # Formatear resultados
     performance_history = []
-    for attempt, quiz_title, quiz_topic, difficulty_level, study_space_id in recent_attempts:
+    for attempt, quiz_title, difficulty_level, study_space_id in recent_attempts:
         performance_history.append({
             "attempt_id": str(attempt.id),
             "quiz_id": str(attempt.quiz_id),
             "quiz_title": quiz_title,
-            "topic": quiz_topic,
             "difficulty_level": difficulty_level,
             "score": round(attempt.score, 2) if attempt.score else 0,
             "completed_at": attempt.completed_at.isoformat(),
@@ -172,12 +109,13 @@ def get_user_summary(
         QuizAttempt.completed_at.isnot(None),
     ).scalar()
 
-    # Temas únicos estudiados
-    unique_topics = db.query(func.count(func.distinct(Quiz.topic))).join(
+    # Espacios de estudio únicos donde el usuario ha completado quizzes
+    unique_spaces = db.query(func.count(func.distinct(Quiz.study_space_id))).join(
         QuizAttempt, Quiz.id == QuizAttempt.quiz_id
     ).filter(
         QuizAttempt.user_id == current_user.id,
         QuizAttempt.completed_at.isnot(None),
+        Quiz.study_space_id.isnot(None),  # Asegurar que tenga espacio
     ).scalar()
 
     return {
@@ -186,7 +124,7 @@ def get_user_summary(
         "total_completed_attempts": total_completed_attempts,
         "avg_score": round(avg_score, 2) if avg_score else 0,
         "best_score": round(best_score, 2) if best_score else 0,
-        "unique_topics_studied": unique_topics or 0,
+        "unique_spaces_studied": unique_spaces or 0,
     }
 
 

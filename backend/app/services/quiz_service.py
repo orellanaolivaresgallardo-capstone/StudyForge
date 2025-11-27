@@ -26,7 +26,7 @@ class QuizService:
         self.openai_service = OpenAIService()
 
     def calculate_adaptive_difficulty(
-        self, db: Session, user_id: UUID, topic: str
+        self, db: Session, user_id: UUID, space_id: UUID
     ) -> int:
         """
         Calcula el nivel de dificultad adaptativo basado en el desempeño histórico.
@@ -34,14 +34,14 @@ class QuizService:
         Args:
             db: Sesión de base de datos
             user_id: ID del usuario
-            topic: Tema del cuestionario
+            space_id: ID del espacio de estudio
 
         Returns:
             Nivel de dificultad (1-5)
         """
-        # Obtener últimos 5 intentos del usuario en el tema
-        recent_attempts = QuizAttemptRepository.get_recent_attempts_by_topic(
-            db, user_id, topic, limit=5
+        # Obtener últimos 5 intentos del usuario en el espacio
+        recent_attempts = QuizAttemptRepository.get_recent_attempts_by_space(
+            db, user_id, space_id, limit=5
         )
 
         if not recent_attempts:
@@ -73,7 +73,6 @@ class QuizService:
         db: Session,
         user_id: UUID,
         file: UploadFile,
-        topic: str = "general",
         max_questions: Optional[int] = None,
     ) -> Quiz:
         """
@@ -83,7 +82,6 @@ class QuizService:
             db: Sesión de base de datos
             user_id: ID del usuario
             file: Archivo subido
-            topic: Tema específico o "general"
             max_questions: Número de preguntas (opcional)
 
         Returns:
@@ -102,13 +100,12 @@ class QuizService:
             # Usar valor por defecto
             num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
-        # 3. Calcular dificultad adaptativa
-        difficulty_level = self.calculate_adaptive_difficulty(db, user_id, topic)
+        # 3. Usar dificultad fija (sin espacio asociado, no hay histórico)
+        difficulty_level = 2  # Nivel fácil por defecto
 
         # 4. Generar cuestionario con OpenAI
         questions_data = self.openai_service.generate_quiz(
             text=text,
-            topic=topic,
             difficulty_level=difficulty_level,
             num_questions=num_questions,
         )
@@ -120,7 +117,7 @@ class QuizService:
             summary_id=None,  # No hay resumen asociado
             study_space_id=None,  # No hay espacio asociado
             title=f"Cuestionario: {filename}",
-            topic=topic,
+            topic="general",  # Se eliminará en migración, por ahora usar valor por defecto
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )
@@ -134,7 +131,6 @@ class QuizService:
         db: Session,
         user: User,
         document_id: UUID,
-        topic: str = "general",
         max_questions: Optional[int] = None,
     ) -> Quiz:
         """
@@ -144,7 +140,6 @@ class QuizService:
             db: Sesión de base de datos
             user: Usuario autenticado
             document_id: ID del documento
-            topic: Tema específico o "general"
             max_questions: Número de preguntas (opcional)
 
         Returns:
@@ -178,38 +173,37 @@ class QuizService:
             # Usar valor por defecto
             num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
-        # 4. Calcular dificultad adaptativa
-        difficulty_level = self.calculate_adaptive_difficulty(db, user.id, topic)
-
-        # 5. Obtener contexto del espacio si el documento pertenece a un espacio
+        # 4. Determinar study_space_id y calcular dificultad
         space_context = None
         study_space_id = None
+        difficulty_level = 2  # Dificultad por defecto
+
         if len(document.study_spaces) > 0:
-            # Usar la descripción del primer espacio como contexto
+            # Usar el primer espacio
             first_space = document.study_spaces[0]
+            study_space_id = first_space.id
+            # Calcular dificultad basada en el espacio
+            difficulty_level = self.calculate_adaptive_difficulty(db, user.id, study_space_id)
+            # Obtener contexto del espacio
             if first_space.description:
                 space_context = first_space.description
-            # Si pertenece a exactamente un espacio, heredar
-            if len(document.study_spaces) == 1:
-                study_space_id = first_space.id
 
-        # 6. Generar cuestionario con OpenAI (con contexto del espacio si está disponible)
+        # 5. Generar cuestionario con OpenAI (con contexto del espacio si está disponible)
         questions_data = self.openai_service.generate_quiz(
             text=document_text,
-            topic=topic,
             difficulty_level=difficulty_level,
             num_questions=num_questions,
             space_context=space_context,
         )
 
-        # 7. Crear cuestionario en BD con preguntas en formato JSON
+        # 6. Crear cuestionario en BD con preguntas en formato JSON
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user.id,
             summary_id=None,  # No hay resumen asociado
             study_space_id=study_space_id,  # Auto-asignado al espacio si pertenece a uno
             title=f"Cuestionario: {document.title}",
-            topic=topic,
+            topic="general",  # Se eliminará en migración, por ahora usar valor por defecto
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )
@@ -227,7 +221,6 @@ class QuizService:
         db: Session,
         user: User,
         summary_id: UUID,
-        topic: str = "general",
         max_questions: Optional[int] = None,
     ) -> Quiz:
         """
@@ -237,7 +230,6 @@ class QuizService:
             db: Sesión de base de datos
             user: Usuario autenticado
             summary_id: ID del resumen
-            topic: Tema específico o "general"
             max_questions: Número de preguntas (opcional)
 
         Returns:
@@ -250,19 +242,10 @@ class QuizService:
         summary = SummaryRepository.get_by_id(db, summary_id)
         summary = verify_summary_ownership(summary, user)
 
-        # 2. Inferir tema automáticamente si es "general" o None
-        # TODO: Mejorar esto en el futuro para inferir el tema de las preguntas generadas
-        if topic == "general" or topic is None:
-            # Usar el primer tema del resumen, o "general" si no hay temas
-            if summary.topics and len(summary.topics) > 0:
-                topic = summary.topics[0]
-            else:
-                topic = "general"
-
-        # 3. Usar el contenido del resumen
+        # 2. Usar el contenido del resumen
         summary_text = summary.content.get("summary", "")
 
-        # 4. Determinar número de preguntas
+        # 3. Determinar número de preguntas
         if max_questions is not None:
             # Usuario especificó cantidad: validar rango 5-30
             num_questions = max(settings.MIN_QUESTIONS_PER_QUIZ,
@@ -271,40 +254,38 @@ class QuizService:
             # Usar valor por defecto
             num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
-        # 5. Calcular dificultad adaptativa
-        difficulty_level = self.calculate_adaptive_difficulty(db, user.id, topic)
-
-        # 5.5. Obtener contexto del espacio si el resumen pertenece a un espacio
+        # 4. Determinar study_space_id y calcular dificultad
+        # Si el resumen pertenece a exactamente un espacio, heredar y calcular dificultad
+        study_space_id = None
+        difficulty_level = 2  # Dificultad por defecto
         space_context = None
+
         if len(summary.study_spaces) > 0:
-            # Usar la descripción del primer espacio como contexto
+            # Usar el primer espacio
             first_space = summary.study_spaces[0]
+            study_space_id = first_space.id
+            # Calcular dificultad basada en el espacio
+            difficulty_level = self.calculate_adaptive_difficulty(db, user.id, study_space_id)
+            # Obtener contexto del espacio
             if first_space.description:
                 space_context = first_space.description
 
-        # 6. Generar cuestionario con OpenAI (con contexto del espacio si está disponible)
+        # 5. Generar cuestionario con OpenAI (con contexto del espacio si está disponible)
         questions_data = self.openai_service.generate_quiz(
             text=summary_text,
-            topic=topic,
             difficulty_level=difficulty_level,
             num_questions=num_questions,
             space_context=space_context,
         )
 
-        # 7. Determinar study_space_id automáticamente
-        # Si el resumen pertenece a exactamente un espacio, heredar
-        study_space_id = None
-        if len(summary.study_spaces) == 1:
-            study_space_id = summary.study_spaces[0].id
-
-        # 8. Crear cuestionario en BD con preguntas en formato JSON
+        # 6. Crear cuestionario en BD con preguntas en formato JSON
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user.id,
             summary_id=summary_id,
             study_space_id=study_space_id,
             title=f"Cuestionario: {summary.title}",
-            topic=topic,
+            topic="general",  # Se eliminará en migración, por ahora usar valor por defecto
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )
@@ -395,14 +376,10 @@ class QuizService:
 
         # 3. Combinar el contenido de todos los resúmenes del espacio
         combined_texts = []
-        all_topics = []
         for summary in space.summaries:
             summary_text = summary.content.get("summary", "")
             if summary_text:
                 combined_texts.append(summary_text)
-            # Recopilar todos los temas de los resúmenes
-            if summary.topics:
-                all_topics.extend(summary.topics)
 
         if not combined_texts:
             raise HTTPException(
@@ -412,18 +389,7 @@ class QuizService:
 
         combined_text = "\n\n".join(combined_texts)
 
-        # 4. Inferir tema automáticamente si es "general" o None
-        if topic == "general" or topic is None:
-            # Usar el tema más común de los resúmenes, o "general" si no hay temas
-            if all_topics:
-                # Encontrar el tema más frecuente
-                from collections import Counter
-                topic_counts = Counter(all_topics)
-                topic = topic_counts.most_common(1)[0][0]
-            else:
-                topic = "general"
-
-        # 5. Determinar número de preguntas
+        # 4. Determinar número de preguntas
         if max_questions is not None:
             # Usuario especificó cantidad: validar rango 5-30
             num_questions = max(settings.MIN_QUESTIONS_PER_QUIZ,
@@ -432,29 +398,28 @@ class QuizService:
             # Usar valor por defecto
             num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
-        # 6. Calcular dificultad adaptativa
-        difficulty_level = self.calculate_adaptive_difficulty(db, user.id, topic)
+        # 5. Calcular dificultad adaptativa basada en el espacio
+        difficulty_level = self.calculate_adaptive_difficulty(db, user.id, space_id)
 
-        # 7. Obtener contexto del espacio (descripción)
+        # 6. Obtener contexto del espacio (descripción)
         space_context = space.description if space.description else None
 
-        # 8. Generar cuestionario con OpenAI (con contexto del espacio)
+        # 7. Generar cuestionario con OpenAI (con contexto del espacio)
         questions_data = self.openai_service.generate_quiz(
             text=combined_text,
-            topic=topic,
             difficulty_level=difficulty_level,
             num_questions=num_questions,
             space_context=space_context,
         )
 
-        # 9. Crear cuestionario en BD con preguntas en formato JSON
+        # 8. Crear cuestionario en BD con preguntas en formato JSON
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user.id,
             summary_id=None,  # No está asociado a un resumen específico, sino al espacio
             study_space_id=space_id,  # Auto-asignado al espacio
             title=f"Cuestionario: {space.name}",
-            topic=topic,
+            topic="general",  # Se eliminará en migración, por ahora usar valor por defecto
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
         )

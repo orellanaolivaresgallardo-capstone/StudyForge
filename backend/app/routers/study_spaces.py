@@ -202,7 +202,6 @@ def create_quiz_from_space(
         db=db,
         user=current_user,
         space_id=space_id,
-        topic=request.topic,
         max_questions=request.max_questions,
     )
 
@@ -213,7 +212,6 @@ def create_quiz_from_space(
         "summary_id": quiz.summary_id,
         "study_space_id": quiz.study_space_id,
         "title": quiz.title,
-        "topic": quiz.topic,
         "difficulty_level": quiz.difficulty_level,
         "created_at": quiz.created_at,
         "questions": quiz.questions,
@@ -277,7 +275,6 @@ def get_space_quizzes(
             "summary_id": quiz.summary_id,
             "study_space_id": quiz.study_space_id,
             "title": quiz.title,
-            "topic": quiz.topic,
             "difficulty_level": quiz.difficulty_level,
             "created_at": quiz.created_at,
             "questions": quiz.questions,

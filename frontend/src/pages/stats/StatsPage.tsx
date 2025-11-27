@@ -4,13 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { Navbar, Toast, PerformanceChart, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import {
-  getUserProgress,
   getUserPerformance,
   getStatsSummary,
   getProgressBySpace,
 } from "@/services/api";
 import type {
-  UserProgress,
   UserPerformance,
   StatsSummary,
   StudySpaceStatsResponse,
@@ -20,7 +18,6 @@ export default function StatsPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<StatsSummary | null>(null);
-  const [progress, setProgress] = useState<UserProgress | null>(null);
   const [performance, setPerformance] = useState<UserPerformance | null>(null);
   const [progressBySpace, setProgressBySpace] = useState<StudySpaceStatsResponse[]>([]);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
@@ -33,15 +30,13 @@ export default function StatsPage() {
     try {
       setLoading(true);
 
-      const [summaryData, progressData, performanceData, progressBySpaceData] = await Promise.all([
+      const [summaryData, performanceData, progressBySpaceData] = await Promise.all([
         getStatsSummary(),
-        getUserProgress(),
         getUserPerformance(10),
         getProgressBySpace(),
       ]);
 
       setSummary(summaryData);
-      setProgress(progressData);
       setPerformance(performanceData);
       setProgressBySpace(progressBySpaceData);
     } catch (err) {
@@ -220,95 +215,17 @@ export default function StatsPage() {
                     </div>
                   </div>
 
-                  {/* Unique Topics */}
+                  {/* Unique Study Spaces */}
                   <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-white/60 text-sm mb-1">Temas Estudiados</p>
+                        <p className="text-white/60 text-sm mb-1">Espacios de Estudio</p>
                         <p className="text-4xl font-bold text-white">
-                          {summary.unique_topics_studied}
+                          {summary.unique_spaces_studied}
                         </p>
                       </div>
-                      <div className="text-4xl">🎓</div>
+                      <div className="text-4xl">📚</div>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Progress by Topic */}
-              {progress && progress.progress_by_topic.length > 0 && (
-                <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 mb-8">
-                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                    <span>📈</span>
-                    Progreso por Tema
-                  </h2>
-
-                  <div className="space-y-4">
-                    {progress.progress_by_topic.map((topic, index) => (
-                      <div
-                        key={index}
-                        className="bg-white/5 border border-white/10 rounded-xl p-4"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-lg font-semibold text-white">
-                            {topic.topic}
-                          </h3>
-                          <span className="text-sm text-white/60">
-                            {topic.total_attempts} intento
-                            {topic.total_attempts !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div>
-                            <p className="text-xs text-white/60 mb-1">Promedio</p>
-                            <p
-                              className={`text-2xl font-bold ${getScoreColor(
-                                topic.avg_score
-                              )}`}
-                            >
-                              {topic.avg_score}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-white/60 mb-1">Máximo</p>
-                            <p
-                              className={`text-2xl font-bold ${getScoreColor(
-                                topic.max_score
-                              )}`}
-                            >
-                              {topic.max_score}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-white/60 mb-1">Mínimo</p>
-                            <p
-                              className={`text-2xl font-bold ${getScoreColor(
-                                topic.min_score
-                              )}`}
-                            >
-                              {topic.min_score}%
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Progress bar */}
-                        <div className="mt-4">
-                          <div className="w-full bg-white/10 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full transition-all duration-500 ${
-                                topic.avg_score >= 80
-                                  ? "bg-green-500"
-                                  : topic.avg_score >= 60
-                                  ? "bg-yellow-500"
-                                  : "bg-red-500"
-                              }`}
-                              style={{ width: `${topic.avg_score}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}

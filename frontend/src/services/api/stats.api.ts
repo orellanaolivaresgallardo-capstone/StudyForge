@@ -4,16 +4,10 @@
  */
 import apiClient from './client';
 import type {
-  UserProgress,
   UserPerformance,
   StatsSummary,
   StudySpaceStatsResponse,
 } from '@/types';
-
-export async function getUserProgress(): Promise<UserProgress> {
-  const response = await apiClient.get<UserProgress>('/stats/progress');
-  return response.data;
-}
 
 export async function getUserPerformance(
   limit: number = 10

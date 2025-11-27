@@ -291,17 +291,17 @@ class QuizAttemptRepository:
         return attempt
 
     @staticmethod
-    def get_recent_attempts_by_topic(
-        db: Session, user_id: UUID, topic: str, limit: int = 5
+    def get_recent_attempts_by_space(
+        db: Session, user_id: UUID, space_id: UUID, limit: int = 5
     ) -> List[QuizAttempt]:
         """
-        Obtiene los intentos recientes de un usuario para un tema específico.
-        Útil para el sistema adaptativo.
+        Obtiene los intentos recientes de un usuario para un espacio específico.
+        Útil para el sistema adaptativo basado en espacios de estudio.
 
         Args:
             db: Sesión de base de datos
             user_id: ID del usuario
-            topic: Tema del cuestionario
+            space_id: ID del espacio de estudio
             limit: Número de intentos a retornar
 
         Returns:
@@ -315,7 +315,7 @@ class QuizAttemptRepository:
             .filter(
                 and_(
                     QuizAttempt.user_id == user_id,
-                    Quiz.topic == topic,
+                    Quiz.study_space_id == space_id,
                     QuizAttempt.completed_at.isnot(None),
                 )
             )

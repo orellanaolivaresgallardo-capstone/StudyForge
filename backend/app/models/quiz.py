@@ -21,7 +21,6 @@ class Quiz(Base):
     summary_id = Column(UUID(as_uuid=True), ForeignKey("studyforge.summaries.id"), nullable=True, index=True)
     study_space_id = Column(UUID(as_uuid=True), ForeignKey("studyforge.study_spaces.id"), nullable=True, index=True)
     title = Column(String(255), nullable=False)
-    topic = Column(String(255), nullable=False)  # "general" o tema específico
     difficulty_level = Column(Integer, nullable=False, default=1)  # 1-5
     questions = Column(JSONB, nullable=False)  # Array de preguntas con opciones no aleatorizadas
     source_document_ids = Column(JSONB, nullable=True)  # IDs de documentos fuente: ["uuid-1", "uuid-2"]

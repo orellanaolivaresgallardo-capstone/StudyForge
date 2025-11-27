@@ -37,7 +37,6 @@ class QuestionWithRandomizedOptions(BaseModel):
 class QuizCreate(BaseModel):
     """Schema para crear un cuestionario."""
     summary_id: Optional[UUID] = Field(None, description="ID del resumen (opcional)")
-    topic: str = Field("general", description="Tema específico o 'general'")
     max_questions: Optional[int] = Field(None, ge=5, le=30, description="Número de preguntas (5-30)")
     file: Optional[bytes] = Field(None, description="Archivo temporal (si no hay summary_id)")
     file_name: Optional[str] = Field(None, description="Nombre del archivo")
@@ -46,7 +45,6 @@ class QuizCreate(BaseModel):
 
 class QuizCreateFromSpace(BaseModel):
     """Schema para crear un cuestionario desde un espacio de estudio."""
-    topic: str = Field("general", description="Tema específico o 'general'")
     max_questions: Optional[int] = Field(None, ge=5, le=30, description="Número de preguntas (5-30)")
 
 
@@ -59,7 +57,6 @@ class QuizResponse(BaseModel):
     summary_id: Optional[UUID]
     study_space_id: Optional[UUID] = None
     title: str
-    topic: str
     difficulty_level: int
     created_at: datetime
     questions: List[Dict[str, Any]] = Field(

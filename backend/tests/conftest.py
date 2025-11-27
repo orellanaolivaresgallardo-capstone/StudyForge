@@ -82,7 +82,6 @@ def fake_quiz(fake_user):
     quiz.id = uuid4()
     quiz.user_id = fake_user.id
     quiz.title = "Test Quiz"
-    quiz.topic = "test"
     quiz.difficulty_level = 3
     quiz.questions = [
         {

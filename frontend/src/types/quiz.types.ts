@@ -36,7 +36,6 @@ export interface QuizResponse {
   document_names: string[];
   source_type: string; // "file" | "summary" | "space"
   title: string;
-  topic: string;
   difficulty_level: number; // 1-5
   created_at: string;
   questions: QuestionData[]; // Preguntas en formato JSON
@@ -53,13 +52,11 @@ export interface QuizListResponse {
 
 export interface QuizCreateFromFile {
   file: File;
-  topic: string;
   max_questions?: number;
   difficulty_level?: number;
 }
 
 export interface QuizCreateFromSummary {
   summary_id: string;
-  topic?: string;
   max_questions?: number;
 }
