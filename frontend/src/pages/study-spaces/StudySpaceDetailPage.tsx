@@ -607,6 +607,22 @@ export default function StudySpaceDetailPage() {
                       </svg>
                     </button>
                   </div>
+                  
+                  {/* Nivel de expertice */}
+                  <div className="mb-2">
+                    <span
+                      className={`border px-2 py-1 rounded-lg text-xs capitalize ${
+                        summary.expertise_level === "basico"
+                          ? "bg-green-500/20 text-green-300 border-green-500/30"
+                          : summary.expertise_level === "medio"
+                          ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+                          : "bg-red-500/20 text-red-300 border-red-500/30"
+                      }`}
+                    >
+                      {summary.expertise_level}
+                    </span>
+                  </div>
+
                   <div className="flex gap-2 flex-wrap mt-2 mb-3">
                     {summary.topics.slice(0, 3).map((topic, idx) => (
                       <span
