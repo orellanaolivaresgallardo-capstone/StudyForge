@@ -39,7 +39,6 @@ export async function createQuizFromSummary(
   data: QuizCreateFromSummary
 ): Promise<QuizResponse> {
   const formData = new FormData();
-  formData.append('topic', data.topic || 'general');
   if (data.max_questions) {
     formData.append('max_questions', data.max_questions.toString());
   }

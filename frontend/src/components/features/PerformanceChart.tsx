@@ -19,7 +19,6 @@ export interface PerformanceChartProps {
 interface ChartDataPoint {
   date: string;
   score: number;
-  topic: string;
   quizTitle: string;
 }
 
@@ -34,7 +33,6 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ attempts, height = 
         day: 'numeric',
       }),
       score: Math.round(attempt.score),
-      topic: attempt.topic,
       quizTitle: attempt.quiz_title,
     }));
 

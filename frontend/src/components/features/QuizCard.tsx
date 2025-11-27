@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { QuizResponse } from '@/types';
 import SpaceBadge from './SpaceBadge';
-import TopicBadge from './TopicBadge';
 
 export interface QuizCardProps {
   quiz: QuizResponse;
@@ -13,7 +12,7 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, showSpaceBadge = true }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/quizzes/${quiz.id}`);
+    navigate(`/quizzes/${quiz.id}/attempt`);
   };
 
   const getDifficultyColor = (level: number) => {
@@ -76,11 +75,6 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, showSpaceBadge = true }) => {
         <span className={`text-sm font-medium ${getDifficultyColor(quiz.difficulty_level)} ml-3`}>
           {getDifficultyLabel(quiz.difficulty_level)}
         </span>
-      </div>
-
-      {/* Topic Badge */}
-      <div className="mb-3">
-        <TopicBadge topic={quiz.topic} size="sm" />
       </div>
 
       {/* Origin Info */}

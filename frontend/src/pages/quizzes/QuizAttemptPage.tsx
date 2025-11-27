@@ -130,7 +130,6 @@ export default function QuizAttemptPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h1 className="text-2xl font-bold text-white">{quiz.title}</h1>
-                  <p className="text-white/60 mt-1">Tema: {quiz.topic}</p>
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-white/60">Progreso</div>

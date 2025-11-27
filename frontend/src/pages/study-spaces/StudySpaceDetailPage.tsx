@@ -179,7 +179,6 @@ export default function StudySpaceDetailPage() {
       setIsCreatingQuiz(true);
       const quiz = await createQuizFromSummary({
         summary_id: summary.id,
-        topic: "general",
         max_questions: 10,
       });
       showToast("Quiz creado exitosamente", "success");

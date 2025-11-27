@@ -359,9 +359,6 @@ export default function StatsPage() {
                               {attempt.quiz_title}
                             </h3>
                             <div className="flex flex-wrap items-center gap-2 text-sm">
-                              <span className="text-white/60">
-                                📚 {attempt.topic}
-                              </span>
                               <span
                                 className={`px-2 py-1 rounded-md border text-xs font-medium ${getDifficultyColor(
                                   attempt.difficulty_level
