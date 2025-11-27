@@ -356,9 +356,9 @@ def test_extract_from_pdf_success(mock_pdfplumber):
 
 
 @patch('app.services.file_processor.pdfplumber')
-@patch('app.services.file_processor.PyPDF2')
-def test_extract_from_pdf_fallback_to_pypdf2(mock_pypdf2, mock_pdfplumber):
-    """_extract_from_pdf debe usar PyPDF2 como fallback"""
+@patch('app.services.file_processor.PdfReader')
+def test_extract_from_pdf_fallback_to_pypdf(mock_pdfreader, mock_pdfplumber):
+    """_extract_from_pdf debe usar pypdf como fallback"""
     # pdfplumber fails
     mock_pdf_plumber = Mock()
     mock_pdf_plumber.pages = []
@@ -366,18 +366,18 @@ def test_extract_from_pdf_fallback_to_pypdf2(mock_pypdf2, mock_pdfplumber):
     mock_pdf_plumber.__exit__ = Mock(return_value=False)
     mock_pdfplumber.open.return_value = mock_pdf_plumber
 
-    # PyPDF2 succeeds
+    # pypdf succeeds
     mock_page = Mock()
-    mock_page.extract_text.return_value = "PyPDF2 extracted text"
+    mock_page.extract_text.return_value = "pypdf extracted text"
 
     mock_pdf_reader = Mock()
     mock_pdf_reader.pages = [mock_page]
-    mock_pypdf2.PdfReader.return_value = mock_pdf_reader
+    mock_pdfreader.return_value = mock_pdf_reader
 
     content = b"PDF binary content"
     text = FileProcessor._extract_from_pdf(content)
 
-    assert "PyPDF2 extracted text" in text
+    assert "pypdf extracted text" in text
 
 
 @patch('app.services.file_processor.pdfplumber')

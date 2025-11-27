@@ -6,7 +6,7 @@ Soporta: PDF, PPTX, PPT, DOCX, DOC, TXT
 import io
 from typing import Tuple
 from fastapi import UploadFile, HTTPException, status
-import PyPDF2
+from pypdf import PdfReader
 import pdfplumber
 from pptx import Presentation
 from docx import Document
@@ -171,9 +171,9 @@ class FileProcessor:
                     if page_text:
                         text_parts.append(page_text)
 
-            # Si pdfplumber no funciona, intentar con PyPDF2
+            # Si pdfplumber no funciona, intentar con pypdf
             if not text_parts:
-                pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
+                pdf_reader = PdfReader(io.BytesIO(content))
                 for page in pdf_reader.pages:
                     page_text = page.extract_text()
                     if page_text:
