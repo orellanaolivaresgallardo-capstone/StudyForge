@@ -160,11 +160,9 @@ class SummaryService:
                 expertise_level=expertise_level,
                 topics=summary_data.get("topics", []),
                 key_concepts=summary_data.get("key_concepts", []),
-                document_title=document.title,
-                document_file_name=document.file_name,
-                document_state="active",
-                study_space_name=study_space.name,
-                study_space_color=study_space.color or "#8B5CF6",
+                source_document_title=document.title,
+                source_document_filename=document.file_name,
+                document_state="active_in_space",
             )
 
             # 9. Actualizar cuota del usuario
@@ -328,11 +326,9 @@ class SummaryService:
                 expertise_level=expertise_level,
                 topics=summary_data.get("topics", []),
                 key_concepts=summary_data.get("key_concepts", []),
-                document_title=document.title,
-                document_file_name=document.file_name,
-                document_state="active",
-                study_space_name=study_space.name,
-                study_space_color=study_space.color or "#8B5CF6",
+                source_document_title=document.title,
+                source_document_filename=document.file_name,
+                document_state="active_in_space",
             )
 
             return summary

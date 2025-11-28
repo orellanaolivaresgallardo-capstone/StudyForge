@@ -72,15 +72,18 @@ class QuizService:
         self,
         db: Session,
         user_id: UUID,
+        study_space_id: UUID,
         file: UploadFile,
         max_questions: Optional[int] = None,
     ) -> Quiz:
         """
         Crea un cuestionario a partir de un archivo temporal.
+        NOTA: Ahora requiere study_space_id ya que todos los quizzes deben pertenecer a un espacio.
 
         Args:
             db: Sesión de base de datos
             user_id: ID del usuario
+            study_space_id: ID del espacio de estudio (requerido)
             file: Archivo subido
             max_questions: Número de preguntas (opcional)
 
@@ -100,8 +103,8 @@ class QuizService:
             # Usar valor por defecto
             num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
-        # 3. Usar dificultad fija (sin espacio asociado, no hay histórico)
-        difficulty_level = 2  # Nivel fácil por defecto
+        # 3. Calcular dificultad adaptativa basada en el espacio
+        difficulty_level = self.calculate_adaptive_difficulty(db, user_id, study_space_id)
 
         # 4. Generar cuestionario con OpenAI
         questions_data = self.openai_service.generate_quiz(
@@ -114,14 +117,16 @@ class QuizService:
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user_id,
-            summary_id=None,  # No hay resumen asociado
-            study_space_id=None,  # No hay espacio asociado
+            study_space_id=study_space_id,
+            source_type='study_space',  # Quiz temporal desde archivo
             title=f"Cuestionario: {filename}",
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
+            source_document_id=None,
+            source_summary_id=None,
+            source_names={"file": filename},
+            source_metadata={"file_type": "temporary"}
         )
-
-        # NOTA: No hay source_document_ids ni source_summary_ids porque no está asociado a ningún documento/resumen almacenado
 
         return quiz
 
@@ -199,18 +204,16 @@ class QuizService:
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user.id,
-            summary_id=None,  # No hay resumen asociado
-            study_space_id=study_space_id,  # Auto-asignado al espacio si pertenece a uno
+            study_space_id=study_space_id,
+            source_type='document',
             title=f"Cuestionario: {document.title}",
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
+            source_document_id=document_id,
+            source_summary_id=None,
+            source_names={"document": document.title},
+            source_metadata={"document_filename": document.file_name, "document_type": document.file_type}
         )
-
-        # 8. Rastrear fuentes: documento
-        quiz.source_document_ids = [str(document_id)]
-        quiz.source_summary_ids = []  # No hay resúmenes fuente
-        db.commit()
-        db.refresh(quiz)
 
         return quiz
 
@@ -277,18 +280,16 @@ class QuizService:
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user.id,
-            summary_id=summary_id,
             study_space_id=study_space_id,
+            source_type='summary',
             title=f"Cuestionario: {summary.title}",
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
+            source_document_id=summary.document_id,  # Opcional, puede ser None
+            source_summary_id=summary_id,
+            source_names={"summary": summary.title, "document": summary.source_document_title or "Unknown"},
+            source_metadata={"expertise_level": summary.expertise_level, "document_state": summary.document_state}
         )
-
-        # 9. Rastrear fuentes: summary y su documento
-        quiz.source_summary_ids = [str(summary_id)]
-        quiz.source_document_ids = [str(summary.document_id)]
-        db.commit()
-        db.refresh(quiz)
 
         return quiz
 
@@ -405,24 +406,22 @@ class QuizService:
         )
 
         # 8. Crear cuestionario en BD con preguntas en formato JSON
+        # Recopilar nombres y metadatos de todos los resúmenes del espacio
+        summary_names = [summary.title for summary in space.summaries]
+        summary_ids = [str(summary.id) for summary in space.summaries]
+
         quiz = QuizRepository.create_quiz(
             db=db,
             user_id=user.id,
-            summary_id=None,  # No está asociado a un resumen específico, sino al espacio
-            study_space_id=space_id,  # Auto-asignado al espacio
+            study_space_id=space_id,
+            source_type='study_space',
             title=f"Cuestionario: {space.name}",
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
+            source_document_id=None,  # No hay un documento específico
+            source_summary_id=None,  # No hay un resumen específico
+            source_names={"space": space.name, "summaries": summary_names},
+            source_metadata={"summary_count": len(space.summaries), "summary_ids": summary_ids}
         )
-
-        # 10. Rastrear fuentes: todos los resúmenes del espacio
-        quiz.source_summary_ids = [str(summary.id) for summary in space.summaries]
-        # Recopilar todos los documentos únicos de los resúmenes (ahora 1-N)
-        all_doc_ids = set()
-        for summary in space.summaries:
-            all_doc_ids.add(str(summary.document_id))
-        quiz.source_document_ids = list(all_doc_ids)
-        db.commit()
-        db.refresh(quiz)
 
         return quiz

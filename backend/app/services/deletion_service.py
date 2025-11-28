@@ -22,6 +22,10 @@ class DeletionService:
         """
         Elimina un documento después de actualizar el estado en resúmenes asociados.
 
+        NOTA: Con la nueva estructura, document_id tiene SET NULL en summaries,
+        así que los resúmenes se preservan pero pierden la referencia al documento.
+        Actualizamos el estado a "permanently_deleted" antes de eliminar.
+
         Args:
             db: Sesión de base de datos
             document_id: ID del documento a eliminar
@@ -29,20 +33,24 @@ class DeletionService:
         Returns:
             True si se eliminó correctamente, False si no se encontró
         """
-        # Obtener el documento con sus resúmenes asociados
+        # Obtener el documento
         document = DocumentRepository.get_by_id(db, document_id)
         if not document:
             return False
 
-        # Para cada resumen asociado, marcar el documento como eliminado
-        for summary in document.summaries:
-            # Actualizar el estado del documento a "removed"
-            summary.document_state = "removed"
+        # Buscar todos los resúmenes que referencian este documento
+        stmt = select(Summary).where(Summary.document_id == document_id)
+        summaries = db.execute(stmt).scalars().all()
+
+        # Para cada resumen asociado, marcar el documento como permanentemente eliminado
+        for summary in summaries:
+            summary.document_state = "permanently_deleted"
 
         # Commit de los cambios en resúmenes
         db.commit()
 
         # Ahora sí eliminar el documento (hard delete)
+        # SET NULL hará que document_id se setee a None automáticamente
         return DocumentRepository.delete(db, document_id)
 
     @staticmethod
@@ -61,7 +69,9 @@ class DeletionService:
     def delete_quiz(db: Session, quiz_id: UUID) -> bool:
         """
         Elimina un quiz (hard delete).
-        Los quiz_attempts se preservan automáticamente (no hay CASCADE).
+
+        NOTA: Con la nueva estructura, quiz_attempts tienen CASCADE en quiz_id,
+        por lo que se eliminarán automáticamente cuando se elimine el quiz.
 
         Args:
             db: Sesión de base de datos
@@ -75,6 +85,7 @@ class DeletionService:
         if not quiz:
             return False
 
+        # CASCADE eliminará automáticamente todos los quiz_attempts
         db.delete(quiz)
         db.commit()
         return True
@@ -88,11 +99,12 @@ class DeletionService:
         """
         Elimina un espacio de estudio y todos sus datos relacionados.
 
-        IMPORTANTE: Esta operación elimina:
+        IMPORTANTE: Con la nueva estructura CASCADE, esta operación elimina automáticamente:
         - El espacio de estudio
-        - Todos los quizzes del espacio (CASCADE)
-        - Todos los quiz_attempts de esos quizzes (manual)
-        - Todas las relaciones con documentos y summaries (CASCADE en junction tables)
+        - Todos los summaries del espacio (CASCADE en study_space_id)
+        - Todos los quizzes del espacio (CASCADE en study_space_id)
+        - Todos los quiz_attempts de esos quizzes (CASCADE en quiz_id)
+        - Todas las relaciones en study_space_documents junction table (CASCADE)
 
         Args:
             db: Sesión de base de datos
@@ -107,19 +119,7 @@ class DeletionService:
         if not space or space.user_id != user_id:
             return False
 
-        # 1. Obtener todos los quizzes del espacio
-        quizzes = QuizRepository.get_quizzes_by_space(
-            db, space_id, user_id, skip=0, limit=10000
-        )
-        quiz_ids = [quiz.id for quiz in quizzes]
-
-        # 2. Eliminar manualmente todos los quiz_attempts asociados a esos quizzes
-        if quiz_ids:
-            stmt = delete(QuizAttempt).where(QuizAttempt.quiz_id.in_(quiz_ids))
-            db.execute(stmt)
-            db.commit()
-
-        # 3. Ahora eliminar el espacio (CASCADE eliminará quizzes y junction table entries)
+        # CASCADE eliminará automáticamente summaries, quizzes, quiz_attempts y junction table entries
         StudySpaceRepository.delete(db, space)
 
         return True
