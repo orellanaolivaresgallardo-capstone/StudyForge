@@ -17,6 +17,8 @@ def test_create_summary_basic():
     mock_db = MagicMock()
     user_id = uuid4()
     summary_id = uuid4()
+    document_id = uuid4()
+    study_space_id = uuid4()
 
     content = {
         "title": "Python Basics",
@@ -35,11 +37,15 @@ def test_create_summary_basic():
     result = SummaryRepository.create(
         db=mock_db,
         user_id=user_id,
+        document_id=document_id,
+        study_space_id=study_space_id,
         title="Python Basics",
         content=content,
         expertise_level=ExpertiseLevel.BASICO,
         topics=["variables", "functions", "loops"],
-        key_concepts=["variable", "function", "loop"]
+        key_concepts=["variable", "function", "loop"],
+        document_title="Python Tutorial",
+        document_file_name="python_basics.pdf"
     )
 
     mock_db.add.assert_called_once()
@@ -52,17 +58,23 @@ def test_create_summary_medium_level():
     """create debe crear un resumen con nivel medio"""
     mock_db = MagicMock()
     user_id = uuid4()
+    document_id = uuid4()
+    study_space_id = uuid4()
 
     content = {"summary": "Advanced concepts"}
 
     result = SummaryRepository.create(
         db=mock_db,
         user_id=user_id,
+        document_id=document_id,
+        study_space_id=study_space_id,
         title="Advanced Python",
         content=content,
         expertise_level=ExpertiseLevel.MEDIO,
         topics=["decorators", "generators"],
-        key_concepts=["decorator", "generator"]
+        key_concepts=["decorator", "generator"],
+        document_title="Advanced Python Guide",
+        document_file_name="advanced_python.pdf"
     )
 
     mock_db.add.assert_called_once()
@@ -73,17 +85,23 @@ def test_create_summary_advanced_level():
     """create debe crear un resumen con nivel avanzado"""
     mock_db = MagicMock()
     user_id = uuid4()
+    document_id = uuid4()
+    study_space_id = uuid4()
 
     content = {"summary": "Expert level content"}
 
     result = SummaryRepository.create(
         db=mock_db,
         user_id=user_id,
+        document_id=document_id,
+        study_space_id=study_space_id,
         title="Python Internals",
         content=content,
         expertise_level=ExpertiseLevel.AVANZADO,
         topics=["metaclasses", "descriptors"],
-        key_concepts=["metaclass", "descriptor"]
+        key_concepts=["metaclass", "descriptor"],
+        document_title="Python Internals Guide",
+        document_file_name="python_internals.pdf"
     )
 
     assert result.expertise_level == ExpertiseLevel.AVANZADO
@@ -93,17 +111,23 @@ def test_create_summary_with_multiple_topics():
     """create debe manejar múltiples temas"""
     mock_db = MagicMock()
     user_id = uuid4()
+    document_id = uuid4()
+    study_space_id = uuid4()
 
     topics = ["topic1", "topic2", "topic3", "topic4", "topic5"]
 
     result = SummaryRepository.create(
         db=mock_db,
         user_id=user_id,
+        document_id=document_id,
+        study_space_id=study_space_id,
         title="Multi-topic Summary",
         content={"summary": "Content"},
         expertise_level=ExpertiseLevel.MEDIO,
         topics=topics,
-        key_concepts=["concept1", "concept2"]
+        key_concepts=["concept1", "concept2"],
+        document_title="Multi-topic Document",
+        document_file_name="topics.pdf"
     )
 
     assert result.topics == topics
@@ -114,53 +138,27 @@ def test_create_summary_with_multiple_key_concepts():
     """create debe manejar múltiples conceptos clave"""
     mock_db = MagicMock()
     user_id = uuid4()
+    document_id = uuid4()
+    study_space_id = uuid4()
 
     key_concepts = ["concept1", "concept2", "concept3", "concept4"]
 
     result = SummaryRepository.create(
         db=mock_db,
         user_id=user_id,
+        document_id=document_id,
+        study_space_id=study_space_id,
         title="Concepts Summary",
         content={"summary": "Content"},
         expertise_level=ExpertiseLevel.BASICO,
         topics=["topic1"],
-        key_concepts=key_concepts
+        key_concepts=key_concepts,
+        document_title="Key Concepts Document",
+        document_file_name="concepts.pdf"
     )
 
     assert result.key_concepts == key_concepts
     assert len(result.key_concepts) == 4
-
-
-# ========================================
-# TESTS PARA add_document_to_summary()
-# ========================================
-
-def test_add_document_to_summary():
-    """add_document_to_summary debe asociar un documento al resumen"""
-    mock_db = MagicMock()
-    summary_id = uuid4()
-    document_id = uuid4()
-
-    SummaryRepository.add_document_to_summary(mock_db, summary_id, document_id)
-
-    mock_db.execute.assert_called_once()
-    mock_db.commit.assert_called_once()
-
-
-def test_add_multiple_documents_to_summary():
-    """add_document_to_summary debe permitir múltiples documentos"""
-    mock_db = MagicMock()
-    summary_id = uuid4()
-    doc_id_1 = uuid4()
-    doc_id_2 = uuid4()
-    doc_id_3 = uuid4()
-
-    SummaryRepository.add_document_to_summary(mock_db, summary_id, doc_id_1)
-    SummaryRepository.add_document_to_summary(mock_db, summary_id, doc_id_2)
-    SummaryRepository.add_document_to_summary(mock_db, summary_id, doc_id_3)
-
-    assert mock_db.execute.call_count == 3
-    assert mock_db.commit.call_count == 3
 
 
 # ========================================
@@ -312,6 +310,8 @@ def test_create_and_retrieve_summary():
     mock_db = MagicMock()
     user_id = uuid4()
     summary_id = uuid4()
+    document_id = uuid4()
+    study_space_id = uuid4()
 
     # Create
     def refresh_side_effect(summary):
@@ -322,11 +322,15 @@ def test_create_and_retrieve_summary():
     created_summary = SummaryRepository.create(
         db=mock_db,
         user_id=user_id,
+        document_id=document_id,
+        study_space_id=study_space_id,
         title="Integration Summary",
         content={"summary": "Test content"},
         expertise_level=ExpertiseLevel.MEDIO,
         topics=["test"],
-        key_concepts=["concept1"]
+        key_concepts=["concept1"],
+        document_title="Integration Test Document",
+        document_file_name="integration.pdf"
     )
 
     # Retrieve
@@ -343,12 +347,12 @@ def test_create_and_retrieve_summary():
 
 
 def test_create_add_documents_and_delete():
-    """Flujo: crear resumen, agregar documentos y eliminar"""
+    """Flujo: crear resumen y eliminar"""
     mock_db = MagicMock()
     user_id = uuid4()
     summary_id = uuid4()
-    doc_id_1 = uuid4()
-    doc_id_2 = uuid4()
+    document_id = uuid4()
+    study_space_id = uuid4()
 
     # Create summary
     mock_summary = Mock(spec=Summary)
@@ -362,22 +366,21 @@ def test_create_add_documents_and_delete():
     SummaryRepository.create(
         db=mock_db,
         user_id=user_id,
+        document_id=document_id,
+        study_space_id=study_space_id,
         title="Summary with Docs",
         content={"summary": "Content"},
         expertise_level=ExpertiseLevel.BASICO,
         topics=["topic1"],
-        key_concepts=["concept1"]
+        key_concepts=["concept1"],
+        document_title="Test Document",
+        document_file_name="test.pdf"
     )
-
-    # Add documents
-    SummaryRepository.add_document_to_summary(mock_db, summary_id, doc_id_1)
-    SummaryRepository.add_document_to_summary(mock_db, summary_id, doc_id_2)
 
     # Delete
     SummaryRepository.delete(mock_db, mock_summary)
 
-    assert mock_db.execute.call_count == 2  # 2 documentos agregados
-    assert mock_db.commit.call_count == 4  # create + 2 docs + delete
+    assert mock_db.commit.call_count == 2  # create + delete
     mock_db.delete.assert_called_once()
 
 
@@ -385,6 +388,8 @@ def test_expertise_levels():
     """Verificar que se pueden crear resúmenes con todos los niveles"""
     mock_db = MagicMock()
     user_id = uuid4()
+    document_id = uuid4()
+    study_space_id = uuid4()
 
     levels = [ExpertiseLevel.BASICO, ExpertiseLevel.MEDIO, ExpertiseLevel.AVANZADO]
 
@@ -392,11 +397,15 @@ def test_expertise_levels():
         SummaryRepository.create(
             db=mock_db,
             user_id=user_id,
+            document_id=document_id,
+            study_space_id=study_space_id,
             title=f"Summary {level.value}",
             content={"summary": "Content"},
             expertise_level=level,
             topics=["topic"],
-            key_concepts=["concept"]
+            key_concepts=["concept"],
+            document_title="Test Document",
+            document_file_name="test.pdf"
         )
 
     assert mock_db.add.call_count == 3

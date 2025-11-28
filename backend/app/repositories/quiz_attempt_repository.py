@@ -102,14 +102,16 @@ class QuizAttemptRepository:
                 "color": quiz.study_space.color
             }
 
-        # Crear intento con respuestas correctas y snapshots
+        # Crear intento con respuestas correctas, snapshots y campos denormalizados
         attempt = QuizAttempt(
             quiz_id=quiz.id,
             user_id=user_id,
             correct_answers=correct_answers,
             user_answers=[],  # Se llenarán conforme el usuario responde
             quiz_snapshot=quiz_snapshot,
-            study_space_snapshot=study_space_snapshot
+            study_space_snapshot=study_space_snapshot,
+            quiz_title=quiz.title,  # Denormalized cache
+            quiz_state="active"  # Default state
         )
         db.add(attempt)
         db.commit()

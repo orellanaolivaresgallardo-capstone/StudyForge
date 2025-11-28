@@ -277,38 +277,6 @@ def test_delete_space():
 
 
 # ========================================
-# TESTS PARA add_summary()
-# ========================================
-
-def test_add_summary_to_space():
-    """add_summary debe asociar un resumen al espacio"""
-    mock_db = MagicMock()
-    space_id = uuid4()
-    summary_id = uuid4()
-
-    StudySpaceRepository.add_summary(mock_db, space_id, summary_id)
-
-    mock_db.execute.assert_called_once()
-    mock_db.commit.assert_called_once()
-
-
-# ========================================
-# TESTS PARA remove_summary()
-# ========================================
-
-def test_remove_summary_from_space():
-    """remove_summary debe desasociar un resumen del espacio"""
-    mock_db = MagicMock()
-    space_id = uuid4()
-    summary_id = uuid4()
-
-    StudySpaceRepository.remove_summary(mock_db, space_id, summary_id)
-
-    mock_db.execute.assert_called_once()
-    mock_db.commit.assert_called_once()
-
-
-# ========================================
 # TESTS PARA add_document()
 # ========================================
 
@@ -382,12 +350,11 @@ def test_create_update_delete_flow():
 
 
 def test_space_with_documents_and_summaries():
-    """Flujo: crear espacio y agregar documentos y resúmenes"""
+    """Flujo: crear espacio y agregar documentos"""
     mock_db = MagicMock()
     user_id = uuid4()
     space_id = uuid4()
     doc_id = uuid4()
-    summary_id = uuid4()
 
     # Create space
     StudySpaceRepository.create(
@@ -399,9 +366,6 @@ def test_space_with_documents_and_summaries():
     # Add document
     StudySpaceRepository.add_document(mock_db, space_id, doc_id)
 
-    # Add summary
-    StudySpaceRepository.add_summary(mock_db, space_id, summary_id)
-
     # Verificar que se ejecutaron las inserciones
-    assert mock_db.execute.call_count == 2
-    assert mock_db.commit.call_count == 3  # create + add_document + add_summary
+    assert mock_db.execute.call_count == 1
+    assert mock_db.commit.call_count == 2  # create + add_document

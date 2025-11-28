@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple, Dict, Any
 from uuid import UUID
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from app.models.study_space import StudySpace, study_space_summaries, study_space_documents
+from app.models.study_space import StudySpace, study_space_documents
 
 
 class StudySpaceRepository:
@@ -90,26 +90,6 @@ class StudySpaceRepository:
     def delete(db: Session, space: StudySpace) -> None:
         """Eliminar un espacio de estudio."""
         db.delete(space)
-        db.commit()
-
-    @staticmethod
-    def add_summary(db: Session, space_id: UUID, summary_id: UUID) -> None:
-        """Agregar un resumen a un espacio de estudio."""
-        stmt = study_space_summaries.insert().values(
-            study_space_id=space_id,
-            summary_id=summary_id
-        )
-        db.execute(stmt)
-        db.commit()
-
-    @staticmethod
-    def remove_summary(db: Session, space_id: UUID, summary_id: UUID) -> None:
-        """Remover un resumen de un espacio de estudio."""
-        stmt = study_space_summaries.delete().where(
-            (study_space_summaries.c.study_space_id == space_id) &
-            (study_space_summaries.c.summary_id == summary_id)
-        )
-        db.execute(stmt)
         db.commit()
 
     @staticmethod

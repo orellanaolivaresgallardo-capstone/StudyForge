@@ -72,7 +72,7 @@ class QuizRepository:
             .where(Quiz.id == quiz_id)
             .options(
                 joinedload(Quiz.study_space),
-                joinedload(Quiz.summary).joinedload(Summary.documents)
+                joinedload(Quiz.summary)
             )
         )
         return db.execute(stmt).scalar_one_or_none()
@@ -96,7 +96,7 @@ class QuizRepository:
             .where(Quiz.user_id == user_id)
             .options(
                 joinedload(Quiz.study_space),
-                joinedload(Quiz.summary).joinedload(Summary.documents)
+                joinedload(Quiz.summary)
             )
             .order_by(Quiz.created_at.desc())
             .offset(skip)
@@ -146,7 +146,7 @@ class QuizRepository:
             .where(Quiz.user_id == user_id)
             .options(
                 joinedload(Quiz.study_space),
-                joinedload(Quiz.summary).joinedload(Summary.documents)
+                joinedload(Quiz.summary)
             )
             .order_by(Quiz.created_at.desc())
             .offset(skip)
