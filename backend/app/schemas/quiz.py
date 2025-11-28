@@ -54,27 +54,25 @@ class QuizResponse(BaseModel):
 
     id: UUID
     user_id: UUID
-    summary_id: Optional[UUID]
-    study_space_id: Optional[UUID] = None
+    study_space_id: UUID  # NOW: Required (NOT NULL, CASCADE)
+    source_type: str  # NEW: 'document' | 'summary' | 'study_space'
     title: str
     difficulty_level: int
     created_at: datetime
     questions: List[Dict[str, Any]] = Field(
         description="Lista de preguntas en formato JSON"
     )
-    source_document_ids: Optional[List[str]] = Field(
-        None,
-        description="IDs de documentos fuente (para detectar cuáles fueron eliminados)"
-    )
-    source_summary_ids: Optional[List[str]] = Field(
-        None,
-        description="IDs de resúmenes fuente (para detectar cuáles fueron eliminados)"
-    )
+
+    # NEW: Source tracking fields (nullable, SET NULL on delete)
+    source_document_id: Optional[UUID] = None
+    source_summary_id: Optional[UUID] = None
+
+    # NEW: Denormalized cache fields (JSONB)
+    source_names: Optional[Dict[str, Any]] = None  # {"document": "...", "summary": "...", etc}
+    source_metadata: Optional[Dict[str, Any]] = None  # Additional metadata
+
     # Campos calculados en el router (no vienen del modelo)
     study_space_name: Optional[str] = None
-    summary_title: Optional[str] = None  # Título del resumen origen si existe
-    document_names: List[str] = []  # Nombres de documentos usados para generar quiz
-    source_type: str  # "file" | "summary" | "space"
     num_questions: int  # Cantidad de preguntas
     num_attempts: int  # Cantidad de intentos del usuario en este quiz
 

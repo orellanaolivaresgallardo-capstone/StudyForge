@@ -43,7 +43,7 @@ class SummaryResponse(BaseModel):
 
     id: UUID
     user_id: UUID
-    document_id: UUID
+    document_id: Optional[UUID]  # NOW: Nullable (SET NULL on delete)
     study_space_id: UUID
     title: str
     content: Dict[str, Any]  # Contenido estructurado
@@ -52,11 +52,9 @@ class SummaryResponse(BaseModel):
     key_concepts: List[KeyConceptItem]
 
     # Denormalized cache fields
-    document_title: str
-    document_file_name: str
+    source_document_title: Optional[str]  # NEW: Renamed from document_title
+    source_document_filename: Optional[str]  # NEW: Renamed from document_file_name
     document_state: str
-    study_space_name: str
-    study_space_color: str
 
     created_at: datetime
     updated_at: datetime

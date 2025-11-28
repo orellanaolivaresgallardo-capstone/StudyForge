@@ -29,30 +29,23 @@ def _enrich_quiz_response(quiz, db: Session, user_id: UUID) -> dict:
     Returns:
         Diccionario con todos los campos para QuizResponse
     """
-    # Determinar source_type
-    if quiz.study_space_id:
-        source_type = "space"
-    elif quiz.summary_id:
-        source_type = "summary"
-    else:
-        source_type = "file"
-
     # Construir diccionario con campos computados
     return {
         "id": quiz.id,
         "user_id": quiz.user_id,
-        "summary_id": quiz.summary_id,
-        "study_space_id": quiz.study_space_id,
+        "study_space_id": quiz.study_space_id,  # NOW: Always present (NOT NULL)
+        "source_type": quiz.source_type,  # NEW: 'document' | 'summary' | 'study_space'
         "title": quiz.title,
         "difficulty_level": quiz.difficulty_level,
         "created_at": quiz.created_at,
         "questions": quiz.questions,
-        "source_document_ids": quiz.source_document_ids,
-        "source_summary_ids": quiz.source_summary_ids,
+        # NEW: Source tracking fields
+        "source_document_id": quiz.source_document_id,
+        "source_summary_id": quiz.source_summary_id,
+        "source_names": quiz.source_names,  # JSONB cache
+        "source_metadata": quiz.source_metadata,  # JSONB cache
+        # Computed fields
         "study_space_name": quiz.study_space.name if quiz.study_space else None,
-        "summary_title": quiz.summary.title if quiz.summary else None,
-        "document_names": [d.file_name for d in quiz.summary.documents] if quiz.summary else [],
-        "source_type": source_type,
         "num_questions": len(quiz.questions),
         "num_attempts": QuizAttemptRepository.count_attempts_by_quiz(db, quiz.id, user_id)
     }
@@ -61,6 +54,7 @@ def _enrich_quiz_response(quiz, db: Session, user_id: UUID) -> dict:
 @router.post("/generate-from-file", response_model=QuizResponse, status_code=status.HTTP_201_CREATED)
 async def generate_quiz_from_file(
     file: UploadFile = File(..., description="Archivo a procesar"),
+    study_space_id: UUID = Form(..., description="ID del espacio de estudio"),  # NEW: Required
     max_questions: Optional[int] = Form(None, ge=5, le=30, description="Número de preguntas (5-30)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -68,10 +62,11 @@ async def generate_quiz_from_file(
     """
     Genera un cuestionario a partir de un archivo temporal.
 
-    La dificultad es fija (nivel 2) para archivos sin espacio asignado.
+    La dificultad se adapta según el espacio de estudio.
 
     Args:
         file: Archivo a procesar
+        study_space_id: ID del espacio de estudio (requerido)
         max_questions: Número de preguntas (si no se especifica, se calcula automáticamente)
         current_user: Usuario autenticado
         db: Sesión de base de datos
@@ -82,6 +77,7 @@ async def generate_quiz_from_file(
     quiz = await quiz_service.create_quiz_from_file(
         db=db,
         user_id=current_user.id,
+        study_space_id=study_space_id,  # NEW: Pass study_space_id
         file=file,
         max_questions=max_questions,
     )
@@ -130,6 +126,7 @@ def generate_quiz_from_summary(
 @router.post("/generate-from-document/{document_id}", response_model=QuizResponse, status_code=status.HTTP_201_CREATED)
 def generate_quiz_from_document(
     document_id: UUID,
+    study_space_id: UUID = Form(..., description="ID del espacio de estudio"),  # NEW: Required
     max_questions: Optional[int] = Form(None, ge=5, le=30, description="Número de preguntas (5-30)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -137,10 +134,11 @@ def generate_quiz_from_document(
     """
     Genera un cuestionario a partir de un documento existente.
 
-    La dificultad se adapta según el espacio de estudio si está disponible.
+    La dificultad se adapta según el espacio de estudio.
 
     Args:
         document_id: ID del documento
+        study_space_id: ID del espacio de estudio (requerido)
         max_questions: Número de preguntas
         current_user: Usuario autenticado
         db: Sesión de base de datos
@@ -155,6 +153,7 @@ def generate_quiz_from_document(
         db=db,
         user=current_user,
         document_id=document_id,
+        study_space_id=study_space_id,  # NEW: Pass study_space_id
         max_questions=max_questions,
     )
 
