@@ -4,10 +4,18 @@ Modelo de Usuario.
 """
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Boolean, DateTime, Integer, BigInteger
+from typing import TYPE_CHECKING
+from sqlalchemy import String, Boolean, DateTime, Integer, BigInteger
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.document import Document
+    from app.models.summary import Summary
+    from app.models.quiz import Quiz
+    from app.models.quiz_attempt import QuizAttempt
+    from app.models.study_space import StudySpace
 
 
 class User(Base):
@@ -16,26 +24,29 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = {"schema": "studyforge"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    username = Column(String(100), unique=True, nullable=False, index=True)
-    hashed_password = Column(String(255), nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    # Clave primaria e identificación
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Configuración de cuotas y límites (configurables por usuario)
-    storage_quota_bytes = Column(BigInteger, nullable=False, default=5_368_709_120)  # 5 GB en bytes
-    storage_used_bytes = Column(BigInteger, nullable=False, default=0)  # Espacio usado actualmente
-    max_documents_per_summary = Column(Integer, nullable=False, default=2)  # Máx documentos por resumen
-    max_file_size_bytes = Column(BigInteger, nullable=False, default=52_428_800)  # 50 MB por archivo
+    storage_quota_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False, default=5_368_709_120)  # 5 GB en bytes
+    storage_used_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)  # Espacio usado actualmente
+    max_documents_per_summary: Mapped[int] = mapped_column(Integer, nullable=False, default=2)  # Máx documentos por resumen
+    max_file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False, default=52_428_800)  # 50 MB por archivo
 
     # Relaciones
-    documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
-    summaries = relationship("Summary", back_populates="user", cascade="all, delete-orphan")
-    quizzes = relationship("Quiz", back_populates="user", cascade="all, delete-orphan")
-    quiz_attempts = relationship("QuizAttempt", back_populates="user", cascade="all, delete-orphan")
-    study_spaces = relationship("StudySpace", back_populates="user", cascade="all, delete-orphan")
+    documents: Mapped[list["Document"]] = relationship("Document", back_populates="user", cascade="all, delete-orphan")
+    summaries: Mapped[list["Summary"]] = relationship("Summary", back_populates="user", cascade="all, delete-orphan")
+    quizzes: Mapped[list["Quiz"]] = relationship("Quiz", back_populates="user", cascade="all, delete-orphan")
+    quiz_attempts: Mapped[list["QuizAttempt"]] = relationship("QuizAttempt", back_populates="user", cascade="all, delete-orphan")
+    study_spaces: Mapped[list["StudySpace"]] = relationship("StudySpace", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.username} ({self.email})>"

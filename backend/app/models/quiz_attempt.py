@@ -4,10 +4,15 @@ Modelo de Intento de Cuestionario.
 """
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, Float, DateTime, ForeignKey
+from typing import TYPE_CHECKING
+from sqlalchemy import Float, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.quiz import Quiz
+    from app.models.user import User
 
 
 class QuizAttempt(Base):
@@ -16,24 +21,31 @@ class QuizAttempt(Base):
     __tablename__ = "quiz_attempts"
     __table_args__ = {"schema": "studyforge"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    quiz_id = Column(UUID(as_uuid=True), ForeignKey("studyforge.quizzes.id"), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("studyforge.users.id"), nullable=False, index=True)
-    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    completed_at = Column(DateTime, nullable=True)
-    score = Column(Float, nullable=True)  # Porcentaje 0-100
+    # Claves primaria y foráneas
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    quiz_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.quizzes.id"), index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.users.id"), index=True)
+
+    # Campos propios del intento
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    completed_at = mapped_column(DateTime, nullable=True)  # Optional
+    score = mapped_column(Float, nullable=True)  # Porcentaje 0-100, Optional
 
     # Respuestas en formato JSON
-    correct_answers = Column(JSONB, nullable=False)  # ["A", "B", "C", "D", "A"] - Respuestas correctas aleatorizadas
-    user_answers = Column(JSONB, nullable=False, default=list)  # ["A", "C", "C", "D", "A"] - Respuestas del usuario
+    correct_answers: Mapped[dict] = mapped_column(JSONB, nullable=False)  # ["A", "B", "C", "D", "A"] - Respuestas correctas aleatorizadas
+    user_answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)  # ["A", "C", "C", "D", "A"] - Respuestas del usuario
 
     # Snapshots para preservar información después de eliminaciones
-    quiz_snapshot = Column(JSONB, nullable=True)  # {"id": "uuid", "title": "...", "difficulty_level": 3}
-    study_space_snapshot = Column(JSONB, nullable=True)  # {"id": "uuid", "name": "...", "color": "#8B5CF6"}
+    quiz_snapshot = mapped_column(JSONB, nullable=True)  # {"id": "uuid", "title": "...", "difficulty_level": 3}
+    study_space_snapshot = mapped_column(JSONB, nullable=True)  # {"id": "uuid", "name": "...", "color": "#8B5CF6"}
+
+    # Denormalización: caché de metadatos del quiz (actualizado automáticamente vía triggers + service layer)
+    quiz_title: Mapped[str] = mapped_column(String(255), nullable=False, default="Untitled Quiz")  # Cached from quizzes.title
+    quiz_state: Mapped[str] = mapped_column(String(20), nullable=False, default="active")  # 'active' | 'deleted'
 
     # Relaciones
-    quiz = relationship("Quiz", back_populates="attempts")
-    user = relationship("User", back_populates="quiz_attempts")
+    quiz: Mapped["Quiz"] = relationship("Quiz", back_populates="attempts")
+    user: Mapped["User"] = relationship("User", back_populates="quiz_attempts")
 
     def __repr__(self):
         status = "completado" if self.completed_at else "en progreso"  # type: ignore[truthy-bool]

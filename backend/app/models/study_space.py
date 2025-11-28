@@ -4,10 +4,17 @@ Modelo para espacios de estudio.
 """
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Table
+from typing import TYPE_CHECKING
+from sqlalchemy import String, DateTime, ForeignKey, Table, Column
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
+    from app.models.summary import Summary
+    from app.models.document import Document
+    from app.models.quiz import Quiz
 
 
 class StudySpace(Base):
@@ -15,29 +22,31 @@ class StudySpace(Base):
     __tablename__ = "study_spaces"
     __table_args__ = {"schema": "studyforge"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("studyforge.users.id"), nullable=False, index=True)
-    name = Column(String(255), nullable=False)
-    description = Column(Text, nullable=True)
-    color = Column(String(7), nullable=True, default="#8B5CF6")  # Hex color para UI
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    # Claves primaria y foráneas
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.users.id"), nullable=False, index=True)
+
+    # Campos del espacio de estudio
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description = mapped_column(String, nullable=True)  # Optional text field
+    color = mapped_column(String(7), nullable=True, default="#8B5CF6")  # Optional hex color para UI
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relaciones
-    user = relationship("User", back_populates="study_spaces")
-    summaries = relationship("Summary", secondary="studyforge.study_space_summaries", back_populates="study_spaces")
+    user: Mapped["User"] = relationship("User", back_populates="study_spaces")
+    # Relación 1-N con Summary (un espacio tiene muchos resúmenes)
+    summaries: Mapped[list["Summary"]] = relationship("Summary", back_populates="study_space")
+    # Relación muchos-a-muchos con documentos
     documents = relationship("Document", secondary="studyforge.study_space_documents", back_populates="study_spaces")
+    # Relación 1-N con quizzes
     quizzes = relationship("Quiz", back_populates="study_space")
 
+    def __repr__(self):
+        return f"<StudySpace {self.name}>"
 
-# Tabla junction: study_space_summaries
-study_space_summaries = Table(
-    'study_space_summaries',
-    Base.metadata,
-    Column('study_space_id', UUID(as_uuid=True), ForeignKey('studyforge.study_spaces.id'), primary_key=True),
-    Column('summary_id', UUID(as_uuid=True), ForeignKey('studyforge.summaries.id'), primary_key=True),
-    schema='studyforge'
-)
 
 # Tabla junction: study_space_documents
 study_space_documents = Table(
