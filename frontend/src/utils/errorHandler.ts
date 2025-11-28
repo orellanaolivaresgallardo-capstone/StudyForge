@@ -69,7 +69,7 @@ export function getErrorMessage(error: unknown): string {
  * Type guard para verificar si un error es AxiosError
  */
 function isAxiosError(error: unknown): error is AxiosError {
-  return (error as AxiosError).isAxiosError === true;
+  return !!error && (error as AxiosError).isAxiosError === true;
 }
 
 /**
