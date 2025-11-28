@@ -15,7 +15,7 @@ if config.config_file_name is not None:
 
 # Importar Base y todos los modelos
 from app.db import Base
-from app.models import User, Summary, Quiz, QuizAttempt
+from app.models import *
 
 # Metadata para autogenerate
 target_metadata = Base.metadata

@@ -2,6 +2,7 @@
 """
 Modelo de Cuestionario.
 """
+from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -23,12 +24,10 @@ class Quiz(Base):
     __tablename__ = "quizzes"
     __table_args__ = (
         CheckConstraint(
-            """
-            (source_type = 'summary' AND summary_id IS NOT NULL AND study_space_id IS NULL) OR
-            (source_type = 'document' AND summary_id IS NULL AND study_space_id IS NOT NULL) OR
-            (source_type = 'study_space' AND summary_id IS NULL AND study_space_id IS NOT NULL)
-            """,
-            name="ck_quiz_source_xor"
+            "(source_type = 'document' AND source_document_id IS NOT NULL AND source_summary_id IS NULL) OR "
+            "(source_type = 'summary' AND source_summary_id IS NOT NULL AND source_document_id IS NULL) OR "
+            "(source_type = 'study_space' AND source_document_id IS NULL AND source_summary_id IS NULL)",
+            name="single_source_type"
         ),
         {"schema": "studyforge"}
     )
@@ -36,29 +35,48 @@ class Quiz(Base):
     # Claves primaria y foráneas
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.users.id"), index=True)
-    summary_id = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.summaries.id"), nullable=True, index=True)  # Optional FK
-    study_space_id = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.study_spaces.id"), nullable=True, index=True)  # Optional FK
+
+    # CHANGED: study_space_id ahora es NOT NULL (requerido) con CASCADE
+    study_space_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("studyforge.study_spaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
 
     # Campos propios del quiz
+    source_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'document' | 'summary' | 'study_space'
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     difficulty_level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)  # 1-5
     questions: Mapped[dict] = mapped_column(JSONB, nullable=False)  # Array de preguntas con opciones no aleatorizadas
-    source_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'summary' | 'document' | 'study_space'
 
-    # Denormalización: caché de metadatos de fuente (actualizado por triggers + service layer)
-    source_summary_title = mapped_column(String(255), nullable=True)  # Optional cache
-    source_document_titles = mapped_column(JSONB, nullable=True)  # Optional cache
-    source_study_space_name = mapped_column(String(100), nullable=True)  # Optional cache
-    source_study_space_color = mapped_column(String(7), nullable=True)  # Optional cache
+    # NEW: Source tracking con FKs opcionales (sin Mapped[] para evitar problemas con Optional)
+    source_document_id = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("studyforge.documents.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+
+    source_summary_id = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("studyforge.summaries.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+
+    # NEW: Denormalized cache (JSONB, opcionales)
+    source_names = mapped_column(JSONB, nullable=True)  # Cache de nombres de sources
+    source_metadata = mapped_column(JSONB, nullable=True)  # Cache de metadatos y estados
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relaciones
-    user: Mapped["User"] = relationship("User", back_populates="quizzes")
-    summary = relationship("Summary", back_populates="quizzes")  # Optional relationship
-    study_space = relationship("StudySpace", back_populates="quizzes")  # Optional relationship
-    attempts: Mapped[list["QuizAttempt"]] = relationship("QuizAttempt", back_populates="quiz", cascade="all, delete-orphan")
+    user: Mapped["User"] = relationship(back_populates="quizzes")
+    study_space: Mapped["StudySpace"] = relationship(back_populates="quizzes")
+    summary = relationship("Summary", back_populates="quizzes")  # Optional via source_summary_id
+    attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="quiz", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Quiz {self.title} - Nivel {self.difficulty_level}>"

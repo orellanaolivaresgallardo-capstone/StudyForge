@@ -35,15 +35,13 @@ class Document(Base):
     extracted_text = mapped_column(String, nullable=True)  # Texto extraído (cache), Optional
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relaciones
-    user: Mapped["User"] = relationship("User", back_populates="documents")
-    # Relación 1-N con Summary (un documento puede tener muchos resúmenes)
-    summaries: Mapped[list["Summary"]] = relationship("Summary", back_populates="document")
+    user: Mapped["User"] = relationship(back_populates="documents")
     # Relación muchos-a-muchos con espacios de estudio
-    study_spaces = relationship("StudySpace", secondary="studyforge.study_space_documents", back_populates="documents")
+    study_spaces: Mapped[list["StudySpace"]] = relationship(secondary="studyforge.study_space_documents", back_populates="documents")
 
     def __repr__(self):
         size_mb = self.file_size_bytes / (1024 * 1024)

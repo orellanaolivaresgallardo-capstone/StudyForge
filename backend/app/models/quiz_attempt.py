@@ -2,6 +2,7 @@
 """
 Modelo de Intento de Cuestionario.
 """
+from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -23,7 +24,15 @@ class QuizAttempt(Base):
 
     # Claves primaria y foráneas
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    quiz_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.quizzes.id"), index=True)
+
+    # CHANGED: quiz_id ahora tiene CASCADE para eliminar intentos cuando se elimina el quiz
+    quiz_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("studyforge.quizzes.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("studyforge.users.id"), index=True)
 
     # Campos propios del intento
@@ -44,8 +53,8 @@ class QuizAttempt(Base):
     quiz_state: Mapped[str] = mapped_column(String(20), nullable=False, default="active")  # 'active' | 'deleted'
 
     # Relaciones
-    quiz: Mapped["Quiz"] = relationship("Quiz", back_populates="attempts")
-    user: Mapped["User"] = relationship("User", back_populates="quiz_attempts")
+    quiz: Mapped["Quiz"] = relationship(back_populates="attempts")
+    user: Mapped["User"] = relationship(back_populates="quiz_attempts")
 
     def __repr__(self):
         status = "completado" if self.completed_at else "en progreso"  # type: ignore[truthy-bool]

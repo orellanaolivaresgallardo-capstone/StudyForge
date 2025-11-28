@@ -2,9 +2,10 @@
 """
 Modelo para espacios de estudio.
 """
+from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import String, DateTime, ForeignKey, Table, Column
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,21 +29,21 @@ class StudySpace(Base):
 
     # Campos del espacio de estudio
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description = mapped_column(String, nullable=True)  # Optional text field
-    color = mapped_column(String(7), nullable=True, default="#8B5CF6")  # Optional hex color para UI
+    description: Mapped[str] = mapped_column(String, nullable=True)  # Optional text field
+    color: Mapped[str] = mapped_column(String(7), nullable=True, default="#8B5CF6")  # Optional hex color para UI
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relaciones
-    user: Mapped["User"] = relationship("User", back_populates="study_spaces")
+    user: Mapped["User"] = relationship(back_populates="study_spaces")
     # Relación 1-N con Summary (un espacio tiene muchos resúmenes)
-    summaries: Mapped[list["Summary"]] = relationship("Summary", back_populates="study_space")
+    summaries: Mapped[list["Summary"]] = relationship(back_populates="study_space")
     # Relación muchos-a-muchos con documentos
-    documents = relationship("Document", secondary="studyforge.study_space_documents", back_populates="study_spaces")
+    documents: Mapped[list["Document"]] = relationship(secondary="studyforge.study_space_documents", back_populates="study_spaces")
     # Relación 1-N con quizzes
-    quizzes = relationship("Quiz", back_populates="study_space")
+    quizzes: Mapped[list["Quiz"]] = relationship(back_populates="study_space")
 
     def __repr__(self):
         return f"<StudySpace {self.name}>"
