@@ -23,11 +23,9 @@ class SummaryRepository:
         expertise_level: ExpertiseLevel,
         topics: List[str],
         key_concepts: List[str],
-        document_title: str,
-        document_file_name: str,
-        document_state: str = "active",
-        study_space_name: str = "Untitled Space",
-        study_space_color: str = "#8B5CF6",
+        source_document_title: str,
+        source_document_filename: str,
+        document_state: str = "active_in_space",
     ) -> Summary:
         """
         Crea un nuevo resumen en la base de datos con campos denormalizados.
@@ -35,18 +33,16 @@ class SummaryRepository:
         Args:
             db: Sesión de base de datos
             user_id: ID del usuario
-            document_id: ID del documento fuente (FK)
+            document_id: ID del documento fuente (FK, nullable)
             study_space_id: ID del espacio de estudio (FK, requerido)
             title: Título del resumen
             content: Contenido estructurado del resumen
             expertise_level: Nivel de expertise
             topics: Lista de temas identificados
             key_concepts: Lista de conceptos clave
-            document_title: Título del documento (cache denormalizado)
-            document_file_name: Nombre del archivo (cache denormalizado)
-            document_state: Estado del documento ('active' | 'removed')
-            study_space_name: Nombre del espacio (cache denormalizado)
-            study_space_color: Color del espacio (cache denormalizado)
+            source_document_title: Título del documento (cache denormalizado)
+            source_document_filename: Nombre del archivo (cache denormalizado)
+            document_state: Estado del documento ('active_in_space' | 'removed_from_space' | 'permanently_deleted')
 
         Returns:
             Resumen creado
@@ -60,11 +56,9 @@ class SummaryRepository:
             expertise_level=expertise_level,
             topics=topics,
             key_concepts=key_concepts,
-            document_title=document_title,
-            document_file_name=document_file_name,
+            source_document_title=source_document_title,
+            source_document_filename=source_document_filename,
             document_state=document_state,
-            study_space_name=study_space_name,
-            study_space_color=study_space_color,
         )
         db.add(summary)
         db.commit()
