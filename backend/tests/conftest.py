@@ -10,12 +10,27 @@ from datetime import datetime
 @pytest.fixture
 def fake_user():
     """Usuario fake con cuota de almacenamiento"""
+    from unittest.mock import PropertyMock
+
     user = Mock()
     user.id = uuid4()
     user.email = "test@studyforge.com"
     user.storage_quota_bytes = 10_000_000  # 10 MB
     user.storage_used_bytes = 0
     user.max_file_size_bytes = 5_000_000  # 5 MB
+
+    # Agregar propiedades computadas como en el modelo User
+    type(user).storage_available_bytes = PropertyMock(
+        return_value=lambda: max(0, user.storage_quota_bytes - user.storage_used_bytes)
+    )
+    type(user).storage_usage_percentage = PropertyMock(
+        return_value=lambda: (user.storage_used_bytes / user.storage_quota_bytes) * 100 if user.storage_quota_bytes > 0 else 0.0
+    )
+
+    # Hacer que las propiedades sean accesibles como atributos normales
+    user.storage_available_bytes = max(0, user.storage_quota_bytes - user.storage_used_bytes)
+    user.storage_usage_percentage = (user.storage_used_bytes / user.storage_quota_bytes) * 100 if user.storage_quota_bytes > 0 else 0.0
+
     return user
 
 
