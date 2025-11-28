@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 backend/.venv/
+.coverage
 
 # Node
 node_modules/
@@ -9,6 +10,9 @@ dist/
 
 # IDEs y editores
 .vscode/
+
+# Asistentes de IA
+.openai/
 .claude/
 CLAUDE.md
 .github/
