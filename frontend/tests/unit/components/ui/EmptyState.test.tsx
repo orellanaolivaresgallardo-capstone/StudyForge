@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import EmptyState from './EmptyState'
+import EmptyState from '@/components/ui/EmptyState'
 
 describe('EmptyState', () => {
   const mockIcon = (

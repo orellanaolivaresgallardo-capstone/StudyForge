@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import MockAdapter from 'axios-mock-adapter'
-import apiClient from './client'
+import apiClient from '@/services/api/client'
 import {
   uploadDocument,
   listDocuments,
@@ -8,7 +8,7 @@ import {
   updateDocumentTitle,
   deleteDocument,
   getStorageInfo,
-} from './documents.api'
+} from '@/services/api/documents.api'
 import type {
   DocumentResponse,
   DocumentDetailResponse,

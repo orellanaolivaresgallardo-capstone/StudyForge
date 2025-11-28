@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import MockAdapter from 'axios-mock-adapter'
-import apiClient from './client'
-import { register, login, getCurrentUser } from './auth.api'
+import apiClient from '@/services/api/client'
+import { register, login, getCurrentUser } from '@/services/api/auth.api'
 import type { UserCreate, UserLogin, Token, UserDetailResponse } from '@/types'
 
 describe('auth.api', () => {

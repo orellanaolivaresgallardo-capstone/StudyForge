@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
-import apiClient, { getToken, setToken, clearToken, isAuthenticated } from './client'
+import apiClient, { getToken, setToken, clearToken, isAuthenticated } from '@/services/api/client'
 
 // Mock window.location
 delete (window as any).location

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { AuthProvider, useAuth } from './AuthContext'
+import { AuthProvider, useAuth } from '@/context/AuthContext'
 import * as apiModule from '@/services/api'
 import type { UserDetailResponse, TokenResponse } from '@/types'
 

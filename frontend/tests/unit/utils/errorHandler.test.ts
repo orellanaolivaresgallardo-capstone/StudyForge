@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getErrorMessage, parseError } from './errorHandler'
+import { getErrorMessage, parseError } from '@/utils/errorHandler'
 import { AxiosError } from 'axios'
 
 describe('errorHandler', () => {
