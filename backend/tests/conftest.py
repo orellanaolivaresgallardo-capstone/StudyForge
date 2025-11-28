@@ -68,11 +68,13 @@ def fake_document(fake_user):
 
 
 @pytest.fixture
-def fake_summary(fake_user):
-    """Resumen fake con JSONB content"""
+def fake_summary(fake_user, fake_study_space):
+    """Resumen fake con JSONB content y denormalized fields"""
     summary = Mock()
     summary.id = uuid4()
     summary.user_id = fake_user.id
+    summary.document_id = uuid4()  # NEW: Nullable FK (can be None if document deleted)
+    summary.study_space_id = fake_study_space.id  # NEW: Required FK (NOT NULL, CASCADE)
     summary.title = "Test Summary"
     summary.content = {
         "summary": "Test summary content",
@@ -83,19 +85,25 @@ def fake_summary(fake_user):
     summary.key_concepts = [
         {"concept": "Test", "definition": "A test concept"}
     ]
+    # NEW: Denormalized cache fields
+    summary.source_document_title = "Test Document"
+    summary.source_document_filename = "test.pdf"
+    summary.document_state = "active_in_space"  # 'active_in_space' | 'removed_from_space' | 'permanently_deleted'
     summary.created_at = datetime.now()
     summary.updated_at = datetime.now()
-    summary.documents = []
-    summary.study_spaces = []
+    # NEW: Relationship to study_space (1-N)
+    summary.study_space = fake_study_space
     return summary
 
 
 @pytest.fixture
-def fake_quiz(fake_user):
-    """Quiz fake con preguntas"""
+def fake_quiz(fake_user, fake_study_space):
+    """Quiz fake con preguntas y source tracking"""
     quiz = Mock()
     quiz.id = uuid4()
     quiz.user_id = fake_user.id
+    quiz.study_space_id = fake_study_space.id  # NEW: Required FK (NOT NULL, CASCADE)
+    quiz.source_type = "study_space"  # NEW: 'document' | 'summary' | 'study_space'
     quiz.title = "Test Quiz"
     quiz.difficulty_level = 3
     quiz.questions = [
@@ -110,11 +118,15 @@ def fake_quiz(fake_user):
             "explanation": "Test explanation"
         }
     ]
-    quiz.source_document_ids = []
-    quiz.source_summary_ids = []
-    quiz.study_space_id = None
-    quiz.summary_id = None
+    # NEW: Source tracking fields (nullable, SET NULL on delete)
+    quiz.source_document_id = None
+    quiz.source_summary_id = None
+    # NEW: Denormalized cache fields (JSONB)
+    quiz.source_names = {"space": "Test Space"}
+    quiz.source_metadata = {"summary_count": 0}
     quiz.created_at = datetime.now()
+    # NEW: Relationship to study_space
+    quiz.study_space = fake_study_space
     return quiz
 
 

@@ -44,8 +44,8 @@ def test_create_summary_basic():
         expertise_level=ExpertiseLevel.BASICO,
         topics=["variables", "functions", "loops"],
         key_concepts=["variable", "function", "loop"],
-        document_title="Python Tutorial",
-        document_file_name="python_basics.pdf"
+        source_document_title="Python Tutorial",
+        source_document_filename="python_basics.pdf"
     )
 
     mock_db.add.assert_called_once()
@@ -73,8 +73,8 @@ def test_create_summary_medium_level():
         expertise_level=ExpertiseLevel.MEDIO,
         topics=["decorators", "generators"],
         key_concepts=["decorator", "generator"],
-        document_title="Advanced Python Guide",
-        document_file_name="advanced_python.pdf"
+        source_document_title="Advanced Python Guide",
+        source_document_filename="advanced_python.pdf"
     )
 
     mock_db.add.assert_called_once()
@@ -100,8 +100,8 @@ def test_create_summary_advanced_level():
         expertise_level=ExpertiseLevel.AVANZADO,
         topics=["metaclasses", "descriptors"],
         key_concepts=["metaclass", "descriptor"],
-        document_title="Python Internals Guide",
-        document_file_name="python_internals.pdf"
+        source_document_title="Python Internals Guide",
+        source_document_filename="python_internals.pdf"
     )
 
     assert result.expertise_level == ExpertiseLevel.AVANZADO
@@ -126,8 +126,8 @@ def test_create_summary_with_multiple_topics():
         expertise_level=ExpertiseLevel.MEDIO,
         topics=topics,
         key_concepts=["concept1", "concept2"],
-        document_title="Multi-topic Document",
-        document_file_name="topics.pdf"
+        source_document_title="Multi-topic Document",
+        source_document_filename="topics.pdf"
     )
 
     assert result.topics == topics
@@ -153,8 +153,8 @@ def test_create_summary_with_multiple_key_concepts():
         expertise_level=ExpertiseLevel.BASICO,
         topics=["topic1"],
         key_concepts=key_concepts,
-        document_title="Key Concepts Document",
-        document_file_name="concepts.pdf"
+        source_document_title="Key Concepts Document",
+        source_document_filename="concepts.pdf"
     )
 
     assert result.key_concepts == key_concepts
@@ -329,8 +329,8 @@ def test_create_and_retrieve_summary():
         expertise_level=ExpertiseLevel.MEDIO,
         topics=["test"],
         key_concepts=["concept1"],
-        document_title="Integration Test Document",
-        document_file_name="integration.pdf"
+        source_document_title="Integration Test Document",
+        source_document_filename="integration.pdf"
     )
 
     # Retrieve
@@ -373,8 +373,8 @@ def test_create_add_documents_and_delete():
         expertise_level=ExpertiseLevel.BASICO,
         topics=["topic1"],
         key_concepts=["concept1"],
-        document_title="Test Document",
-        document_file_name="test.pdf"
+        source_document_title="Test Document",
+        source_document_filename="test.pdf"
     )
 
     # Delete
@@ -404,8 +404,8 @@ def test_expertise_levels():
             expertise_level=level,
             topics=["topic"],
             key_concepts=["concept"],
-            document_title="Test Document",
-            document_file_name="test.pdf"
+            source_document_title="Test Document",
+            source_document_filename="test.pdf"
         )
 
     assert mock_db.add.call_count == 3

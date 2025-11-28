@@ -17,6 +17,7 @@ def test_create_quiz_with_summary():
     mock_db = MagicMock()
     user_id = uuid4()
     summary_id = uuid4()
+    space_id = uuid4()  # NEW: Required
     quiz_id = uuid4()
 
     questions = [
@@ -40,11 +41,15 @@ def test_create_quiz_with_summary():
     result = QuizRepository.create_quiz(
         db=mock_db,
         user_id=user_id,
-        summary_id=summary_id,
-        study_space_id=None,
+        study_space_id=space_id,  # NEW: Required
+        source_type='summary',  # NEW: Required
         title="Python Quiz",
         difficulty_level=3,
-        questions=questions
+        questions=questions,
+        source_document_id=None,  # NEW: Optional
+        source_summary_id=summary_id,  # NEW: Renamed from summary_id
+        source_names={"summary": "Test Summary"},  # NEW: Optional
+        source_metadata=None,  # NEW: Optional
     )
 
     mock_db.add.assert_called_once()
@@ -64,11 +69,15 @@ def test_create_quiz_with_study_space():
     result = QuizRepository.create_quiz(
         db=mock_db,
         user_id=user_id,
-        summary_id=None,
-        study_space_id=space_id,
+        study_space_id=space_id,  # Required
+        source_type='study_space',  # NEW: Required
         title="Space Quiz",
         difficulty_level=2,
-        questions=questions
+        questions=questions,
+        source_document_id=None,  # NEW: Optional
+        source_summary_id=None,  # NEW: Optional
+        source_names={"space": "Test Space"},  # NEW: Optional
+        source_metadata=None,  # NEW: Optional
     )
 
     mock_db.add.assert_called_once()
@@ -79,6 +88,7 @@ def test_create_quiz_with_multiple_questions():
     """create_quiz debe manejar múltiples preguntas"""
     mock_db = MagicMock()
     user_id = uuid4()
+    space_id = uuid4()  # NEW: Required
 
     questions = [
         {"question": "Q1", "options": {"correct": "A"}, "explanation": "E1"},
@@ -91,11 +101,15 @@ def test_create_quiz_with_multiple_questions():
     result = QuizRepository.create_quiz(
         db=mock_db,
         user_id=user_id,
-        summary_id=None,
-        study_space_id=None,
+        study_space_id=space_id,  # NEW: Required
+        source_type='study_space',  # NEW: Required
         title="Multiple Questions Quiz",
         difficulty_level=4,
-        questions=questions
+        questions=questions,
+        source_document_id=None,  # NEW: Optional
+        source_summary_id=None,  # NEW: Optional
+        source_names=None,  # NEW: Optional
+        source_metadata=None,  # NEW: Optional
     )
 
     mock_db.add.assert_called_once()
@@ -107,17 +121,22 @@ def test_create_quiz_difficulty_levels():
     """create_quiz debe aceptar niveles de dificultad 1-5"""
     mock_db = MagicMock()
     user_id = uuid4()
+    space_id = uuid4()  # NEW: Required
     questions = [{"question": "Test", "options": {}, "explanation": ""}]
 
     for difficulty in [1, 2, 3, 4, 5]:
         QuizRepository.create_quiz(
             db=mock_db,
             user_id=user_id,
-            summary_id=None,
-            study_space_id=None,
+            study_space_id=space_id,  # NEW: Required
+            source_type='study_space',  # NEW: Required
             title=f"Quiz Difficulty {difficulty}",
             difficulty_level=difficulty,
-            questions=questions
+            questions=questions,
+            source_document_id=None,  # NEW: Optional
+            source_summary_id=None,  # NEW: Optional
+            source_names=None,  # NEW: Optional
+            source_metadata=None,  # NEW: Optional
         )
 
     # Se debe haber llamado 5 veces
@@ -322,6 +341,7 @@ def test_create_and_retrieve_quiz():
     """Flujo completo: crear quiz y recuperarlo"""
     mock_db = MagicMock()
     user_id = uuid4()
+    space_id = uuid4()  # NEW: Required
     quiz_id = uuid4()
 
     questions = [
@@ -337,11 +357,15 @@ def test_create_and_retrieve_quiz():
     created_quiz = QuizRepository.create_quiz(
         db=mock_db,
         user_id=user_id,
-        summary_id=None,
-        study_space_id=None,
+        study_space_id=space_id,  # NEW: Required
+        source_type='study_space',  # NEW: Required
         title="Integration Quiz",
         difficulty_level=2,
-        questions=questions
+        questions=questions,
+        source_document_id=None,  # NEW: Optional
+        source_summary_id=None,  # NEW: Optional
+        source_names=None,  # NEW: Optional
+        source_metadata=None,  # NEW: Optional
     )
 
     # Simulate retrieval
