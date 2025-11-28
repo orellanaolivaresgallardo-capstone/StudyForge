@@ -253,20 +253,17 @@ class QuizService:
             num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
         # 4. Determinar study_space_id y calcular dificultad
-        # Si el resumen pertenece a exactamente un espacio, heredar y calcular dificultad
-        study_space_id = None
+        # Summary ahora tiene relación 1-N con StudySpace (siempre tiene uno)
+        study_space_id = summary.study_space_id
         difficulty_level = 2  # Dificultad por defecto
         space_context = None
 
-        if len(summary.study_spaces) > 0:
-            # Usar el primer espacio
-            first_space = summary.study_spaces[0]
-            study_space_id = first_space.id
+        if study_space_id:
             # Calcular dificultad basada en el espacio
             difficulty_level = self.calculate_adaptive_difficulty(db, user.id, study_space_id)
             # Obtener contexto del espacio
-            if first_space.description:
-                space_context = first_space.description
+            if summary.study_space and summary.study_space.description:
+                space_context = summary.study_space.description
 
         # 5. Generar cuestionario con OpenAI (con contexto del espacio si está disponible)
         questions_data = self.openai_service.generate_quiz(
@@ -287,9 +284,9 @@ class QuizService:
             questions=questions_data[:num_questions],
         )
 
-        # 9. Rastrear fuentes: summary y sus documentos
+        # 9. Rastrear fuentes: summary y su documento
         quiz.source_summary_ids = [str(summary_id)]
-        quiz.source_document_ids = [str(doc.id) for doc in summary.documents]
+        quiz.source_document_ids = [str(summary.document_id)]
         db.commit()
         db.refresh(quiz)
 
@@ -420,11 +417,10 @@ class QuizService:
 
         # 10. Rastrear fuentes: todos los resúmenes del espacio
         quiz.source_summary_ids = [str(summary.id) for summary in space.summaries]
-        # Recopilar todos los documentos únicos de los resúmenes
+        # Recopilar todos los documentos únicos de los resúmenes (ahora 1-N)
         all_doc_ids = set()
         for summary in space.summaries:
-            for doc in summary.documents:
-                all_doc_ids.add(str(doc.id))
+            all_doc_ids.add(str(summary.document_id))
         quiz.source_document_ids = list(all_doc_ids)
         db.commit()
         db.refresh(quiz)

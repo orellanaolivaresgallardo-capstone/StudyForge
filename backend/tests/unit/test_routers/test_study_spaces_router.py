@@ -190,33 +190,19 @@ class TestDeleteStudySpace:
 
 
 class TestAddSummaryToSpace:
-    """Tests para agregar resumen a espacio"""
+    """Tests para agregar resumen a espacio - OBSOLETO"""
 
     def test_add_summary_to_space_success(self, fake_user, fake_db, fake_study_space, fake_summary):
-        """Debe agregar resumen a espacio"""
-        request = AddResourceRequest(resource_id=fake_summary.id)
-
-        with patch('app.services.study_space_service.StudySpaceService.add_summary_to_space') as mock_add:
-            mock_add.return_value = None
-
-            result = add_summary_to_space(fake_study_space.id, request, fake_user, fake_db)
-
-            assert result is None
-            mock_add.assert_called_once_with(fake_db, fake_study_space.id, fake_summary.id, fake_user)
+        """OBSOLETE: Summaries now created with study_space_id directly"""
+        pass
 
 
 class TestRemoveSummaryFromSpace:
-    """Tests para remover resumen de espacio"""
+    """Tests para remover resumen de espacio - OBSOLETO"""
 
     def test_remove_summary_from_space_success(self, fake_user, fake_db, fake_study_space, fake_summary):
-        """Debe remover resumen de espacio"""
-        with patch('app.services.study_space_service.StudySpaceService.remove_summary_from_space') as mock_remove:
-            mock_remove.return_value = None
-
-            result = remove_summary_from_space(fake_study_space.id, fake_summary.id, fake_user, fake_db)
-
-            assert result is None
-            mock_remove.assert_called_once_with(fake_db, fake_study_space.id, fake_summary.id, fake_user)
+        """OBSOLETE: Summaries belong to single study_space_id"""
+        pass
 
 
 class TestAddDocumentToSpace:

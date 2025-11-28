@@ -24,6 +24,7 @@ summary_service = SummaryService()
 @router.post("/upload", response_model=SummaryResponse, status_code=status.HTTP_201_CREATED)
 async def upload_and_generate_summary(
     file: UploadFile = File(..., description="Archivo a procesar (PDF, PPTX, DOCX, TXT)"),
+    study_space_id: UUID = Form(..., description="ID del espacio de estudio"),
     expertise_level: ExpertiseLevelEnum = Form(..., description="Nivel de expertise del resumen"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -36,6 +37,7 @@ async def upload_and_generate_summary(
 
     Args:
         file: Archivo a procesar (PDF, PPTX, DOCX, TXT)
+        study_space_id: ID del espacio de estudio al que pertenecerá el resumen
         expertise_level: Nivel de expertise (basico, medio, avanzado)
         current_user: Usuario autenticado
         db: Sesión de base de datos
@@ -51,6 +53,7 @@ async def upload_and_generate_summary(
     summary = await summary_service.create_summary_from_file(
         db=db,
         user_id=current_user.id,
+        study_space_id=study_space_id,
         file=file,
         expertise_level=expertise_level,
     )
@@ -64,13 +67,13 @@ def generate_summary_from_documents(
     db: Session = Depends(get_db),
 ):
     """
-    Genera un resumen a partir de documentos ya almacenados.
+    Genera un resumen a partir de un documento ya almacenado.
 
-    Permite combinar múltiples documentos previamente subidos en un solo resumen.
+    Crea un resumen desde un documento previamente subido.
     No consume espacio adicional de almacenamiento.
 
     Args:
-        request: IDs de documentos y nivel de expertise
+        request: ID de documento, espacio de estudio y nivel de expertise
         current_user: Usuario autenticado
         db: Sesión de base de datos
 
@@ -78,14 +81,14 @@ def generate_summary_from_documents(
         Resumen generado
 
     Raises:
-        HTTPException 400: Si se excede el número máximo de documentos
-        HTTPException 403: Si algún documento no pertenece al usuario
-        HTTPException 404: Si algún documento no existe
+        HTTPException 403: Si el documento no pertenece al usuario
+        HTTPException 404: Si el documento o espacio no existe
     """
     summary = summary_service.create_summary_from_documents(
         db=db,
         user=current_user,
-        document_ids=request.document_ids,
+        document_id=request.document_id,
+        study_space_id=request.study_space_id,
         expertise_level=request.expertise_level,
     )
     return summary
@@ -117,24 +120,8 @@ def list_summaries(
         limit=limit,
     )
 
-    # Construir respuestas con study_space_names
-    summary_responses = []
-    for summary in summaries:
-        summary_dict = {
-            "id": summary.id,
-            "user_id": summary.user_id,
-            "title": summary.title,
-            "content": summary.content,
-            "expertise_level": summary.expertise_level.value if hasattr(summary.expertise_level, 'value') else summary.expertise_level,
-            "topics": summary.topics,
-            "key_concepts": summary.key_concepts,
-            "created_at": summary.created_at,
-            "updated_at": summary.updated_at,
-            "study_space_names": [space.name for space in summary.study_spaces]
-        }
-        summary_responses.append(SummaryResponse(**summary_dict))
-
-    return SummaryListResponse(items=summary_responses, total=total)
+    # Pydantic automáticamente convierte los ORM models usando model_config from_attributes
+    return SummaryListResponse(items=summaries, total=total)
 
 
 @router.get("/{summary_id}", response_model=SummaryDetailResponse)
@@ -162,22 +149,9 @@ def get_summary(
         summary_id=summary_id,
         user=current_user,
     )
-    
-    # Convertir a respuesta con documentos
-    from app.schemas.document import DocumentResponse
-    summary_dict = {
-        "id": summary.id,
-        "user_id": summary.user_id,
-        "title": summary.title,
-        "content": summary.content,
-        "expertise_level": summary.expertise_level,
-        "topics": summary.topics,
-        "key_concepts": summary.key_concepts,
-        "created_at": summary.created_at,
-        "updated_at": summary.updated_at,
-        "documents": [DocumentResponse.model_validate(doc) for doc in summary.documents]
-    }
-    return SummaryDetailResponse(**summary_dict)
+
+    # Pydantic automáticamente convierte el ORM model con sus relaciones
+    return SummaryDetailResponse.model_validate(summary)
 
 
 @router.delete("/{summary_id}", status_code=status.HTTP_204_NO_CONTENT)

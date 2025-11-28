@@ -5,7 +5,7 @@ Servicio para manejar eliminaciones con denormalización de datos.
 from typing import List
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import select, delete
 from app.models import Document, Summary, Quiz, QuizAttempt
 from app.repositories.document_repository import DocumentRepository
 from app.repositories.summary_repository import SummaryRepository
@@ -20,7 +20,7 @@ class DeletionService:
     @staticmethod
     def delete_document_with_denormalization(db: Session, document_id: UUID) -> bool:
         """
-        Elimina un documento después de denormalizar su información en resúmenes asociados.
+        Elimina un documento después de actualizar el estado en resúmenes asociados.
 
         Args:
             db: Sesión de base de datos
@@ -34,23 +34,10 @@ class DeletionService:
         if not document:
             return False
 
-        # Preparar info del documento para denormalización
-        doc_info = {
-            "id": str(document.id),
-            "title": document.title,
-            "file_name": document.file_name
-        }
-
-        # Para cada resumen asociado, agregar la info del documento eliminado
+        # Para cada resumen asociado, marcar el documento como eliminado
         for summary in document.summaries:
-            # Obtener la lista actual de documentos eliminados (o crear una nueva)
-            deleted_docs_info = summary.deleted_documents_info or []
-
-            # Agregar info del documento actual
-            deleted_docs_info.append(doc_info)
-
-            # Actualizar el resumen
-            summary.deleted_documents_info = deleted_docs_info
+            # Actualizar el estado del documento a "removed"
+            summary.document_state = "removed"
 
         # Commit de los cambios en resúmenes
         db.commit()
@@ -83,7 +70,8 @@ class DeletionService:
         Returns:
             True si se eliminó correctamente
         """
-        quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
+        stmt = select(Quiz).where(Quiz.id == quiz_id)
+        quiz = db.execute(stmt).scalar_one_or_none()
         if not quiz:
             return False
 
@@ -127,9 +115,8 @@ class DeletionService:
 
         # 2. Eliminar manualmente todos los quiz_attempts asociados a esos quizzes
         if quiz_ids:
-            db.query(QuizAttempt).filter(
-                QuizAttempt.quiz_id.in_(quiz_ids)
-            ).delete(synchronize_session=False)
+            stmt = delete(QuizAttempt).where(QuizAttempt.quiz_id.in_(quiz_ids))
+            db.execute(stmt)
             db.commit()
 
         # 3. Ahora eliminar el espacio (CASCADE eliminará quizzes y junction table entries)

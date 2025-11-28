@@ -32,16 +32,19 @@ def test_init(mock_openai_service):
 @patch('app.services.summary_service.UserRepository')
 @patch('app.services.summary_service.DocumentRepository')
 @patch('app.services.summary_service.SummaryRepository')
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
+@patch('app.core.dependencies.verify_space_ownership')
 @patch('app.services.summary_service.log_quota_event')
 @patch('app.services.summary_service.log_openai_request')
 @pytest.mark.asyncio
 async def test_create_summary_from_file_success(
-    mock_log_openai, mock_log_quota, mock_summary_repo, mock_doc_repo,
+    mock_log_openai, mock_log_quota, mock_verify_space, mock_space_repo, mock_summary_repo, mock_doc_repo,
     mock_user_repo, mock_file_processor, mock_openai_service
 ):
     """create_summary_from_file debe crear resumen exitosamente"""
     mock_db = MagicMock()
     user_id = uuid4()
+    study_space_id = uuid4()
 
     # Mock file
     file_content = b"This is test content for a PDF file"
@@ -63,6 +66,14 @@ async def test_create_summary_from_file_success(
     mock_user.storage_available_bytes = 100 * 1024 * 1024
     mock_user_repo.get_by_id.return_value = mock_user
 
+    # Mock StudySpace
+    mock_study_space = Mock()
+    mock_study_space.id = study_space_id
+    mock_study_space.name = "Test Space"
+    mock_study_space.color = "#8B5CF6"
+    mock_space_repo.get_by_id.return_value = mock_study_space
+    mock_verify_space.return_value = mock_study_space
+
     # Mock OpenAI response
     mock_openai = Mock()
     mock_openai.model = "gpt-4"
@@ -77,6 +88,8 @@ async def test_create_summary_from_file_success(
     # Mock Document creation
     mock_document = Mock(spec=Document)
     mock_document.id = uuid4()
+    mock_document.title = "test.pdf"
+    mock_document.file_name = "test.pdf"
     mock_doc_repo.create.return_value = mock_document
 
     # Mock Summary creation
@@ -89,6 +102,7 @@ async def test_create_summary_from_file_success(
     result = await service.create_summary_from_file(
         db=mock_db,
         user_id=user_id,
+        study_space_id=study_space_id,
         file=mock_file,
         expertise_level=ExpertiseLevel.MEDIO
     )
@@ -97,10 +111,11 @@ async def test_create_summary_from_file_success(
     assert result == mock_summary
     mock_file_processor.validate_file.assert_called_once()
     mock_user_repo.get_by_id.assert_called_once_with(mock_db, user_id)
+    mock_space_repo.get_by_id.assert_called_once_with(mock_db, study_space_id)
+    mock_verify_space.assert_called_once()
     mock_openai.generate_summary.assert_called_once()
     mock_doc_repo.create.assert_called_once()
     mock_summary_repo.create.assert_called_once()
-    mock_summary_repo.add_document_to_summary.assert_called_once()
     mock_db.commit.assert_called()
 
 
@@ -125,11 +140,13 @@ async def test_create_summary_from_file_user_not_found(
     mock_user_repo.get_by_id.return_value = None
 
     service = SummaryService()
+    study_space_id = uuid4()
 
     with pytest.raises(HTTPException) as exc_info:
         await service.create_summary_from_file(
             db=mock_db,
             user_id=user_id,
+            study_space_id=study_space_id,
             file=mock_file,
             expertise_level=ExpertiseLevel.BASICO
         )
@@ -164,11 +181,13 @@ async def test_create_summary_from_file_exceeds_max_file_size(
     mock_user_repo.get_by_id.return_value = mock_user
 
     service = SummaryService()
+    study_space_id = uuid4()
 
     with pytest.raises(HTTPException) as exc_info:
         await service.create_summary_from_file(
             db=mock_db,
             user_id=user_id,
+            study_space_id=study_space_id,
             file=mock_file,
             expertise_level=ExpertiseLevel.BASICO
         )
@@ -206,11 +225,13 @@ async def test_create_summary_from_file_insufficient_storage(
     mock_user_repo.get_by_id.return_value = mock_user
 
     service = SummaryService()
+    study_space_id = uuid4()
 
     with pytest.raises(HTTPException) as exc_info:
         await service.create_summary_from_file(
             db=mock_db,
             user_id=user_id,
+            study_space_id=study_space_id,
             file=mock_file,
             expertise_level=ExpertiseLevel.BASICO
         )
@@ -250,11 +271,13 @@ async def test_create_summary_from_file_openai_error(
     mock_openai_service.return_value = mock_openai
 
     service = SummaryService()
+    study_space_id = uuid4()
 
     with pytest.raises(HTTPException) as exc_info:
         await service.create_summary_from_file(
             db=mock_db,
             user_id=user_id,
+            study_space_id=study_space_id,
             file=mock_file,
             expertise_level=ExpertiseLevel.BASICO
         )
@@ -329,15 +352,17 @@ def test_get_summary(mock_verify, mock_summary_repo, mock_openai_service):
 @patch('app.services.summary_service.SummaryRepository')
 @patch('app.repositories.study_space_repository.StudySpaceRepository')
 @patch('app.core.dependencies.verify_document_ownership')
+@patch('app.core.dependencies.verify_space_ownership')
 @patch('app.services.summary_service.log_openai_request')
 def test_create_summary_from_documents_success(
-    mock_log_openai, mock_verify_doc, mock_space_repo, mock_summary_repo,
+    mock_log_openai, mock_verify_space, mock_verify_doc, mock_space_repo, mock_summary_repo,
     mock_doc_repo, mock_openai_service
 ):
     """create_summary_from_documents debe crear resumen desde un documento"""
     mock_db = MagicMock()
     user_id = uuid4()
     doc_id = uuid4()
+    study_space_id = uuid4()
 
     mock_user = Mock(spec=User)
     mock_user.id = user_id
@@ -345,11 +370,19 @@ def test_create_summary_from_documents_success(
     mock_document = Mock(spec=Document)
     mock_document.id = doc_id
     mock_document.title = "Test Document"
+    mock_document.file_name = "test.pdf"
     mock_document.extracted_text = "This is the extracted text from document"
-    mock_document.study_spaces = []
+
+    mock_study_space = Mock()
+    mock_study_space.id = study_space_id
+    mock_study_space.name = "Test Space"
+    mock_study_space.color = "#FF5733"
+    mock_study_space.description = None
 
     mock_doc_repo.get_by_id.return_value = mock_document
     mock_verify_doc.return_value = mock_document
+    mock_space_repo.get_by_id.return_value = mock_study_space
+    mock_verify_space.return_value = mock_study_space
 
     mock_openai = Mock()
     mock_openai.model = "gpt-4"
@@ -369,78 +402,55 @@ def test_create_summary_from_documents_success(
     result = service.create_summary_from_documents(
         db=mock_db,
         user=mock_user,
-        document_ids=[doc_id],
+        document_id=doc_id,
+        study_space_id=study_space_id,
         expertise_level=ExpertiseLevel.MEDIO
     )
 
     assert result == mock_summary
     mock_doc_repo.get_by_id.assert_called_once_with(mock_db, doc_id)
     mock_verify_doc.assert_called_once()
+    mock_space_repo.get_by_id.assert_called_once_with(mock_db, study_space_id)
+    mock_verify_space.assert_called_once()
     mock_openai.generate_summary.assert_called_once()
     mock_summary_repo.create.assert_called_once()
-    mock_summary_repo.add_document_to_summary.assert_called_once()
 
 
-@patch('app.services.summary_service.OpenAIService')
-def test_create_summary_from_documents_empty_list(mock_openai_service):
-    """create_summary_from_documents debe lanzar 400 con lista vacía"""
-    mock_db = MagicMock()
-    mock_user = Mock(spec=User)
-    mock_user.id = uuid4()
-
-    service = SummaryService()
-
-    with pytest.raises(HTTPException) as exc_info:
-        service.create_summary_from_documents(
-            db=mock_db,
-            user=mock_user,
-            document_ids=[],
-            expertise_level=ExpertiseLevel.BASICO
-        )
-
-    assert exc_info.value.status_code == 400
-    assert "Debe proporcionar un documento" in exc_info.value.detail
+def test_create_summary_from_documents_empty_list():
+    """OBSOLETE: create_summary_from_documents ya no acepta listas, solo document_id único"""
+    pass
 
 
-@patch('app.services.summary_service.OpenAIService')
-def test_create_summary_from_documents_multiple_documents(mock_openai_service):
-    """create_summary_from_documents debe lanzar 400 con múltiples documentos"""
-    mock_db = MagicMock()
-    mock_user = Mock(spec=User)
-    mock_user.id = uuid4()
-
-    service = SummaryService()
-
-    with pytest.raises(HTTPException) as exc_info:
-        service.create_summary_from_documents(
-            db=mock_db,
-            user=mock_user,
-            document_ids=[uuid4(), uuid4()],
-            expertise_level=ExpertiseLevel.BASICO
-        )
-
-    assert exc_info.value.status_code == 400
-    assert "único documento" in exc_info.value.detail
+def test_create_summary_from_documents_multiple_documents():
+    """OBSOLETE: create_summary_from_documents ya no acepta múltiples documentos, solo document_id único"""
+    pass
 
 
 @patch('app.services.summary_service.OpenAIService')
 @patch('app.services.summary_service.DocumentRepository')
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
 @patch('app.core.dependencies.verify_document_ownership')
+@patch('app.core.dependencies.verify_space_ownership')
 def test_create_summary_from_documents_no_text(
-    mock_verify_doc, mock_doc_repo, mock_openai_service
+    mock_verify_space, mock_verify_doc, mock_space_repo, mock_doc_repo, mock_openai_service
 ):
     """create_summary_from_documents debe lanzar 400 si no hay texto"""
     mock_db = MagicMock()
     mock_user = Mock(spec=User)
     mock_user.id = uuid4()
     doc_id = uuid4()
+    study_space_id = uuid4()
 
     mock_document = Mock(spec=Document)
     mock_document.extracted_text = ""  # No text
-    mock_document.study_spaces = []
+
+    mock_study_space = Mock()
+    mock_study_space.id = study_space_id
 
     mock_doc_repo.get_by_id.return_value = mock_document
     mock_verify_doc.return_value = mock_document
+    mock_space_repo.get_by_id.return_value = mock_study_space
+    mock_verify_space.return_value = mock_study_space
 
     service = SummaryService()
 
@@ -448,7 +458,8 @@ def test_create_summary_from_documents_no_text(
         service.create_summary_from_documents(
             db=mock_db,
             user=mock_user,
-            document_ids=[doc_id],
+            document_id=doc_id,
+            study_space_id=study_space_id,
             expertise_level=ExpertiseLevel.BASICO
         )
 
@@ -461,31 +472,38 @@ def test_create_summary_from_documents_no_text(
 @patch('app.services.summary_service.SummaryRepository')
 @patch('app.repositories.study_space_repository.StudySpaceRepository')
 @patch('app.core.dependencies.verify_document_ownership')
+@patch('app.core.dependencies.verify_space_ownership')
 @patch('app.services.summary_service.log_openai_request')
 def test_create_summary_from_documents_with_space_context(
-    mock_log_openai, mock_verify_doc, mock_space_repo, mock_summary_repo,
+    mock_log_openai, mock_verify_space, mock_verify_doc, mock_space_repo, mock_summary_repo,
     mock_doc_repo, mock_openai_service
 ):
     """create_summary_from_documents debe incluir contexto del espacio"""
     mock_db = MagicMock()
     user_id = uuid4()
     doc_id = uuid4()
+    study_space_id = uuid4()
 
     mock_user = Mock(spec=User)
     mock_user.id = user_id
 
-    # Document belongs to a space with description
-    mock_space = Mock()
-    mock_space.id = uuid4()
-    mock_space.description = "Machine Learning space"
+    # Study space with description
+    mock_study_space = Mock()
+    mock_study_space.id = study_space_id
+    mock_study_space.name = "ML Space"
+    mock_study_space.color = "#FF5733"
+    mock_study_space.description = "Machine Learning space"
 
     mock_document = Mock(spec=Document)
     mock_document.id = doc_id
+    mock_document.title = "Doc"
+    mock_document.file_name = "doc.pdf"
     mock_document.extracted_text = "Document text"
-    mock_document.study_spaces = [mock_space]
 
     mock_doc_repo.get_by_id.return_value = mock_document
     mock_verify_doc.return_value = mock_document
+    mock_space_repo.get_by_id.return_value = mock_study_space
+    mock_verify_space.return_value = mock_study_space
 
     mock_openai = Mock()
     mock_openai.model = "gpt-4"
@@ -505,14 +523,14 @@ def test_create_summary_from_documents_with_space_context(
     service.create_summary_from_documents(
         db=mock_db,
         user=mock_user,
-        document_ids=[doc_id],
+        document_id=doc_id,
+        study_space_id=study_space_id,
         expertise_level=ExpertiseLevel.AVANZADO
     )
 
     # Verify that space_context was passed to generate_summary
     call_args = mock_openai.generate_summary.call_args
     assert call_args[1]["space_context"] == "Machine Learning space"
-    mock_space_repo.add_summary.assert_called_once()
 
 
 # ========================================

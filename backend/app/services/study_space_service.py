@@ -5,6 +5,7 @@ Service para lógica de negocio relacionada con espacios de estudio.
 from uuid import UUID
 from typing import List, Tuple, Dict, Any
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from fastapi import HTTPException, status
 
 from app.repositories.study_space_repository import StudySpaceRepository
@@ -85,34 +86,6 @@ class StudySpaceService:
         space = self.get_space(db, space_id, user)
         StudySpaceRepository.delete(db, space)
 
-    def add_summary_to_space(
-        self,
-        db: Session,
-        space_id: UUID,
-        summary_id: UUID,
-        user: User
-    ) -> None:
-        """Agregar resumen a espacio."""
-        space = self.get_space(db, space_id, user)
-        summary = SummaryRepository.get_by_id(db, summary_id)
-        if not summary or summary.user_id != user.id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Summary not found"
-            )
-        StudySpaceRepository.add_summary(db, space_id, summary_id)
-
-    def remove_summary_from_space(
-        self,
-        db: Session,
-        space_id: UUID,
-        summary_id: UUID,
-        user: User
-    ) -> None:
-        """Remover resumen de espacio."""
-        self.get_space(db, space_id, user)  # Verificar ownership
-        StudySpaceRepository.remove_summary(db, space_id, summary_id)
-
     def add_document_to_space(
         self,
         db: Session,
@@ -155,16 +128,18 @@ class StudySpaceService:
         num_summaries = len(space.summaries)
 
         # Obtener quizzes del espacio
-        quizzes_in_space = db.query(Quiz).filter(Quiz.study_space_id == space_id).all()
+        stmt = select(Quiz).where(Quiz.study_space_id == space_id)
+        quizzes_in_space = list(db.execute(stmt).scalars().all())
         quiz_ids = [q.id for q in quizzes_in_space]
 
         # Obtener attempts completados para quizzes del espacio
         if quiz_ids:
-            attempts = db.query(QuizAttempt).filter(
+            stmt = select(QuizAttempt).where(
                 QuizAttempt.quiz_id.in_(quiz_ids),
                 QuizAttempt.user_id == user.id,
                 QuizAttempt.completed_at.isnot(None)
-            ).all()
+            )
+            attempts = list(db.execute(stmt).scalars().all())
 
             total_attempts = len(attempts)
             avg_score = (

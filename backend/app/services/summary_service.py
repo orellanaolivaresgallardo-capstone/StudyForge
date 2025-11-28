@@ -28,6 +28,7 @@ class SummaryService:
         self,
         db: Session,
         user_id: UUID,
+        study_space_id: UUID,
         file: UploadFile,
         expertise_level: ExpertiseLevel,
     ) -> Summary:
@@ -40,6 +41,7 @@ class SummaryService:
         Args:
             db: Sesión de base de datos
             user_id: ID del usuario
+            study_space_id: ID del espacio de estudio (requerido)
             file: Archivo subido
             expertise_level: Nivel de expertise del resumen
 
@@ -125,7 +127,14 @@ class SummaryService:
                     detail=f"Error al generar resumen: {str(e)}"
                 )
 
-            # 6. Guardar documento en la base de datos
+            # 6. Validar que el espacio de estudio existe y pertenece al usuario
+            from app.repositories.study_space_repository import StudySpaceRepository
+            from app.core.dependencies import verify_space_ownership
+
+            study_space = StudySpaceRepository.get_by_id(db, study_space_id)
+            study_space = verify_space_ownership(study_space, user)
+
+            # 7. Guardar documento en la base de datos
             document = DocumentRepository.create(
                 db=db,
                 user_id=user_id,
@@ -137,10 +146,12 @@ class SummaryService:
                 extracted_text=text
             )
 
-            # 7. Crear resumen
+            # 8. Crear resumen con campos denormalizados
             summary = SummaryRepository.create(
                 db=db,
                 user_id=user_id,
+                document_id=document.id,
+                study_space_id=study_space_id,
                 title=summary_data.get("title", filename),
                 content={
                     "summary": summary_data.get("summary", ""),
@@ -149,13 +160,11 @@ class SummaryService:
                 expertise_level=expertise_level,
                 topics=summary_data.get("topics", []),
                 key_concepts=summary_data.get("key_concepts", []),
-            )
-
-            # 8. Asociar documento con resumen
-            SummaryRepository.add_document_to_summary(
-                db=db,
-                summary_id=summary.id,
-                document_id=document.id
+                document_title=document.title,
+                document_file_name=document.file_name,
+                document_state="active",
+                study_space_name=study_space.name,
+                study_space_color=study_space.color or "#8B5CF6",
             )
 
             # 9. Actualizar cuota del usuario
@@ -235,7 +244,8 @@ class SummaryService:
         self,
         db: Session,
         user: User,
-        document_ids: List[UUID],
+        document_id: UUID,
+        study_space_id: UUID,
         expertise_level: ExpertiseLevel,
     ) -> Summary:
         """
@@ -244,7 +254,8 @@ class SummaryService:
         Args:
             db: Sesión de base de datos
             user: Usuario autenticado
-            document_ids: Lista de IDs de documentos (debe contener solo 1)
+            document_id: ID del documento
+            study_space_id: ID del espacio de estudio (requerido)
             expertise_level: Nivel de expertise del resumen
 
         Returns:
@@ -254,25 +265,16 @@ class SummaryService:
             HTTPException: Si hay error al procesar o validación falla
         """
         try:
-            # 1. Validar que sea exactamente un documento
-            if len(document_ids) == 0:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Debe proporcionar un documento"
-                )
+            # 1. Obtener y validar ownership del documento
+            from app.core.dependencies import verify_document_ownership, verify_space_ownership
+            from app.repositories.study_space_repository import StudySpaceRepository
 
-            if len(document_ids) > 1:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Los resúmenes solo pueden generarse desde un único documento"
-                )
-
-            # 2. Obtener y validar ownership del documento
-            from app.core.dependencies import verify_document_ownership
-
-            document_id = document_ids[0]
             document = DocumentRepository.get_by_id(db, document_id)
             document = verify_document_ownership(document, user)
+
+            # 2. Validar que el espacio de estudio existe y pertenece al usuario
+            study_space = StudySpaceRepository.get_by_id(db, study_space_id)
+            study_space = verify_space_ownership(study_space, user)
 
             # 3. Usar texto del documento
             combined_text = document.extracted_text or ""
@@ -280,16 +282,11 @@ class SummaryService:
             if not combined_text.strip():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Los documentos no contienen texto extraíble"
+                    detail="El documento no contiene texto extraíble"
                 )
 
-            # 3.5. Obtener contexto del espacio si el documento pertenece a un espacio
-            space_context = None
-            if len(document.study_spaces) > 0:
-                # Usar la descripción del primer espacio como contexto
-                first_space = document.study_spaces[0]
-                if first_space.description:
-                    space_context = first_space.description
+            # 4. Obtener contexto del espacio
+            space_context = study_space.description if study_space.description else None
 
             # 4. Generar resumen con OpenAI (con contexto del espacio si está disponible)
             try:
@@ -317,10 +314,12 @@ class SummaryService:
                     detail=f"Error al generar resumen: {str(e)}"
                 )
 
-            # 5. Crear resumen
+            # 5. Crear resumen con campos denormalizados
             summary = SummaryRepository.create(
                 db=db,
                 user_id=user.id,
+                document_id=document.id,
+                study_space_id=study_space_id,
                 title=summary_data.get("title", document.title),
                 content={
                     "summary": summary_data.get("summary", ""),
@@ -329,22 +328,12 @@ class SummaryService:
                 expertise_level=expertise_level,
                 topics=summary_data.get("topics", []),
                 key_concepts=summary_data.get("key_concepts", []),
+                document_title=document.title,
+                document_file_name=document.file_name,
+                document_state="active",
+                study_space_name=study_space.name,
+                study_space_color=study_space.color or "#8B5CF6",
             )
-
-            # 6. Asociar el documento con el resumen
-            SummaryRepository.add_document_to_summary(
-                db=db,
-                summary_id=summary.id,
-                document_id=document.id
-            )
-
-            # 7. Auto-asignar resumen al espacio si el documento pertenece a un espacio
-            from app.repositories.study_space_repository import StudySpaceRepository
-
-            if len(document.study_spaces) > 0:
-                # Asignar a todos los espacios del documento
-                for space in document.study_spaces:
-                    StudySpaceRepository.add_summary(db, space.id, summary.id)
 
             return summary
 

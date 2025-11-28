@@ -31,6 +31,7 @@ class TestUploadAndGenerateSummary:
             result = await upload_and_generate_summary(
                 file=mock_file,
                 expertise_level=ExpertiseLevelEnum.BASICO,
+                study_space_id=None,
                 current_user=fake_user,
                 db=fake_db
             )
@@ -39,6 +40,7 @@ class TestUploadAndGenerateSummary:
             mock_create.assert_called_once_with(
                 db=fake_db,
                 user_id=fake_user.id,
+                study_space_id=None,
                 file=mock_file,
                 expertise_level=ExpertiseLevelEnum.BASICO
             )
@@ -49,8 +51,12 @@ class TestGenerateSummaryFromDocuments:
 
     def test_generate_summary_from_documents_success(self, fake_user, fake_db, fake_summary, fake_document):
         """Debe generar resumen desde documentos existentes"""
+        # Note: SummaryFromDocumentsRequest now requires document_id (single) and study_space_id
+        from uuid import uuid4
+        study_space_id = uuid4()
         request = SummaryFromDocumentsRequest(
-            document_ids=[fake_document.id],
+            document_id=fake_document.id,
+            study_space_id=study_space_id,
             expertise_level=ExpertiseLevelEnum.MEDIO
         )
 
@@ -63,7 +69,8 @@ class TestGenerateSummaryFromDocuments:
             mock_create.assert_called_once_with(
                 db=fake_db,
                 user=fake_user,
-                document_ids=[fake_document.id],
+                document_id=fake_document.id,
+                study_space_id=study_space_id,
                 expertise_level=ExpertiseLevelEnum.MEDIO
             )
 
@@ -73,7 +80,16 @@ class TestListSummaries:
 
     def test_list_summaries_success(self, fake_user, fake_db, fake_summary, fake_study_space):
         """Debe listar resúmenes del usuario"""
-        fake_summary.study_spaces = [fake_study_space]
+        from uuid import uuid4
+
+        # Set all denormalized fields (document and study_space)
+        fake_summary.document_id = uuid4()
+        fake_summary.document_title = "Test Document"
+        fake_summary.document_file_name = "test.pdf"
+        fake_summary.document_state = "active"
+        fake_summary.study_space_id = fake_study_space.id
+        fake_summary.study_space_name = fake_study_space.name
+        fake_summary.study_space_color = fake_study_space.color
         fake_summary.expertise_level = ExpertiseLevelEnum.BASICO
 
         with patch('app.services.summary_service.SummaryService.get_summaries') as mock_get:
@@ -88,7 +104,7 @@ class TestListSummaries:
 
             assert result.total == 1
             assert len(result.items) == 1
-            assert result.items[0].study_space_names == [fake_study_space.name]
+            assert result.items[0].study_space_name == fake_study_space.name
             mock_get.assert_called_once_with(
                 db=fake_db,
                 user_id=fake_user.id,
@@ -133,8 +149,18 @@ class TestGetSummary:
     """Tests para obtener resumen específico"""
 
     def test_get_summary_success(self, fake_user, fake_db, fake_summary):
-        """Debe obtener resumen con documentos"""
-        fake_summary.documents = []
+        """Debe obtener resumen con documento"""
+        from uuid import uuid4
+
+        # Set all required denormalized fields
+        fake_summary.document_id = uuid4()
+        fake_summary.document_title = "Test Document"
+        fake_summary.document_file_name = "test.pdf"
+        fake_summary.document_state = "active"
+        fake_summary.study_space_id = uuid4()
+        fake_summary.study_space_name = "Test Space"
+        fake_summary.study_space_color = "#8B5CF6"
+        fake_summary.document = None  # Optional relationship
         fake_summary.expertise_level = ExpertiseLevelEnum.MEDIO
 
         with patch('app.services.summary_service.SummaryService.get_summary') as mock_get:

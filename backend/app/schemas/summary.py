@@ -32,15 +32,9 @@ class SummaryCreate(BaseModel):
 
 class SummaryFromDocumentsRequest(BaseModel):
     """Schema para crear resumen desde un documento existente."""
-    document_ids: List[UUID] = Field(..., min_length=1, max_length=1, description="ID del documento (debe ser exactamente 1)")
+    document_id: UUID = Field(..., description="ID del documento")
+    study_space_id: UUID = Field(..., description="ID del espacio de estudio")
     expertise_level: ExpertiseLevelEnum = Field(..., description="Nivel de expertise del resumen")
-
-
-class DeletedDocumentInfo(BaseModel):
-    """Schema para información de documento eliminado."""
-    id: str = Field(..., description="UUID del documento eliminado")
-    title: str = Field(..., description="Título del documento")
-    file_name: str = Field(..., description="Nombre del archivo")
 
 
 class SummaryResponse(BaseModel):
@@ -49,18 +43,23 @@ class SummaryResponse(BaseModel):
 
     id: UUID
     user_id: UUID
+    document_id: UUID
+    study_space_id: UUID
     title: str
     content: Dict[str, Any]  # Contenido estructurado
     expertise_level: str
     topics: List[str]
     key_concepts: List[KeyConceptItem]
-    deleted_documents_info: Optional[List[DeletedDocumentInfo]] = Field(
-        None,
-        description="Info de documentos eliminados que fueron fuente de este resumen"
-    )
+
+    # Denormalized cache fields
+    document_title: str
+    document_file_name: str
+    document_state: str
+    study_space_name: str
+    study_space_color: str
+
     created_at: datetime
     updated_at: datetime
-    study_space_names: List[str] = Field(default_factory=list, description="Nombres de espacios a los que pertenece")
 
 
 # Import DocumentResponse after SummaryResponse is defined to avoid any import issues
@@ -68,8 +67,8 @@ from app.schemas.document import DocumentResponse  # noqa: E402
 
 
 class SummaryDetailResponse(SummaryResponse):
-    """Schema para detalle de resumen con documentos asociados."""
-    documents: List[DocumentResponse] = Field(default_factory=list, description="Documentos fuente asociados al resumen")
+    """Schema para detalle de resumen con documento asociado."""
+    document: Optional[DocumentResponse] = Field(None, description="Documento fuente asociado al resumen")
 
 
 class SummaryListResponse(BaseModel):

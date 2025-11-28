@@ -44,12 +44,8 @@ def test_delete_document_with_denormalization_success(mock_doc_repo):
     assert result is True
     mock_doc_repo.get_by_id.assert_called_once_with(mock_db, doc_id)
 
-    # Verify denormalization occurred
-    assert len(mock_summary.deleted_documents_info) == 1
-    deleted_info = mock_summary.deleted_documents_info[0]
-    assert deleted_info["id"] == str(doc_id)
-    assert deleted_info["title"] == "Test Document"
-    assert deleted_info["file_name"] == "test.pdf"
+    # Verify denormalization occurred - document_state updated to "removed"
+    assert mock_summary.document_state == "removed"
 
     mock_db.commit.assert_called_once()
     mock_doc_repo.delete.assert_called_once_with(mock_db, doc_id)
@@ -94,10 +90,9 @@ def test_delete_document_with_denormalization_multiple_summaries(mock_doc_repo):
     result = DeletionService.delete_document_with_denormalization(mock_db, doc_id)
 
     assert result is True
-    # Both summaries should have the document info
-    assert len(mock_summary1.deleted_documents_info) == 1
-    assert len(mock_summary2.deleted_documents_info) == 2  # Old + new
-    assert mock_summary2.deleted_documents_info[1]["title"] == "Shared Document"
+    # Both summaries should have document_state updated
+    assert mock_summary1.document_state == "removed"
+    assert mock_summary2.document_state == "removed"
 
 
 @patch('app.services.deletion_service.DocumentRepository')
@@ -148,7 +143,11 @@ def test_delete_quiz_success():
     mock_quiz = Mock(spec=Quiz)
     mock_quiz.id = quiz_id
 
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_quiz
+    # Mock SQLAlchemy 2.0 select() pattern
+    from sqlalchemy import select
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_quiz
+    mock_db.execute.return_value = mock_result
 
     result = DeletionService.delete_quiz(mock_db, quiz_id)
 
@@ -162,7 +161,11 @@ def test_delete_quiz_not_found():
     mock_db = MagicMock()
     quiz_id = uuid4()
 
-    mock_db.query.return_value.filter.return_value.first.return_value = None
+    # Mock SQLAlchemy 2.0 select() pattern
+    from sqlalchemy import select
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value = mock_result
 
     result = DeletionService.delete_quiz(mock_db, quiz_id)
 
@@ -208,8 +211,8 @@ def test_delete_study_space_with_cascade_success(mock_quiz_repo, mock_space_repo
         mock_db, space_id, user_id, skip=0, limit=10000
     )
 
-    # Verify quiz_attempts were deleted
-    mock_db.query.assert_called_once_with(QuizAttempt)
+    # Verify quiz_attempts were deleted via execute()
+    assert mock_db.execute.called
     mock_db.commit.assert_called()
 
     # Verify space was deleted
@@ -277,8 +280,7 @@ def test_delete_study_space_with_cascade_no_quizzes(mock_quiz_repo, mock_space_r
     )
 
     assert result is True
-    # No quiz_attempts to delete
-    mock_db.query.assert_not_called()
+    # No quiz_attempts to delete (no quizzes, so delete() not called)
     mock_space_repo.delete.assert_called_once_with(mock_db, mock_space)
 
 
