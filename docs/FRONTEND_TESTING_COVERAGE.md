@@ -1,7 +1,7 @@
 # 🧪 Análisis de Cobertura de Testing - Frontend
 
 **Fecha:** 2025-11-29
-**Estado:** MVP con cobertura parcial
+**Estado:** MVP con cobertura parcial - **Fase 1 Completada** ✅
 **Framework:** Vitest + React Testing Library + axios-mock-adapter
 
 ---
@@ -13,9 +13,77 @@
 | **Archivos fuente totales** | 141 archivos | - |
 | **Archivos de test** | 16 archivos | 🟡 Cobertura baja |
 | **Tests totales** | 339 tests | ✅ Buena cantidad |
-| **Tests pasando** | 302 (89%) | ✅ Mayormente estable |
-| **Tests fallando** | 37 (11%) | 🔴 Requiere atención |
+| **Tests pasando** | 339 (100%) | ✅ **TODOS PASANDO** ✅ |
+| **Tests fallando** | 0 (0%) | ✅ **Fase 1 completada** |
 | **Cobertura objetivo** | 70% líneas/funciones/ramas | ⚠️ No alcanzada |
+
+---
+
+## ✅ Fase 1: Estabilización de Tests - COMPLETADA
+
+**Fecha de completación:** 2025-11-29
+**Duración:** ~45 minutos
+**Commits:** `24cc22e`
+
+### Objetivo
+Lograr que todos los tests existentes pasen (100% pasando).
+
+### Resultados
+
+| Fix | Tests Afectados | Estado |
+|-----|----------------|--------|
+| **QuotaWidget** - Agregar StorageProvider | 32 tests | ✅ Completado |
+| **QuizCard** - Actualizar estructura de datos | 4 tests | ✅ Completado |
+| **quizzes.api** - Actualizar firma de función | 1 test | ✅ Completado |
+| **TOTAL** | **37 tests** | **✅ 100% pasando** |
+
+### Cambios Implementados
+
+#### 1. QuotaWidget Tests (32 tests fallando → 32 pasando)
+**Problema:** Componente usa `useStorage()` pero tests no envolvían en `StorageProvider`
+
+**Solución:**
+```typescript
+// Agregado helper
+import { StorageProvider } from '@/context/StorageContext';
+
+const renderWithStorage = (ui: React.ReactElement) => {
+  return render(<StorageProvider>{ui}</StorageProvider>);
+};
+
+// Reemplazados todos los render() con renderWithStorage()
+```
+
+#### 2. QuizCard Tests (4 tests fallando → 31 pasando)
+**Problema:** Tests usaban estructura de datos obsoleta
+
+**Cambios:**
+- `source_type: 'file'` → `'document'`
+- `source_type: 'space'` → `'study_space'`
+- `document_names`, `summary_title`, `study_space_name` → `source_names` (JSONB)
+- Assertions: `"Desde archivo:"` → `"Documento"`
+
+#### 3. quizzes.api Test (1 test fallando → 22 pasando)
+**Problema:** Firma de función `createQuizFromDocument()` cambió
+
+**Cambio:**
+```typescript
+// Antes
+createQuizFromDocument(documentId, maxQuestions?)
+
+// Ahora
+createQuizFromDocument(documentId, studySpaceId, maxQuestions?)
+```
+
+### Métricas Finales
+
+```
+Test Files  16 passed (16)
+Tests       339 passed (339)
+Duration    15.53s
+```
+
+**🎉 Resultado:** 100% de tests pasando (339/339) ✅
 
 ---
 
@@ -123,69 +191,26 @@
 
 ---
 
-## 🚨 Tests Fallando (37 tests)
+## ✅ Tests Fallando (0 tests) - TODOS ARREGLADOS
 
-### 1. QuotaWidget.test.tsx (32 tests fallando)
-**Causa raíz:** Componente requiere `StorageProvider` pero no está envuelto en tests
+**Estado anterior:** 37 tests fallando (11%)
+**Estado actual:** 0 tests fallando (0%) ✅
 
-**Error:**
-```
-Error: useStorage must be used within a StorageProvider
-```
+Todos los tests fallando fueron arreglados en la **Fase 1** (ver sección anterior).
 
-**Solución:**
-```tsx
-// tests/unit/components/features/QuotaWidget.test.tsx
-import { StorageProvider } from '@/context/StorageContext';
+### Histórico de Fixes
 
-const renderQuotaWidget = (props = {}) => {
-  return render(
-    <StorageProvider>
-      <QuotaWidget {...props} />
-    </StorageProvider>
-  );
-};
-```
+#### 1. QuotaWidget.test.tsx ~~(32 tests fallando)~~ → ✅ ARREGLADO
+**Solución aplicada:** Agregado `StorageProvider` wrapper en todos los tests
+**Commit:** `24cc22e`
 
-**Prioridad:** 🔴 **ALTA** - Bloquea 32 tests
+#### 2. QuizCard.test.tsx ~~(4 tests fallando)~~ → ✅ ARREGLADO
+**Solución aplicada:** Actualizada estructura de datos y assertions
+**Commit:** `24cc22e`
 
----
-
-### 2. QuizCard.test.tsx (4 tests fallando)
-**Causa raíz:** Cambios en el componente - badges de espacio no se muestran como esperado
-
-**Tests afectados:**
-- `debe mostrar información de archivo cuando source_type es "file"`
-- `debe mostrar información de resumen cuando source_type es "summary"`
-- `debe mostrar información de espacio cuando source_type es "space"`
-- `debe mostrar información de espacio cuando showSpaceBadge es true`
-
-**Error:**
-```
-Unable to find an element with the text: /Desde espacio:/
-```
-
-**Solución:** Actualizar tests para reflejar cambios recientes en el componente
-
-**Prioridad:** 🟡 **MEDIA** - Tests desactualizados, no bugs reales
-
----
-
-### 3. quizzes.api.test.ts (1 test fallando)
-**Causa raíz:** FormData no se está creando correctamente
-
-**Test afectado:**
-- `debe crear quiz desde documento con max_questions`
-
-**Error:**
-```
-expected null to be '12' // Object.is equality
-expect(formData.get('max_questions')).toBe('12')
-```
-
-**Solución:** Revisar cómo se construye el FormData en `createQuizFromDocument()`
-
-**Prioridad:** 🟡 **MEDIA** - Posible bug en implementación
+#### 3. quizzes.api.test.ts ~~(1 test fallando)~~ → ✅ ARREGLADO
+**Solución aplicada:** Actualizada firma de función con `studySpaceId`
+**Commit:** `24cc22e`
 
 ---
 
@@ -193,11 +218,11 @@ expect(formData.get('max_questions')).toBe('12')
 
 ### 🔴 **PRIORIDAD ALTA** (Bloquean funcionalidad crítica)
 
-1. **StorageContext sin tests** → QuotaWidget inoperable
-2. **Hooks de datos sin tests** → `useStudySpacesData`, `useSummariesData`, `useStudySpace`
-3. **stats.api.ts sin tests** → Dashboard de estadísticas no validado
-4. **ConfirmModal sin tests** → Usado en toda la app para eliminaciones
-5. **Cards principales sin tests** → `SummaryCard`, `DocumentCard`, `SpaceCard`
+1. **Hooks de datos sin tests** → `useStudySpacesData`, `useSummariesData`, `useStudySpace`
+2. **stats.api.ts sin tests** → Dashboard de estadísticas no validado
+3. **ConfirmModal sin tests** → Usado en toda la app para eliminaciones
+4. **Cards principales sin tests** → `SummaryCard`, `DocumentCard`, `SpaceCard`
+5. **StorageContext sin tests** → Solo tests indirectos vía QuotaWidget (necesita tests unitarios propios)
 
 ### 🟡 **PRIORIDAD MEDIA** (Mejoran confiabilidad)
 
