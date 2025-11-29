@@ -8,6 +8,8 @@ import logging
 import sys
 from typing import Optional
 from datetime import datetime, timezone
+from pathlib import Path
+from logging.handlers import RotatingFileHandler
 from app.config import settings
 
 
@@ -68,21 +70,118 @@ def setup_logging() -> logging.Logger:
     if logger.handlers:
         return logger
 
-    # Crear handler para consola
+    # Formatter compartido
+    formatter = StructuredFormatter()
+
+    # ========== Handler para consola ==========
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
-
-    # Aplicar formatter
-    formatter = StructuredFormatter()
     console_handler.setFormatter(formatter)
-
-    # Agregar handler al logger
     logger.addHandler(console_handler)
+
+    # ========== Handler para archivo (con rotación) ==========
+    if settings.LOG_TO_FILE:
+        # Crear directorio de logs si no existe
+        log_file = Path(settings.LOG_FILE_PATH)
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Crear handler con rotación automática
+        file_handler = RotatingFileHandler(
+            filename=str(log_file),
+            maxBytes=settings.LOG_FILE_MAX_BYTES,  # 10 MB por defecto
+            backupCount=settings.LOG_FILE_BACKUP_COUNT,  # 5 backups
+            encoding='utf-8'
+        )
+        file_handler.setLevel(log_level)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        logger.info(
+            f"File logging enabled: {settings.LOG_FILE_PATH} "
+            f"(max {settings.LOG_FILE_MAX_BYTES / 1024 / 1024:.1f} MB, "
+            f"{settings.LOG_FILE_BACKUP_COUNT} backups)"
+        )
 
     # No propagar a logger raíz de Python
     logger.propagate = False
 
+    # ========== Configurar SQL Logging ==========
+    setup_sql_logging(formatter)
+
     return logger
+
+
+def setup_sql_logging(formatter: StructuredFormatter) -> None:
+    """
+    Configura el logging de queries SQL de SQLAlchemy.
+
+    Args:
+        formatter: Formatter a usar para los logs SQL
+    """
+    if not settings.LOG_SQL_QUERIES:
+        # Desactivar completamente el logging SQL
+        logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+        return
+
+    # Logger de SQLAlchemy engine (queries ejecutadas)
+    sql_logger = logging.getLogger("sqlalchemy.engine")
+    sql_log_level = getattr(logging, settings.LOG_SQL_LEVEL.upper(), logging.INFO)
+    sql_logger.setLevel(sql_log_level)
+
+    # Evitar duplicación
+    if sql_logger.handlers:
+        return
+
+    # Si queremos SQL en archivo separado
+    if settings.LOG_SQL_TO_SEPARATE_FILE:
+        # Crear directorio si no existe
+        sql_log_file = Path(settings.LOG_SQL_FILE_PATH)
+        sql_log_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Handler específico para SQL
+        sql_file_handler = RotatingFileHandler(
+            filename=str(sql_log_file),
+            maxBytes=settings.LOG_FILE_MAX_BYTES,
+            backupCount=settings.LOG_FILE_BACKUP_COUNT,
+            encoding='utf-8'
+        )
+        sql_file_handler.setLevel(sql_log_level)
+        sql_file_handler.setFormatter(formatter)
+        sql_logger.addHandler(sql_file_handler)
+
+        # También a consola si estamos en debug
+        if settings.DEBUG:
+            sql_console_handler = logging.StreamHandler(sys.stdout)
+            sql_console_handler.setLevel(sql_log_level)
+            sql_console_handler.setFormatter(formatter)
+            sql_logger.addHandler(sql_console_handler)
+
+        # No propagar al logger raíz (ya tiene sus propios handlers)
+        sql_logger.propagate = False
+
+        logging.getLogger("studyforge").info(
+            f"SQL logging enabled: {settings.LOG_SQL_FILE_PATH} (separate file)"
+        )
+    else:
+        # Copiar los handlers del logger principal (studyforge) al logger SQL
+        # Así las queries aparecerán en el mismo archivo que los demás logs
+        studyforge_logger = logging.getLogger("studyforge")
+
+        for handler in studyforge_logger.handlers:
+            # Crear un nuevo handler con la misma configuración
+            if isinstance(handler, RotatingFileHandler):
+                # Usar el mismo archivo que el logger principal
+                sql_logger.addHandler(handler)
+            elif isinstance(handler, logging.StreamHandler):
+                # Usar la misma consola
+                sql_logger.addHandler(handler)
+
+        # No propagar para evitar duplicados
+        sql_logger.propagate = False
+
+        logging.getLogger("studyforge").info(
+            f"SQL logging enabled: level={settings.LOG_SQL_LEVEL} (same file as app logs)"
+        )
 
 
 def get_logger(name: str = "studyforge") -> logging.Logger:

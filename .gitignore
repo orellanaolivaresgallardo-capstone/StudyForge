@@ -4,6 +4,10 @@ __pycache__/
 backend/.venv/
 .coverage
 
+# Logs
+logs/
+*.log
+
 # Node
 node_modules/
 dist/
