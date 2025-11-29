@@ -14,19 +14,21 @@
 7. [Backend: Fixtures Compartidas](#backend-fixtures-compartidas)
 8. [Backend: Cobertura de Código](#backend-cobertura-de-código)
 9. [Backend: Best Practices](#backend-best-practices)
+10. [Backend: Tests Especiales](#backend-tests-especiales)
+    - [Tests de Logging de Errores SQL](#tests-de-logging-de-errores-sql)
 
 ### Frontend (React/TypeScript)
-10. [Frontend: Estructura de Tests](#frontend-estructura-de-tests)
-11. [Frontend: Configuración del Entorno](#frontend-configuración-del-entorno)
-12. [Frontend: Ejecutar Tests](#frontend-ejecutar-tests)
-13. [Frontend: Escribir Tests](#frontend-escribir-tests)
-14. [Frontend: Mocking y Test Utils](#frontend-mocking-y-test-utils)
-15. [Frontend: Cobertura de Código](#frontend-cobertura-de-código)
-16. [Frontend: Best Practices](#frontend-best-practices)
+11. [Frontend: Estructura de Tests](#frontend-estructura-de-tests)
+12. [Frontend: Configuración del Entorno](#frontend-configuración-del-entorno)
+13. [Frontend: Ejecutar Tests](#frontend-ejecutar-tests)
+14. [Frontend: Escribir Tests](#frontend-escribir-tests)
+15. [Frontend: Mocking y Test Utils](#frontend-mocking-y-test-utils)
+16. [Frontend: Cobertura de Código](#frontend-cobertura-de-código)
+17. [Frontend: Best Practices](#frontend-best-practices)
 
 ### CI/CD
-17. [Integración Continua](#integración-continua)
-18. [Comandos de Referencia Rápida](#comandos-de-referencia-rápida)
+18. [Integración Continua](#integración-continua)
+19. [Comandos de Referencia Rápida](#comandos-de-referencia-rápida)
 
 ---
 
@@ -143,7 +145,8 @@ backend/
 │       ├── test_auth_me.py
 │       ├── test_rate_limiter.py
 │       ├── test_documents_guard.py
-│       └── test_topic_cleanup.py
+│       ├── test_topic_cleanup.py
+│       └── test_sql_logging.py  # Tests de logging de errores SQL
 ```
 
 ### Convenciones de Nombres
@@ -776,6 +779,170 @@ def test_create_summary_with_multiple_documents():
     """
     # ... test code
 ```
+
+---
+
+## Backend: Tests Especiales
+
+### Tests de Logging de Errores SQL
+
+StudyForge incluye tests especializados para verificar que el sistema de logging de errores de SQLAlchemy funciona correctamente. Estos tests son útiles para debugging y asegurar que los errores de base de datos se registran apropiadamente.
+
+#### 📁 Archivos
+
+##### 1. Test pytest: `tests/test_sql_logging.py`
+
+Test pytest que verifica el logging de errores SQL con assertions y captura de errores esperados.
+
+**Características:**
+- ✅ Tests con `pytest.raises()` para capturar errores intencionados
+- ✅ Verificación de tipos de error específicos (UndefinedTable, ForeignKeyViolation, etc.)
+- ✅ Uso de fixture `db` del conftest
+- ✅ Modo standalone para ejecución manual
+
+**Ejecutar con pytest:**
+```bash
+cd backend
+pytest tests/test_sql_logging.py -v
+```
+
+**Ejecutar manualmente para ver logs en consola en tiempo real:**
+```bash
+cd backend
+.venv\Scripts\python.exe tests\test_sql_logging.py
+```
+
+El modo manual es útil para **ver los logs en tiempo real** en tu consola.
+
+**Ejemplo de test:**
+```python
+def test_sql_error_nonexistent_table(db: Session, caplog):
+    """
+    Verifica que los errores de tabla inexistente se loguean correctamente.
+
+    Este test genera intencionalmente un error de tabla inexistente
+    y verifica que se captura y registra apropiadamente.
+    """
+    with pytest.raises(ProgrammingError) as exc_info:
+        db.execute(text("SELECT * FROM studyforge.tabla_que_no_existe"))
+
+    # Verificar que es el error esperado
+    assert "tabla_que_no_existe" in str(exc_info.value)
+    logger.error(f"Error esperado capturado: {exc_info.value}")
+```
+
+##### 2. Router de prueba: `app/routers/test_sql_errors.py`
+
+Router FastAPI con endpoints HTTP para generar errores SQL desde el navegador o Swagger UI.
+
+**⚠️ Importante:** Este router solo está disponible cuando `DEBUG=True` (configurado en `app/main.py`).
+
+**Uso:**
+
+1. Inicia el servidor:
+   ```bash
+   cd backend
+   .venv\Scripts\python.exe -m uvicorn app.main:app --reload
+   ```
+
+2. Abre Swagger UI: http://localhost:8000/docs
+
+3. Busca la sección **"test-errors"**
+
+4. Ejecuta cualquier endpoint (Try it out → Execute)
+
+5. **Observa la consola del servidor** donde está corriendo uvicorn
+
+**Endpoints disponibles:**
+
+| Endpoint | Error Generado | Descripción |
+|----------|----------------|-------------|
+| `GET /test-errors/nonexistent-table` | UndefinedTable | Tabla inexistente |
+| `GET /test-errors/nonexistent-column` | UndefinedColumn | Columna inexistente |
+| `GET /test-errors/syntax-error` | SyntaxError | Sintaxis SQL inválida |
+| `GET /test-errors/division-by-zero` | DivisionByZero | División por cero |
+| `GET /test-errors/foreign-key-violation` | ForeignKeyViolation | Violación de integridad referencial |
+
+**Ejemplo de endpoint:**
+```python
+@router.get("/test-errors/nonexistent-table")
+def test_nonexistent_table(db: Session = Depends(get_db)):
+    """Genera error de tabla inexistente."""
+    try:
+        result = db.execute(text("SELECT * FROM studyforge.tabla_que_no_existe"))
+        return {"result": result.fetchall()}
+    except Exception as e:
+        logger.error(f"Error de prueba capturado: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+#### ✅ Qué Verificar
+
+Cuando ejecutes los tests o endpoints, deberías ver:
+
+**En consola del servidor:**
+```
+[2025-11-29T...] ERROR studyforge - Error esperado capturado: (psycopg.errors.UndefinedTable) no existe la relación «studyforge.tabla_que_no_existe»
+LINE 1: SELECT * FROM studyforge.tabla_que_no_existe
+                      ^
+[SQL: SELECT * FROM studyforge.tabla_que_no_existe]
+```
+
+**En archivo de logs (`backend/logs/studyforge.log`):**
+Los mismos mensajes de error con formato estructurado.
+
+#### 🔧 Configuración de Logging
+
+El sistema de logging está configurado en:
+- **`app/core/logging.py:114-205`** - Configuración de loggers y handlers de SQLAlchemy
+- **`app/config.py:45-49`** - Variables de entorno para logging SQL
+
+**Loggers configurados automáticamente:**
+- `sqlalchemy.engine.Engine` - Errores de ejecución SQL
+- `sqlalchemy.pool` - Errores de pool de conexiones
+- `sqlalchemy.dialects` - Errores de dialecto (PostgreSQL)
+- `sqlalchemy.orm` - Errores de ORM (flush, commit)
+
+Todos estos loggers envían errores (WARNING y ERROR) a:
+- ✅ Consola (stdout) con `StreamHandler`
+- ✅ Archivo de logs (`logs/studyforge.log`) con `RotatingFileHandler`
+
+**Variables de entorno relevantes:**
+```python
+# En .env
+LOG_LEVEL=DEBUG               # Nivel general de logging
+LOG_SQL_QUERIES=True          # Habilitar logging de queries SQL (opcional)
+LOG_SQL_LEVEL=DEBUG           # Nivel de logging SQL
+LOG_TO_FILE=True              # Guardar logs en archivo
+LOG_FILE_PATH=logs/studyforge.log
+```
+
+#### 📝 Notas Importantes
+
+- ✅ Los errores generados son **intencionados** y parte del test
+- ✅ No afectan la base de datos (transacciones hacen rollback automáticamente)
+- ✅ Los endpoints de prueba **solo están disponibles en DEBUG mode**
+- ✅ En producción (`DEBUG=False`), los endpoints no se cargan
+- ✅ Los errores se registran **siempre**, incluso si `LOG_SQL_QUERIES=False`
+
+#### 🐛 Debugging
+
+Si no ves los errores en consola:
+
+1. Verifica que `DEBUG=True` en `.env`
+2. Verifica que `LOG_LEVEL=DEBUG` en `.env`
+3. Revisa que el servidor se haya iniciado correctamente
+4. Verifica la configuración en `app/core/logging.py:121-149`
+
+#### 🧪 Casos de Prueba Cubiertos
+
+| Test | Tipo de Error | Fixture | Assertion |
+|------|---------------|---------|-----------|
+| `test_sql_error_nonexistent_table` | ProgrammingError | db | Verifica mensaje de error contiene nombre de tabla |
+| `test_sql_error_nonexistent_column` | ProgrammingError | db | Verifica mensaje de error contiene nombre de columna |
+| `test_sql_error_syntax_error` | ProgrammingError | db | Verifica mensaje contiene keyword SQL inválido |
+| `test_sql_error_division_by_zero` | DataError | db | Verifica mensaje de división por cero |
+| `test_sql_error_foreign_key_violation` | IntegrityError | db | Verifica mensaje de violación FK |
 
 ---
 
@@ -1943,7 +2110,8 @@ cd backend && pytest && cd ../frontend && pnpm test:run
 
 ### Backend
 - **Framework**: pytest + pytest-asyncio + pytest-cov
-- **Tests**: 31 archivos
+- **Tests**: 32 archivos (incluyendo `test_sql_logging.py`)
+- **Tests Especiales**: Logging de errores SQL + Router HTTP de prueba (`test_sql_errors.py`)
 - **Cobertura**: ~96% (Core: 100%, Auth: 100%, Documents: 99%)
 - **Comando**: `cd backend && pytest --cov=app`
 
@@ -1971,4 +2139,5 @@ cd backend && pytest && cd ../frontend && pnpm test:run
 **Última actualización**: Noviembre 2025
 **Cobertura Backend**: ~96% (Core: 100%, Auth: 100%, Documents: 99%)
 **Cobertura Frontend**: Objetivo 70%+ (18 archivos de test)
-**Total de tests**: 49 archivos (31 backend + 18 frontend)
+**Total de tests**: 50 archivos (32 backend + 18 frontend)
+**Tests especiales**: SQL Logging tests + Router HTTP de prueba
