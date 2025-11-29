@@ -23,3 +23,9 @@ dist/
 .env
 .env.*
 !.env*.example
+
+# Test
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
