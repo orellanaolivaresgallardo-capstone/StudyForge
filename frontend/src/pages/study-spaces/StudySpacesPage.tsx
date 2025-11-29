@@ -2,7 +2,7 @@
  * Study Spaces Page - REFACTORED VERSION
  * Reduced from 418 → ~175 lines using custom hooks and extracted components
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar, Toast, LoadingSpinner, EmptyState } from '@/components';
 import { SpaceCard } from '@/components/ui/Card';
 import { CreateEditSpaceModal } from './components/CreateEditSpaceModal';
@@ -23,9 +23,11 @@ export default function StudySpacesPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Show error from hook
-  if (error) {
-    showError(error);
-  }
+  useEffect(() => {
+    if (error) {
+      showError(error);
+    }
+  }, [error, showError]);
 
   // ========== Create Space ==========
   const handleOpenCreateModal = () => {

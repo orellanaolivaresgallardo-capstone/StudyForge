@@ -2,7 +2,7 @@
  * Summaries Page - REFACTORED VERSION
  * Reduced from 531 → ~240 lines using custom hooks and extracted components
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar, Toast, Modal, LoadingSpinner, EmptyState } from '@/components';
 import { SummaryCard } from '@/components/ui/Card';
@@ -35,9 +35,11 @@ export default function SummariesPage() {
   const [isCreating, setIsCreating] = useState(false);
 
   // Show error from hook
-  if (error) {
-    showError(error);
-  }
+  useEffect(() => {
+    if (error) {
+      showError(error);
+    }
+  }, [error, showError]);
 
   // ========== Create Summary ==========
   const handleOpenCreateModal = () => {
