@@ -22,25 +22,25 @@ export function ProgressSection({ stats, performance }: ProgressSectionProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Documentos"
-            value={stats.total_documents}
+            value={stats.num_documents}
             icon="📄"
             color="violet"
           />
           <StatCard
             title="Total Resúmenes"
-            value={stats.total_summaries}
+            value={stats.num_summaries}
             icon="📝"
             color="blue"
           />
           <StatCard
             title="Total Quizzes"
-            value={stats.total_quizzes}
+            value={stats.num_quizzes}
             icon="📋"
             color="green"
           />
           <StatCard
             title="Promedio Score"
-            value={`${stats.average_score?.toFixed(1) || 0}%`}
+            value={`${stats.avg_score?.toFixed(1) || 0}%`}
             icon="🎯"
             color="yellow"
           />
@@ -48,10 +48,10 @@ export function ProgressSection({ stats, performance }: ProgressSectionProps) {
       )}
 
       {/* Performance Chart */}
-      {performance && performance.attempts.length > 0 && (
+      {performance && performance.recent_attempts && performance.recent_attempts.length > 0 && (
         <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
           <h2 className="text-2xl font-bold text-white mb-4">Rendimiento</h2>
-          <PerformanceChart performance={performance} />
+          <PerformanceChart attempts={performance.recent_attempts} />
         </div>
       )}
     </div>

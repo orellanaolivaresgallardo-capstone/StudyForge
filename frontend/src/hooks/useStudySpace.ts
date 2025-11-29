@@ -16,7 +16,7 @@ import type {
   UserPerformance,
 } from '@/types';
 
-interface UseStudySpaceReturn {
+export interface UseStudySpaceReturn {
   space: StudySpaceDetailResponse | null;
   stats: StudySpaceStatsResponse | null;
   quizzes: QuizResponse[];

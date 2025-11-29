@@ -10,7 +10,7 @@ interface QuizSource {
   data: DocumentResponse | SummaryResponse | null;
 }
 
-interface UseStudySpaceModalsReturn {
+export interface UseStudySpaceModalsReturn {
   // Edit modal
   editModal: {
     isOpen: boolean;
