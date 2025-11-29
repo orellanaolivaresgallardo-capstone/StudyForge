@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException, s
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.dependencies import get_current_user
+from app.core.logging import log_audit_event
 from app.services.quiz_service import QuizService
 from app.repositories.quiz_attempt_repository import QuizAttemptRepository
 from app.schemas.quiz import QuizResponse, QuizListResponse
@@ -82,6 +83,22 @@ async def generate_quiz_from_file(
         max_questions=max_questions,
     )
 
+    # Audit log: successful quiz creation from file
+    log_audit_event(
+        event="quiz_creation",
+        user_id=str(current_user.id),
+        resource_type="quiz",
+        resource_id=str(quiz.id),
+        action="create",
+        result="success",
+        extra={
+            "source_type": "file",
+            "study_space_id": str(study_space_id),
+            "num_questions": len(quiz.questions),
+            "difficulty_level": quiz.difficulty_level
+        }
+    )
+
     # Enriquecer con metadata
     quiz_dict = _enrich_quiz_response(quiz, db, current_user.id)
     return QuizResponse(**quiz_dict)
@@ -116,6 +133,23 @@ def generate_quiz_from_summary(
         user=current_user,
         summary_id=summary_id,
         max_questions=max_questions,
+    )
+
+    # Audit log: successful quiz creation from summary
+    log_audit_event(
+        event="quiz_creation",
+        user_id=str(current_user.id),
+        resource_type="quiz",
+        resource_id=str(quiz.id),
+        action="create",
+        result="success",
+        extra={
+            "source_type": "summary",
+            "source_summary_id": str(summary_id),
+            "study_space_id": str(quiz.study_space_id) if quiz.study_space_id else None,
+            "num_questions": len(quiz.questions),
+            "difficulty_level": quiz.difficulty_level
+        }
     )
 
     # Enriquecer con metadata
@@ -155,6 +189,23 @@ def generate_quiz_from_document(
         document_id=document_id,
         study_space_id=study_space_id,  # NEW: Pass study_space_id
         max_questions=max_questions,
+    )
+
+    # Audit log: successful quiz creation from document
+    log_audit_event(
+        event="quiz_creation",
+        user_id=str(current_user.id),
+        resource_type="quiz",
+        resource_id=str(quiz.id),
+        action="create",
+        result="success",
+        extra={
+            "source_type": "document",
+            "source_document_id": str(document_id),
+            "study_space_id": str(study_space_id),
+            "num_questions": len(quiz.questions),
+            "difficulty_level": quiz.difficulty_level
+        }
     )
 
     # Enriquecer con metadata
@@ -262,5 +313,15 @@ def delete_quiz(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz no encontrado"
         )
+
+    # Audit log: successful quiz deletion
+    log_audit_event(
+        event="quiz_deletion",
+        user_id=str(current_user.id),
+        resource_type="quiz",
+        resource_id=str(quiz_id),
+        action="delete",
+        result="success"
+    )
 
     return None

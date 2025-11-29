@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException, s
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.dependencies import get_current_user, verify_document_ownership
+from app.core.logging import log_audit_event
 from app.repositories.document_repository import DocumentRepository
 from app.repositories.user_repository import UserRepository
 from app.services.file_processor import FileProcessor
@@ -141,6 +142,22 @@ async def upload_document(
     db.commit()
     db.refresh(current_user)
     db.refresh(document)
+
+    # Audit log: successful document upload
+    log_audit_event(
+        event="document_upload",
+        user_id=str(current_user.id),
+        resource_type="document",
+        resource_id=str(document.id),
+        action="create",
+        result="success",
+        extra={
+            "file_name": filename,
+            "file_size_bytes": file_size_bytes,
+            "file_type": file_type,
+            "space_count": len(space_ids_list)
+        }
+    )
 
     return document
 
@@ -313,5 +330,16 @@ def delete_document(
     # Actualizar storage_used_bytes del usuario
     current_user.storage_used_bytes = max(0, current_user.storage_used_bytes - file_size)
     db.commit()
+
+    # Audit log: successful document deletion
+    log_audit_event(
+        event="document_deletion",
+        user_id=str(current_user.id),
+        resource_type="document",
+        resource_id=str(document_id),
+        action="delete",
+        result="success",
+        extra={"file_size_bytes": file_size}
+    )
 
     return None
