@@ -5,7 +5,8 @@
  */
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Navbar, Toast, Modal, UploadDocumentModal } from "@/components";
+import { useStorage } from "@/context/StorageContext";
+import { Toast, Modal, UploadDocumentModal } from "@/components";
 import type { ToastType } from "@/components";
 import {
   listDocuments,
@@ -19,6 +20,7 @@ import { getErrorMessage } from "@/utils/errorHandler";
 
 export default function DocumentsPage() {
   const { user } = useAuth();
+  const { refreshStorage } = useStorage();
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
   const [studySpaces, setStudySpaces] = useState<StudySpaceResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,6 +84,8 @@ export default function DocumentsPage() {
       await apiUploadDocument(file, spaceIds, title);
       showToast("Documento subido con éxito", "success");
       await loadData();
+      // Actualizar cuota de almacenamiento en QuotaWidget
+      await refreshStorage();
     } catch (error: any) {
       console.error("Error uploading document:", error);
       if (error?.response?.status === 413) {
@@ -119,6 +123,8 @@ export default function DocumentsPage() {
       await apiDeleteDocument(deleteModal.id);
       showToast("Documento eliminado", "success");
       await loadData();
+      // Actualizar cuota de almacenamiento en QuotaWidget
+      await refreshStorage();
       setDeleteModal(null);
     } catch (error) {
       console.error("Error deleting document:", error);
@@ -151,18 +157,9 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
-        aria-hidden="true"
-      />
-
-      {/* Navbar */}
-      <Navbar />
-
-      <main className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-10">
-        {/* Upload Zone */}
-        <section className="mx-auto max-w-3xl">
+    <>
+      {/* Upload Zone */}
+      <section className="mx-auto max-w-3xl">
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-6">
             Sube tu documento
           </h2>
@@ -291,7 +288,6 @@ export default function DocumentsPage() {
             </ul>
           )}
         </section>
-      </main>
 
       {/* Delete Confirmation Modal */}
       {deleteModal && (
@@ -349,6 +345,6 @@ export default function DocumentsPage() {
           onClose={() => setToast(null)}
         />
       )}
-    </div>
+    </>
   );
 }
