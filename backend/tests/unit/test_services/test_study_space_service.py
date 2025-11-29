@@ -18,24 +18,350 @@ from app.models.quiz_attempt import QuizAttempt
 # TESTS PARA create_space()
 # ========================================
 
-def test_add_summary_to_space_summary_not_found():
-    """Method removed - summaries now created with study_space_id directly"""
-    pass
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_create_space_success(mock_repo):
+    """create_space debe crear espacio correctamente"""
+    mock_db = MagicMock()
+    user_id = uuid4()
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.id = uuid4()
+    mock_space.name = "New Space"
+    mock_repo.create.return_value = mock_space
+
+    service = StudySpaceService()
+    result = service.create_space(mock_db, user_id, "New Space", "Description", "#FF0000")
+
+    mock_repo.create.assert_called_once_with(mock_db, user_id, "New Space", "Description", "#FF0000")
+    assert result == mock_space
 
 
-def test_add_summary_to_space_wrong_owner():
-    """Method removed - summaries now created with study_space_id directly"""
-    pass
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_create_space_with_defaults(mock_repo):
+    """create_space debe usar valores por defecto"""
+    mock_db = MagicMock()
+    user_id = uuid4()
+
+    mock_space = Mock(spec=StudySpace)
+    mock_repo.create.return_value = mock_space
+
+    service = StudySpaceService()
+    service.create_space(mock_db, user_id, "Space Name")
+
+    # Debe usar None para description y color por defecto
+    mock_repo.create.assert_called_once_with(mock_db, user_id, "Space Name", None, "#8B5CF6")
+
+
+# ========================================
+# TESTS PARA get_spaces()
+# ========================================
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_get_spaces_success(mock_repo):
+    """get_spaces debe retornar espacios y total"""
+    mock_db = MagicMock()
+    user_id = uuid4()
+
+    mock_spaces = [Mock(spec=StudySpace), Mock(spec=StudySpace)]
+    mock_repo.get_by_user.return_value = mock_spaces
+    mock_repo.count_by_user.return_value = 10
+
+    service = StudySpaceService()
+    result, total = service.get_spaces(mock_db, user_id, skip=0, limit=100)
+
+    assert result == mock_spaces
+    assert total == 10
+    mock_repo.get_by_user.assert_called_once_with(mock_db, user_id, 0, 100)
+    mock_repo.count_by_user.assert_called_once_with(mock_db, user_id)
+
+
+# ========================================
+# TESTS PARA get_spaces_with_stats()
+# ========================================
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_get_spaces_with_stats_success(mock_repo):
+    """get_spaces_with_stats debe retornar estadísticas"""
+    mock_db = MagicMock()
+    user_id = uuid4()
+
+    mock_stats = [{'space': Mock(), 'num_documents': 2}]
+    mock_repo.get_by_user_with_stats.return_value = (mock_stats, 5)
+
+    service = StudySpaceService()
+    result, total = service.get_spaces_with_stats(mock_db, user_id, skip=0, limit=10)
+
+    assert result == mock_stats
+    assert total == 5
+    mock_repo.get_by_user_with_stats.assert_called_once_with(mock_db, user_id, 0, 10)
+
+
+# ========================================
+# TESTS PARA get_space()
+# ========================================
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_get_space_success(mock_repo):
+    """get_space debe retornar espacio si ownership correcto"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = user_id
+    mock_repo.get_by_id.return_value = mock_space
+
+    service = StudySpaceService()
+    result = service.get_space(mock_db, space_id, mock_user)
+
+    assert result == mock_space
+
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_get_space_not_found(mock_repo):
+    """get_space debe lanzar 404 si espacio no existe"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_repo.get_by_id.return_value = None
+
+    service = StudySpaceService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.get_space(mock_db, space_id, mock_user)
+
+    assert exc_info.value.status_code == 404
+    assert "Study space not found" in exc_info.value.detail
+
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_get_space_wrong_owner(mock_repo):
+    """get_space debe lanzar 403 si usuario no es dueño"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    user_id = uuid4()
+    other_user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = other_user_id  # Diferente usuario
+    mock_repo.get_by_id.return_value = mock_space
+
+    service = StudySpaceService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.get_space(mock_db, space_id, mock_user)
+
+    assert exc_info.value.status_code == 403
+    assert "Not authorized" in exc_info.value.detail
+
+
+# ========================================
+# TESTS PARA update_space()
+# ========================================
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_update_space_success(mock_repo):
+    """update_space debe actualizar espacio correctamente"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = user_id
+    mock_repo.get_by_id.return_value = mock_space
+
+    updated_space = Mock(spec=StudySpace)
+    mock_repo.update.return_value = updated_space
+
+    service = StudySpaceService()
+    result = service.update_space(mock_db, space_id, mock_user, name="Updated", color="#000000")
+
+    mock_repo.update.assert_called_once_with(mock_db, mock_space, "Updated", None, "#000000")
+    assert result == updated_space
+
+
+# ========================================
+# TESTS PARA delete_space()
+# ========================================
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+def test_delete_space_success(mock_repo):
+    """delete_space debe eliminar espacio correctamente"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = user_id
+    mock_repo.get_by_id.return_value = mock_space
+
+    service = StudySpaceService()
+    service.delete_space(mock_db, space_id, mock_user)
+
+    mock_repo.delete.assert_called_once_with(mock_db, mock_space)
+
+
+# ========================================
+# TESTS PARA add_summary_to_space()
+# ========================================
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+@patch('app.services.study_space_service.SummaryRepository')
+def test_add_summary_to_space_success(mock_summary_repo, mock_space_repo):
+    """add_summary_to_space debe agregar resumen a espacio"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    summary_id = uuid4()
+    user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = user_id
+    mock_space_repo.get_by_id.return_value = mock_space
+
+    mock_summary = Mock(spec=Summary)
+    mock_summary.user_id = user_id
+    mock_summary.study_space_id = None
+    mock_summary_repo.get_by_id.return_value = mock_summary
+
+    service = StudySpaceService()
+    service.add_summary_to_space(mock_db, space_id, summary_id, mock_user)
+
+    assert mock_summary.study_space_id == space_id
+    mock_db.commit.assert_called_once()
+
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+@patch('app.services.study_space_service.SummaryRepository')
+def test_add_summary_to_space_summary_not_found(mock_summary_repo, mock_space_repo):
+    """add_summary_to_space debe lanzar 404 si resumen no existe"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    summary_id = uuid4()
+    user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = user_id
+    mock_space_repo.get_by_id.return_value = mock_space
+
+    mock_summary_repo.get_by_id.return_value = None
+
+    service = StudySpaceService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.add_summary_to_space(mock_db, space_id, summary_id, mock_user)
+
+    assert exc_info.value.status_code == 404
+    assert "Summary not found" in exc_info.value.detail
+
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+@patch('app.services.study_space_service.SummaryRepository')
+def test_add_summary_to_space_wrong_owner(mock_summary_repo, mock_space_repo):
+    """add_summary_to_space debe lanzar 404 si resumen no es del usuario"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    summary_id = uuid4()
+    user_id = uuid4()
+    other_user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = user_id
+    mock_space_repo.get_by_id.return_value = mock_space
+
+    mock_summary = Mock(spec=Summary)
+    mock_summary.user_id = other_user_id  # Diferente usuario
+    mock_summary_repo.get_by_id.return_value = mock_summary
+
+    service = StudySpaceService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.add_summary_to_space(mock_db, space_id, summary_id, mock_user)
+
+    assert exc_info.value.status_code == 404
 
 
 # ========================================
 # TESTS PARA remove_summary_from_space()
 # ========================================
-# NOTE: remove_summary_from_space() was removed - summaries belong to single space
 
-def test_remove_summary_from_space():
-    """Method removed - summaries now belong to single study_space_id"""
-    pass
+@patch('app.services.study_space_service.StudySpaceRepository')
+@patch('app.services.study_space_service.SummaryRepository')
+def test_remove_summary_from_space_success(mock_summary_repo, mock_space_repo):
+    """remove_summary_from_space debe eliminar resumen correctamente"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    summary_id = uuid4()
+    user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = user_id
+    mock_space_repo.get_by_id.return_value = mock_space
+
+    mock_summary = Mock(spec=Summary)
+    mock_summary.user_id = user_id
+    mock_summary.study_space_id = space_id
+    mock_summary_repo.get_by_id.return_value = mock_summary
+
+    service = StudySpaceService()
+    service.remove_summary_from_space(mock_db, space_id, summary_id, mock_user)
+
+    mock_summary_repo.delete.assert_called_once_with(mock_db, mock_summary)
+
+
+@patch('app.services.study_space_service.StudySpaceRepository')
+@patch('app.services.study_space_service.SummaryRepository')
+def test_remove_summary_not_in_space(mock_summary_repo, mock_space_repo):
+    """remove_summary_from_space debe lanzar 400 si resumen no pertenece al espacio"""
+    mock_db = MagicMock()
+    space_id = uuid4()
+    other_space_id = uuid4()
+    summary_id = uuid4()
+    user_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_space = Mock(spec=StudySpace)
+    mock_space.user_id = user_id
+    mock_space_repo.get_by_id.return_value = mock_space
+
+    mock_summary = Mock(spec=Summary)
+    mock_summary.user_id = user_id
+    mock_summary.study_space_id = other_space_id  # Diferente espacio
+    mock_summary_repo.get_by_id.return_value = mock_summary
+
+    service = StudySpaceService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.remove_summary_from_space(mock_db, space_id, summary_id, mock_user)
+
+    assert exc_info.value.status_code == 400
+    assert "does not belong to this study space" in exc_info.value.detail
 
 
 # ========================================
