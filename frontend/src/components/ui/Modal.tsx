@@ -7,6 +7,7 @@ export interface ModalProps {
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showCloseButton?: boolean;
+  allowClose?: boolean; // Si false, previene cerrar con ESC o click fuera
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -16,6 +17,7 @@ const Modal: React.FC<ModalProps> = ({
   children,
   size = 'md',
   showCloseButton = true,
+  allowClose = true,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -43,22 +45,24 @@ const Modal: React.FC<ModalProps> = ({
   // Handle ESC key press
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && isOpen && allowClose) {
         handleClose();
       }
     };
 
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
-  }, [isOpen]);
+  }, [isOpen, allowClose]);
 
   const handleClose = () => {
-    onClose();
+    if (allowClose) {
+      onClose();
+    }
   };
 
   // Handle click outside modal
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+    if (modalRef.current && !modalRef.current.contains(e.target as Node) && allowClose) {
       handleClose();
     }
   };

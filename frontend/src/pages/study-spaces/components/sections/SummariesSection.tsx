@@ -7,14 +7,12 @@ import type { SummaryResponse } from '@/types';
 
 interface SummariesSectionProps {
   summaries: SummaryResponse[];
-  onAddSummary: () => void;
   onRemoveSummary: (id: string, title: string) => void;
   onCreateQuiz: (summary: SummaryResponse) => void;
 }
 
 export function SummariesSection({
   summaries,
-  onAddSummary,
   onRemoveSummary,
   onCreateQuiz,
 }: SummariesSectionProps) {
@@ -22,12 +20,6 @@ export function SummariesSection({
     <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-white">Resúmenes</h2>
-        <button
-          onClick={onAddSummary}
-          className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
-        >
-          + Agregar Resumen
-        </button>
       </div>
 
       {summaries.length === 0 ? (
@@ -43,11 +35,7 @@ export function SummariesSection({
             </svg>
           }
           title="No hay resúmenes en este espacio"
-          description="Agrega resúmenes para organizar tu contenido de estudio"
-          action={{
-            label: '+ Agregar Resumen',
-            onClick: onAddSummary,
-          }}
+          description="Crea resúmenes desde la sección de documentos para organizar tu contenido de estudio"
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

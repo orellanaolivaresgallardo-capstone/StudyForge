@@ -29,7 +29,14 @@ export function CreateSummaryModal({
   const levels: ExpertiseLevel[] = ['basico', 'medio', 'avanzado'];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Generar Resumen" size="sm">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Generar Resumen"
+      size="sm"
+      showCloseButton={!isCreating}
+      allowClose={!isCreating}
+    >
       <div className="space-y-6">
         <div>
           <p className="text-white/80 mb-2">

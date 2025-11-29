@@ -54,9 +54,11 @@ export function QuizConfigModal({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={handleClose}
+      onClose={onClose}
       title={title}
       size="md"
+      showCloseButton={!isGenerating}
+      allowClose={!isGenerating}
     >
       <div className="space-y-6">
         {/* Descripción */}

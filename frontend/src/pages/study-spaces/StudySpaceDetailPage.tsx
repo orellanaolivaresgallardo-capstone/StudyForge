@@ -288,7 +288,6 @@ export default function StudySpaceDetailPage() {
 
           <SummariesSection
             summaries={space.summaries}
-            onAddSummary={() => handleOpenAddModal('summary')}
             onRemoveSummary={(id, title) => handleRemoveResource(id, 'summary', title)}
             onCreateQuiz={(summary) => handleOpenQuizModal('summary', summary)}
           />
