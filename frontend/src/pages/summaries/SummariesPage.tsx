@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Navbar, Toast, Modal, LoadingSpinner, EmptyState } from '@/components';
+import { Toast, Modal, LoadingSpinner, EmptyState } from '@/components';
 import { SummaryCard } from '@/components/ui/Card';
 import { CreateSummaryModal } from './components/CreateSummaryModal';
 import { useSummariesData } from '@/hooks/useSummariesData';
@@ -105,16 +105,8 @@ export default function SummariesPage() {
 
   // ========== Render ==========
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
-        aria-hidden="true"
-      />
-
-      <Navbar />
-
-      <main className="relative z-10 mx-auto max-w-6xl px-4 py-10 space-y-8">
-        {/* Header */}
+    <>
+      {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-white">
@@ -233,10 +225,9 @@ export default function SummariesPage() {
           onSubmit={handleCreateSummary}
           isCreating={isCreating}
         />
-      </main>
 
       {/* Toast Notification */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
-    </div>
+    </>
   );
 }

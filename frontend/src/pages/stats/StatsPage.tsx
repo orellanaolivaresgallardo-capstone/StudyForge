@@ -1,7 +1,7 @@
 // frontend/src/pages/stats/StatsPage.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navbar, Toast, PerformanceChart, LoadingSpinner } from "@/components";
+import { Toast, PerformanceChart, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import {
   getUserPerformance,
@@ -78,15 +78,8 @@ export default function StatsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
-          aria-hidden="true"
-        />
-        <Navbar />
-        <div className="relative min-h-[calc(100vh-64px)]">
-          <LoadingSpinner size="lg" message="Cargando estadísticas..." />
-        </div>
+      <div className="relative min-h-[calc(100vh-64px)]">
+        <LoadingSpinner size="lg" message="Cargando estadísticas..." />
       </div>
     );
   }
@@ -98,13 +91,7 @@ export default function StatsPage() {
       summary.total_completed_attempts > 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
-        aria-hidden="true"
-      />
-      <Navbar />
-
+    <>
       <div className="relative container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -406,6 +393,6 @@ export default function StatsPage() {
           onClose={() => setToast(null)}
         />
       )}
-    </div>
+    </>
   );
 }

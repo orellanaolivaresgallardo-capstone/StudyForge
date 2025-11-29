@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Navbar, LoadingSpinner } from "@/components";
+import { LoadingSpinner } from "@/components";
 import { getQuizAttemptResults } from "@/services/api";
 import type {
   QuizResultResponse,
@@ -68,16 +68,8 @@ export default function QuizResultsPage() {
   const optionLetters: CorrectOption[] = ["A", "B", "C", "D"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-slate-50">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
-        aria-hidden="true"
-      />
-
-      {/* Navbar */}
-      <Navbar />
-
-      <main className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-8">
+    <>
+      <main className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-8 text-slate-50">
         {/* Back Button */}
         <button
           onClick={() => navigate("/summaries")}
@@ -293,6 +285,6 @@ export default function QuizResultsPage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

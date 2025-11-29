@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Navbar, Toast, LoadingSpinner, QuizConfigModal, ConfirmModal } from '@/components';
+import { Toast, LoadingSpinner, QuizConfigModal, ConfirmModal } from '@/components';
 import { SpaceHeader } from './components';
 import { EditSpaceModal, AddResourceModal, CreateSummaryModal } from './components/modals';
 import { DocumentsSection, SummariesSection, QuizzesSection, ProgressSection } from './components/sections';
@@ -252,23 +252,15 @@ export default function StudySpaceDetailPage() {
   // ========== Render ==========
   if (isLoading || !space) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10" />
-        <Navbar />
-        <div className="relative z-10 flex justify-center items-center h-screen">
-          <LoadingSpinner message="Cargando espacio de estudio..." />
-        </div>
+      <div className="flex justify-center items-center h-screen">
+        <LoadingSpinner message="Cargando espacio de estudio..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10" />
-
-      <Navbar />
-
-      <div className="relative z-10 container mx-auto px-4 py-8">
+    <>
+      <div className="container mx-auto px-4 py-8">
         <SpaceHeader
           space={space}
           onEdit={modals.editModal.open}
@@ -355,6 +347,6 @@ export default function StudySpaceDetailPage() {
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
-    </div>
+    </>
   );
 }

@@ -4,7 +4,7 @@
  * Permite al usuario personalizar preferencias y configuraciones
  */
 import { useState } from "react";
-import { Navbar, Toast } from "@/components";
+import { Toast } from "@/components";
 import type { ToastType } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 
@@ -29,9 +29,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
-
+    <>
       {/* Toast */}
       {toast && (
         <Toast
@@ -292,6 +290,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

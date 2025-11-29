@@ -4,7 +4,7 @@
  * Muestra información del usuario y permite editar datos básicos
  */
 import { useState, useEffect } from "react";
-import { Navbar, Toast, LoadingSpinner } from "@/components";
+import { Toast, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 
@@ -36,9 +36,7 @@ export default function ProfilePage() {
     : 0;
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
-
+    <>
       {/* Toast */}
       {toast && (
         <Toast
@@ -192,6 +190,6 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

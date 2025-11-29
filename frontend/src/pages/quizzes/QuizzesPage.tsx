@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navbar, Toast, QuizCard, LoadingSpinner } from "@/components";
+import { Toast, QuizCard, LoadingSpinner } from "@/components";
 import type { ToastType } from "@/components";
 import { listQuizzes } from "@/services/api";
 import type { QuizResponse } from "@/types";
@@ -40,15 +40,7 @@ export default function QuizzesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
-        aria-hidden="true"
-      />
-
-      {/* Navbar */}
-      <Navbar />
-
+    <>
       {/* Toast */}
       {toast && (
         <Toast
@@ -58,7 +50,7 @@ export default function QuizzesPage() {
         />
       )}
 
-      <main className="relative z-10 mx-auto max-w-6xl px-4 py-10 space-y-8">
+      <div className="mx-auto max-w-6xl px-4 py-10 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -176,7 +168,7 @@ export default function QuizzesPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

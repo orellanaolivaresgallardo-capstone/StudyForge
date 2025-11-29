@@ -3,7 +3,7 @@
  * Reduced from 418 → ~175 lines using custom hooks and extracted components
  */
 import { useState, useEffect } from 'react';
-import { Navbar, Toast, LoadingSpinner, EmptyState } from '@/components';
+import { Toast, LoadingSpinner, EmptyState } from '@/components';
 import { SpaceCard } from '@/components/ui/Card';
 import { CreateEditSpaceModal } from './components/CreateEditSpaceModal';
 import { DeleteSpaceModal } from './components/DeleteSpaceModal';
@@ -103,15 +103,8 @@ export default function StudySpacesPage() {
 
   // ========== Render ==========
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
-        aria-hidden="true"
-      />
-
-      <Navbar />
-
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -192,10 +185,10 @@ export default function StudySpacesPage() {
             isDeleting={isDeleting}
           />
         )}
-      </main>
+      </div>
 
       {/* Toast Notification */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
-    </div>
+    </>
   );
 }
