@@ -1,52 +1,48 @@
 """
 Fixtures para tests de integración E2E.
-Estos fixtures usan base de datos real y autenticación completa.
+Estos fixtures usan base de datos PostgreSQL real y autenticación completa.
 """
 import pytest
+import os
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, Text
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.postgresql import JSONB
 from app.main import app
 from app.db import Base, get_db
 from app.config import settings
 
 
-# Base de datos de test en memoria (SQLite para tests rápidos)
-# SQLite no soporta schemas, así que removemos el schema de todas las tablas
-TEST_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False}  # Solo para SQLite
+# Base de datos PostgreSQL para tests de integración
+# Usa la misma DB que desarrollo pero con un esquema diferente para aislamiento
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "postgresql://studyforge_app:studyforge_password@localhost:5432/studyforge"
 )
+
+engine = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Remover schemas de las tablas para compatibilidad con SQLite
-for table in Base.metadata.tables.values():
-    table.schema = None
-    # Convertir columnas JSONB a TEXT para SQLite
-    for column in table.columns:
-        if isinstance(column.type, JSONB):
-            column.type = Text()
+# No modificar schemas - PostgreSQL soporta JSONB y UUID nativamente
 
 
 @pytest.fixture(scope="function")
 def db_session():
     """
     Crea una sesión de base de datos limpia para cada test.
-    Crea todas las tablas antes del test y las elimina después.
+    Usa transacciones para aislar tests sin recrear tablas.
     """
-    # Crear todas las tablas
-    Base.metadata.create_all(bind=engine)
+    # Crear conexión y comenzar transacción
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = TestingSessionLocal(bind=connection)
 
-    session = TestingSessionLocal()
     try:
         yield session
     finally:
         session.close()
-        # Eliminar todas las tablas después del test
-        Base.metadata.drop_all(bind=engine)
+        # Rollback para limpiar datos del test
+        transaction.rollback()
+        connection.close()
 
 
 @pytest.fixture(scope="function")
