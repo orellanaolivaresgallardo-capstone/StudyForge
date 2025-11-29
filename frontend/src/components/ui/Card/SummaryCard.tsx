@@ -173,17 +173,30 @@ export function SummaryCard({
           </div>
 
           {/* Actions */}
-          {showActions && onCreateQuiz && (
-            <div className="pt-3 border-t border-white/10">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCreateQuiz(summary);
-                }}
-                className="w-full bg-green-500/20 hover:bg-green-500/30 text-green-400 px-3 py-2 rounded text-sm font-medium transition-colors"
-              >
-                Crear Quiz
-              </button>
+          {showActions && (onCreateQuiz || onDelete) && (
+            <div className="pt-3 border-t border-white/10 flex gap-2">
+              {onCreateQuiz && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCreateQuiz(summary);
+                  }}
+                  className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 px-3 py-2 rounded text-sm font-medium transition-colors"
+                >
+                  Crear Quiz
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(summary.id);
+                  }}
+                  className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-2 rounded text-sm font-medium transition-colors"
+                >
+                  Eliminar
+                </button>
+              )}
             </div>
           )}
         </>

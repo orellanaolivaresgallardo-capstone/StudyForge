@@ -182,7 +182,6 @@ export default function SummariesPage() {
               <SummaryCard
                 key={summary.id}
                 summary={summary}
-                variant="list"
                 onDelete={(id) => handleDeleteClick(id, summary.title)}
               />
             ))}

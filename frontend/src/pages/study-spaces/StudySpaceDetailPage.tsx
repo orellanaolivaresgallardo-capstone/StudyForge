@@ -192,7 +192,7 @@ export default function StudySpaceDetailPage() {
       showSuccess('Quiz creado exitosamente');
       modals.quizConfigModal.close();
       await Promise.all([refreshStats(), refreshQuizzes()]);
-      setTimeout(() => navigate(`/quizzes/${quiz.id}`), 1000);
+      setTimeout(() => navigate(`/quizzes/${quiz.id}/attempt`), 1000);
     } catch (err: any) {
       showError(err.response?.data?.detail || 'Error al crear el quiz');
       throw err;
