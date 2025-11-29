@@ -216,6 +216,7 @@ def create_quiz_from_space(
     y se asigna automáticamente a ese espacio.
     """
     from app.services.quiz_service import QuizService
+    from app.repositories.quiz_attempt_repository import QuizAttemptRepository
 
     quiz_service = QuizService()
     quiz = quiz_service.create_quiz_from_space(
@@ -225,25 +226,26 @@ def create_quiz_from_space(
         max_questions=request.max_questions,
     )
 
-    # Agregar nombre del espacio si está asignado
+    # Enriquecer con metadata (misma lógica que en quizzes router)
     quiz_dict = {
         "id": quiz.id,
         "user_id": quiz.user_id,
-        "summary_id": quiz.summary_id,
-        "study_space_id": quiz.study_space_id,
+        "study_space_id": quiz.study_space_id,  # NOW: Always present (NOT NULL)
+        "source_type": quiz.source_type,  # NEW: 'document' | 'summary' | 'study_space'
         "title": quiz.title,
         "difficulty_level": quiz.difficulty_level,
         "created_at": quiz.created_at,
         "questions": quiz.questions,
-        "study_space_name": None
+        # NEW: Source tracking fields
+        "source_document_id": quiz.source_document_id,
+        "source_summary_id": quiz.source_summary_id,
+        "source_names": quiz.source_names,  # JSONB cache
+        "source_metadata": quiz.source_metadata,  # JSONB cache
+        # Computed fields
+        "study_space_name": quiz.study_space.name if quiz.study_space else None,
+        "num_questions": len(quiz.questions),
+        "num_attempts": QuizAttemptRepository.count_attempts_by_quiz(db, quiz.id, current_user.id)
     }
-
-    # Si tiene espacio asignado, obtener el nombre
-    if quiz.study_space_id:
-        from app.repositories.study_space_repository import StudySpaceRepository
-        space = StudySpaceRepository.get_by_id(db, quiz.study_space_id)
-        if space:
-            quiz_dict["study_space_name"] = space.name
 
     return QuizResponse(**quiz_dict)
 

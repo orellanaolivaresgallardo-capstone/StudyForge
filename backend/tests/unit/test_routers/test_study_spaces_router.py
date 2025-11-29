@@ -260,28 +260,34 @@ class TestGetSpaceStats:
 class TestCreateQuizFromSpace:
     """Tests para crear quiz desde espacio"""
 
-    @pytest.mark.skip(reason="Router tiene bug - falta source_type, num_questions, num_attempts en quiz_dict")
     def test_create_quiz_from_space_success(self, fake_user, fake_db, fake_study_space, fake_quiz):
         """Debe crear quiz desde espacio"""
         request = QuizCreateFromSpace(max_questions=10)
+
+        # Setup quiz con nueva estructura
         fake_quiz.study_space_id = fake_study_space.id
-        fake_quiz.summary_id = None
-        fake_quiz.summary = None
-        fake_quiz.source_document_ids = []
-        fake_quiz.source_summary_ids = []
+        fake_quiz.source_type = "study_space"  # NEW: Explicit source_type
+        fake_quiz.source_document_id = None
+        fake_quiz.source_summary_id = None
+        fake_quiz.source_names = {"space": fake_study_space.name}
+        fake_quiz.source_metadata = {"summary_count": 0}
+        fake_quiz.study_space = fake_study_space
 
         with patch('app.services.quiz_service.QuizService') as MockQuizService, \
-             patch('app.repositories.study_space_repository.StudySpaceRepository') as MockSpaceRepo:
+             patch('app.repositories.quiz_attempt_repository.QuizAttemptRepository') as MockAttemptRepo:
 
             mock_service = Mock()
             MockQuizService.return_value = mock_service
             mock_service.create_quiz_from_space.return_value = fake_quiz
-            MockSpaceRepo.get_by_id.return_value = fake_study_space
+            MockAttemptRepo.count_attempts_by_quiz.return_value = 0
 
             result = create_quiz_from_space(fake_study_space.id, request, fake_user, fake_db)
 
             assert result.id == fake_quiz.id
+            assert result.source_type == "study_space"  # NEW: Check source_type
             assert result.study_space_name == fake_study_space.name
+            assert result.num_questions == len(fake_quiz.questions)
+            assert result.num_attempts == 0
             mock_service.create_quiz_from_space.assert_called_once()
 
 
