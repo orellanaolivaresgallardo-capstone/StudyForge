@@ -517,6 +517,8 @@ What should happen next (if any)
 
 ## Integration with StudyForge Conventions
 
+**Testing Quick Reference:** `.claude/conventions/testing-guide.md`
+
 Ensure all fixes comply with:
 - ✅ Layered architecture (Router → Service → Repository → Model)
 - ✅ SQLAlchemy 2.0 query API
