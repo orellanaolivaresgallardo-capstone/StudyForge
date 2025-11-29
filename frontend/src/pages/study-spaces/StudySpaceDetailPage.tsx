@@ -2,15 +2,16 @@
  * Study Space Detail Page - REFACTORED VERSION
  * Reduced from 910 → ~280 lines using custom hooks and extracted components
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Navbar, Toast, LoadingSpinner, QuizConfigModal } from '@/components';
+import { Navbar, Toast, LoadingSpinner, QuizConfigModal, ConfirmModal } from '@/components';
 import { SpaceHeader } from './components';
 import { EditSpaceModal, AddResourceModal, CreateSummaryModal } from './components/modals';
 import { DocumentsSection, SummariesSection, QuizzesSection, ProgressSection } from './components/sections';
 import { useStudySpace } from '@/hooks/useStudySpace';
 import { useStudySpaceModals } from '@/hooks/useStudySpaceModals';
 import { useToast } from '@/hooks/useToast';
+import { useModal } from '@/hooks/useModal';
 import {
   updateStudySpace,
   addSummaryToSpace,
@@ -34,6 +35,15 @@ export default function StudySpaceDetailPage() {
   const { space, stats, quizzes, performance, isLoading, error, refreshSpace, refreshStats, refreshQuizzes } = useStudySpace(id);
   const modals = useStudySpaceModals();
   const { toast, showToast, showSuccess, showError, hideToast } = useToast();
+  const confirmModal = useModal();
+
+  // Confirm removal state
+  const [removalTarget, setRemovalTarget] = useState<{
+    id: string;
+    type: 'summary' | 'document';
+    name: string;
+  } | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // Handle errors
   useEffect(() => {
@@ -112,21 +122,30 @@ export default function StudySpaceDetailPage() {
   };
 
   // ========== Remove Resources ==========
-  const handleRemoveResource = async (resourceId: string, type: 'summary' | 'document', name: string) => {
-    if (!id) return;
-    if (!confirm(`¿Remover "${name}" del espacio?`)) return;
+  const handleRemoveResource = (resourceId: string, type: 'summary' | 'document', name: string) => {
+    setRemovalTarget({ id: resourceId, type, name });
+    confirmModal.open();
+  };
+
+  const handleConfirmRemoval = async () => {
+    if (!id || !removalTarget) return;
 
     try {
-      if (type === 'summary') {
-        await removeSummaryFromSpace(id, resourceId);
+      setIsRemoving(true);
+      if (removalTarget.type === 'summary') {
+        await removeSummaryFromSpace(id, removalTarget.id);
         showSuccess('Resumen removido del espacio');
       } else {
-        await removeDocumentFromSpace(id, resourceId);
+        await removeDocumentFromSpace(id, removalTarget.id);
         showSuccess('Documento removido del espacio');
       }
       await Promise.all([refreshSpace(), refreshStats()]);
+      confirmModal.close();
+      setRemovalTarget(null);
     } catch (err) {
       showError('No se pudo remover el recurso');
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -318,6 +337,23 @@ export default function StudySpaceDetailPage() {
         isGenerating={modals.quizConfigModal.isCreating}
         description={getQuizModalDescription()}
       />
+
+      {removalTarget && (
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={confirmModal.close}
+          onConfirm={handleConfirmRemoval}
+          title="Remover recurso"
+          message={`¿Estás seguro de que deseas remover "${removalTarget.name}" de este espacio? ${
+            removalTarget.type === 'summary'
+              ? 'El resumen será eliminado permanentemente.'
+              : 'El documento solo será removido del espacio, no se eliminará.'
+          }`}
+          confirmText="Sí, remover"
+          variant={removalTarget.type === 'summary' ? 'danger' : 'warning'}
+          isLoading={isRemoving}
+        />
+      )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     </div>
