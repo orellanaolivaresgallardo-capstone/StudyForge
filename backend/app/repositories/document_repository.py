@@ -66,7 +66,8 @@ class DocumentRepository:
             .options(joinedload(Document.study_spaces))
             .where(Document.id == document_id)
         )
-        return db.execute(stmt).scalar_one_or_none()
+        # NOTE: .unique() is required when using joinedload() with collections
+        return db.execute(stmt).unique().scalar_one_or_none()
 
     @staticmethod
     def get_by_user(

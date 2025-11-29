@@ -109,8 +109,8 @@ def test_get_by_id_found():
     mock_doc.id = doc_id
     mock_doc.title = "Found Document"
 
-    # Configurar el mock para simular execute con select
-    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_doc
+    # Configurar el mock para simular execute con select + unique()
+    mock_db.execute.return_value.unique.return_value.scalar_one_or_none.return_value = mock_doc
 
     result = DocumentRepository.get_by_id(mock_db, doc_id)
 
@@ -124,7 +124,7 @@ def test_get_by_id_not_found():
     mock_db = MagicMock()
     doc_id = uuid4()
 
-    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value.unique.return_value.scalar_one_or_none.return_value = None
 
     result = DocumentRepository.get_by_id(mock_db, doc_id)
 

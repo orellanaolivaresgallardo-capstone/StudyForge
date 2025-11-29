@@ -97,7 +97,7 @@ def test_get_by_id_found():
     mock_space.id = space_id
     mock_space.name = "Found Space"
 
-    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_space
+    mock_db.execute.return_value.unique.return_value.scalar_one_or_none.return_value = mock_space
 
     result = StudySpaceRepository.get_by_id(mock_db, space_id)
 
@@ -111,7 +111,7 @@ def test_get_by_id_not_found():
     mock_db = MagicMock()
     space_id = uuid4()
 
-    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value.unique.return_value.scalar_one_or_none.return_value = None
 
     result = StudySpaceRepository.get_by_id(mock_db, space_id)
 
