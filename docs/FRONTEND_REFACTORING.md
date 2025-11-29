@@ -504,7 +504,9 @@ La refactorización planificada ha sido **completada exitosamente**, superando l
 
 **Promedio de líneas por componente**: **~95 líneas** (objetivo era <200)
 
-#### Componentes Refactorizados
+#### Componentes Refactorizados (Fase 1 + Fase 2)
+
+**Fase 1 - Refactorización Masiva Inicial**:
 
 | Archivo | Antes | Después | Reducción | Componentes Creados |
 |---------|-------|---------|-----------|---------------------|
@@ -518,13 +520,20 @@ La refactorización planificada ha sido **completada exitosamente**, superando l
 | **UploadDocumentModal.tsx** | 270 | 211 | -22% | 3 (ColorPicker, CreateSpaceForm, SpaceSelector) |
 | **SignupPage.tsx** | 242 | 189 | -22% | 2 (FormInput, PasswordInput) |
 
-#### Impacto Total
+**Fase 2 - Refactorización Componentes >150 líneas**:
 
-- **Archivos modificados**: 9 páginas principales
-- **Componentes nuevos creados**: 33
-- **Barrel exports creados**: 8 (`index.ts`)
-- **Reducción total de líneas**: ~1,657 líneas
-- **Promedio de reducción**: -54%
+| Archivo | Antes | Después | Reducción | Componentes Creados |
+|---------|-------|---------|-----------|---------------------|
+| **SummaryCard.tsx** | 206 | 113 | -45% | 3 (SummaryTopics, SummaryKeyConcepts, SummaryCardFooter) |
+| **SummariesPage.tsx** | 233 | 185 | -21% | 1 (SummariesHeader) |
+
+#### Impacto Total (Ambas Fases)
+
+- **Archivos refactorizados**: 11 componentes principales
+- **Componentes nuevos creados**: 37
+- **Barrel exports creados**: 9 (`index.ts`)
+- **Reducción total de líneas**: ~1,798 líneas
+- **Promedio de reducción**: -52%
 
 #### Estructura de Carpetas Creada
 
@@ -532,7 +541,8 @@ La refactorización planificada ha sido **completada exitosamente**, superando l
 frontend/src/
 ├── components/
 │   ├── layout/components/        # NavLinks, UserMenu, MobileMenu
-│   └── upload/                   # ColorPicker, CreateSpaceForm, SpaceSelector
+│   ├── upload/                   # ColorPicker, CreateSpaceForm, SpaceSelector
+│   └── ui/Card/                  # SummaryTopics, SummaryKeyConcepts, SummaryCardFooter
 ├── pages/
 │   ├── auth/components/          # FormInput, PasswordInput
 │   ├── documents/components/     # UploadZone, DocumentsList
@@ -542,7 +552,7 @@ frontend/src/
 │   │                             # NotificationSettings, AppearanceSettings, DangerZone
 │   ├── stats/components/         # StatsSummaryCards, ProgressBySpace,
 │   │                             # RecentAttempts, EmptyState
-│   └── summaries/components/     # SummaryHeader, DocumentsSection,
+│   └── summaries/components/     # SummaryHeader, SummariesHeader, DocumentsSection,
                                   # TopicsSection, KeyConceptsSection, SummaryContentSection
 ```
 
