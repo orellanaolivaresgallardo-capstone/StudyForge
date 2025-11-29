@@ -43,6 +43,11 @@ Identify what type of documentation task is requested:
 - User: "New dependency added, update tech stack"
 - Action: Targeted update based on reported change
 
+**HTML Anchor Maintenance**:
+- User: "Verify HTML anchors"
+- User: "Update anchors for new sections"
+- Action: Maintain HTML anchors in docs/ and conventions/ for doc-retriever
+
 ### Step 2: Load Relevant Procedures
 
 Use the `Task` tool with `subagent_type="doc-retriever"` to load specific procedures from `.claude/conventions/documentation-standards.md`.
@@ -173,6 +178,7 @@ Map user requests to specific procedures:
 | "new endpoint", "new feature" | Audit Workflows |
 | "outdated example", "broken link" | Common Issues and Fixes |
 | "hierarchy", "single source of truth" | Documentation Hierarchy |
+| "verify anchors", "HTML anchors", "update anchors" | (Built-in task) |
 
 ## Common Tasks
 
@@ -217,6 +223,34 @@ Map user requests to specific procedures:
 2. Read new endpoint code
 3. Extract details
 4. Propose addition to docs
+
+### Task 5: Maintain HTML Anchors
+
+**When**: Sections added/removed/renamed in docs or conventions
+
+**Process**:
+1. Scan all documentation files for headings
+2. Verify each major section has HTML anchor
+3. Check anchor format: `## <a id="section-name"></a>Section Title`
+4. Validate referenced anchors exist
+5. Update anchors when sections change
+
+**Files to monitor**:
+- `docs/*.md` (all documentation)
+- `.claude/conventions/*.md` (for doc-retriever)
+- `CLAUDE.md` (for agent references)
+
+**Verification**:
+```bash
+# Find all HTML anchors
+grep '<a id=' docs/*.md .claude/conventions/*.md
+
+# Find anchor references
+grep '#section-name' CLAUDE.md
+
+# Verify format
+grep -E '##\s+<a id="[a-z0-9-]+"' docs/*.md
+```
 
 ## Critical Paths
 
