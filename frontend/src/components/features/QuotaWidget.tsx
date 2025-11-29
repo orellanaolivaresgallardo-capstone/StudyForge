@@ -2,10 +2,14 @@
 /**
  * Widget de cuota de almacenamiento con diseño aurora.
  * Muestra el uso de almacenamiento del usuario con una barra de progreso estilizada.
+ *
+ * IMPORTANTE: Usa StorageContext para actualizarse automáticamente cuando:
+ * - El usuario sube un documento
+ * - El usuario elimina un documento
+ * - Cualquier operación que afecte el almacenamiento
  */
-import { useEffect, useState } from "react";
-import { getStorageInfo } from "@/services/api";
-import type { StorageInfo } from "@/types";
+import { useEffect } from "react";
+import { useStorage } from "@/context/StorageContext";
 
 interface QuotaWidgetProps {
   className?: string;
@@ -13,27 +17,12 @@ interface QuotaWidgetProps {
 }
 
 export default function QuotaWidget({ className = "", compact = false }: QuotaWidgetProps) {
-  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { storageInfo, isLoading, error, refreshStorage } = useStorage();
 
+  // Cargar información de almacenamiento al montar el componente
   useEffect(() => {
-    loadStorageInfo();
-  }, []);
-
-  const loadStorageInfo = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await getStorageInfo();
-      setStorageInfo(data);
-    } catch (err) {
-      console.error("Error loading storage info:", err);
-      setError("Error al cargar información de almacenamiento");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    refreshStorage();
+  }, [refreshStorage]);
 
   const formatBytes = (bytes: number): string => {
     if (bytes === 0) return "0 B";
@@ -112,7 +101,7 @@ export default function QuotaWidget({ className = "", compact = false }: QuotaWi
           <h3 className="text-sm font-semibold text-white">Almacenamiento</h3>
         </div>
         <button
-          onClick={loadStorageInfo}
+          onClick={refreshStorage}
           className="text-slate-400 hover:text-white transition-colors"
           title="Actualizar"
         >

@@ -3,12 +3,14 @@
 Router de documentos - Subir, listar, obtener y eliminar documentos.
 Con validación de cuotas de almacenamiento por usuario.
 """
+import os
 from uuid import UUID
 from typing import List
 from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.dependencies import get_current_user, verify_document_ownership
+from app.core.logging import log_audit_event
 from app.repositories.document_repository import DocumentRepository
 from app.repositories.user_repository import UserRepository
 from app.services.file_processor import FileProcessor
@@ -24,7 +26,7 @@ from app.models.user import User
 router = APIRouter()
 
 
-@router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentDetailResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(..., description="Archivo a subir (PDF, DOCX, PPTX, TXT)"),
     study_space_ids: str = Form(..., description="IDs de espacios de estudio (separados por coma), al menos uno requerido"),
@@ -117,10 +119,12 @@ async def upload_document(
     extracted_text = await FileProcessor.extract_text(file)
 
     # 6. Crear documento en BD
+    # Si no se especifica título, usar filename sin extensión (más user-friendly)
+    default_title = os.path.splitext(filename)[0]  # "math.txt" → "math"
     document = DocumentRepository.create(
         db=db,
         user_id=current_user.id,
-        title=title or filename,
+        title=title or default_title,
         file_name=filename,
         file_type=file_type,
         file_size_bytes=file_size_bytes,
@@ -141,6 +145,22 @@ async def upload_document(
     db.commit()
     db.refresh(current_user)
     db.refresh(document)
+
+    # Audit log: successful document upload
+    log_audit_event(
+        event="document_upload",
+        user_id=str(current_user.id),
+        resource_type="document",
+        resource_id=str(document.id),
+        action="create",
+        result="success",
+        extra={
+            "file_name": filename,
+            "file_size_bytes": file_size_bytes,
+            "file_type": file_type,
+            "space_count": len(space_ids_list)
+        }
+    )
 
     return document
 
@@ -313,5 +333,16 @@ def delete_document(
     # Actualizar storage_used_bytes del usuario
     current_user.storage_used_bytes = max(0, current_user.storage_used_bytes - file_size)
     db.commit()
+
+    # Audit log: successful document deletion
+    log_audit_event(
+        event="document_deletion",
+        user_id=str(current_user.id),
+        resource_type="document",
+        resource_id=str(document_id),
+        action="delete",
+        result="success",
+        extra={"file_size_bytes": file_size}
+    )
 
     return None

@@ -27,16 +27,17 @@ describe('QuizCard', () => {
   const baseQuiz: QuizResponse = {
     id: 'quiz1',
     user_id: 'user1',
+    study_space_id: 'space1',
+    source_type: 'document',
     title: 'Quiz de Matemáticas',
     difficulty_level: 2,
     created_at: '2024-01-15T10:00:00Z',
     questions: [],
-    summary_id: null,
-    study_space_id: null,
+    source_document_id: null,
+    source_summary_id: null,
+    source_names: null,
+    source_metadata: null,
     study_space_name: null,
-    summary_title: null,
-    document_names: [],
-    source_type: 'file',
     num_questions: 10,
     num_attempts: 5,
   }
@@ -121,14 +122,14 @@ describe('QuizCard', () => {
   })
 
   describe('Tipos de fuente', () => {
-    it('debe mostrar información de archivo cuando source_type es "file"', () => {
+    it('debe mostrar información de documento cuando source_type es "document"', () => {
       const quiz = {
         ...baseQuiz,
-        source_type: 'file',
-        document_names: ['documento.pdf'],
+        source_type: 'document',
+        source_names: { document: 'documento.pdf' },
       }
       renderQuizCard({ quiz })
-      expect(screen.getByText(/Desde archivo:/)).toBeInTheDocument()
+      expect(screen.getByText('Documento')).toBeInTheDocument()
       expect(screen.getByText('documento.pdf')).toBeInTheDocument()
     })
 
@@ -136,42 +137,43 @@ describe('QuizCard', () => {
       const quiz = {
         ...baseQuiz,
         source_type: 'summary',
-        summary_title: 'Mi Resumen',
+        source_names: { summary: 'Mi Resumen' },
       }
       renderQuizCard({ quiz })
-      expect(screen.getByText(/Desde resumen:/)).toBeInTheDocument()
+      expect(screen.getByText('Resumen')).toBeInTheDocument()
       expect(screen.getByText('Mi Resumen')).toBeInTheDocument()
     })
 
-    it('debe mostrar información de espacio cuando source_type es "space"', () => {
+    it('debe mostrar información de espacio cuando source_type es "study_space"', () => {
       const quiz = {
         ...baseQuiz,
-        source_type: 'space',
-        study_space_name: 'Mi Espacio',
+        source_type: 'study_space',
+        source_names: { space: 'Mi Espacio' },
       }
       renderQuizCard({ quiz })
-      expect(screen.getByText(/Desde espacio:/)).toBeInTheDocument()
+      expect(screen.getByText('Espacio')).toBeInTheDocument()
       expect(screen.getByText('Mi Espacio')).toBeInTheDocument()
     })
 
-    it('NO debe mostrar información de espacio cuando showSpaceBadge es false', () => {
+    it('debe mostrar label sin nombre cuando source_names es null', () => {
       const quiz = {
         ...baseQuiz,
-        source_type: 'space',
-        study_space_name: 'Mi Espacio',
-      }
-      renderQuizCard({ quiz, showSpaceBadge: false })
-      expect(screen.queryByText(/Desde espacio:/)).not.toBeInTheDocument()
-    })
-
-    it('debe mostrar información de espacio cuando showSpaceBadge es true (por defecto)', () => {
-      const quiz = {
-        ...baseQuiz,
-        source_type: 'space',
-        study_space_name: 'Mi Espacio',
+        source_type: 'document',
+        source_names: null,
       }
       renderQuizCard({ quiz })
-      expect(screen.getByText(/Desde espacio:/)).toBeInTheDocument()
+      expect(screen.getByText('Documento')).toBeInTheDocument()
+      expect(screen.queryByText('documento.pdf')).not.toBeInTheDocument()
+    })
+
+    it('debe mostrar "Desconocido" cuando showSpaceBadge es true (por defecto)', () => {
+      const quiz = {
+        ...baseQuiz,
+        source_type: 'unknown' as any,
+        source_names: null,
+      }
+      renderQuizCard({ quiz })
+      expect(screen.getByText('Desconocido')).toBeInTheDocument()
     })
   })
 
@@ -251,40 +253,46 @@ describe('QuizCard', () => {
       ).toBeInTheDocument()
     })
 
-    it('debe manejar quiz sin document_names', () => {
+    it('debe manejar quiz sin source_names (document)', () => {
       const quiz = {
         ...baseQuiz,
-        source_type: 'file',
-        document_names: [],
+        source_type: 'document',
+        source_names: null,
       }
       renderQuizCard({ quiz })
-      expect(screen.queryByText(/Desde archivo:/)).not.toBeInTheDocument()
+      // Debe mostrar el label pero no el nombre
+      expect(screen.getByText('Documento')).toBeInTheDocument()
+      expect(screen.queryByText('documento.pdf')).not.toBeInTheDocument()
     })
 
-    it('debe manejar quiz sin summary_title', () => {
+    it('debe manejar quiz sin source_names (summary)', () => {
       const quiz = {
         ...baseQuiz,
         source_type: 'summary',
-        summary_title: null,
+        source_names: null,
       }
       renderQuizCard({ quiz })
-      expect(screen.queryByText(/Desde resumen:/)).not.toBeInTheDocument()
+      // Debe mostrar el label pero no el nombre
+      expect(screen.getByText('Resumen')).toBeInTheDocument()
+      expect(screen.queryByText('Mi Resumen')).not.toBeInTheDocument()
     })
 
-    it('debe manejar quiz sin study_space_name', () => {
+    it('debe manejar quiz sin source_names (study_space)', () => {
       const quiz = {
         ...baseQuiz,
-        source_type: 'space',
-        study_space_name: null,
+        source_type: 'study_space',
+        source_names: null,
       }
       renderQuizCard({ quiz })
-      expect(screen.queryByText(/Desde espacio:/)).not.toBeInTheDocument()
+      // Debe mostrar el label pero no el nombre
+      expect(screen.getByText('Espacio')).toBeInTheDocument()
+      expect(screen.queryByText('Mi Espacio')).not.toBeInTheDocument()
     })
   })
 
   describe('Iconos SVG', () => {
-    it('debe renderizar icono para source_type "file"', () => {
-      const quiz = { ...baseQuiz, source_type: 'file' }
+    it('debe renderizar icono para source_type "document"', () => {
+      const quiz = { ...baseQuiz, source_type: 'document' }
       const { container } = renderQuizCard({ quiz })
       const svgs = container.querySelectorAll('svg')
       expect(svgs.length).toBeGreaterThan(0)
@@ -297,8 +305,8 @@ describe('QuizCard', () => {
       expect(svgs.length).toBeGreaterThan(0)
     })
 
-    it('debe renderizar icono para source_type "space"', () => {
-      const quiz = { ...baseQuiz, source_type: 'space' }
+    it('debe renderizar icono para source_type "study_space"', () => {
+      const quiz = { ...baseQuiz, source_type: 'study_space' }
       const { container } = renderQuizCard({ quiz })
       const svgs = container.querySelectorAll('svg')
       expect(svgs.length).toBeGreaterThan(0)

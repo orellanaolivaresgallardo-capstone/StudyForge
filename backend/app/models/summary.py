@@ -7,10 +7,10 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
 from sqlalchemy import String, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
-from app.db import Base
+from app.db import Base, get_json_type
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -54,10 +54,10 @@ class Summary(Base):
 
     # Campos propios del resumen
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    content: Mapped[dict] = mapped_column(JSONB, nullable=False)  # Contenido estructurado del resumen
+    content: Mapped[dict] = mapped_column(get_json_type(), nullable=False)  # Contenido estructurado del resumen
     expertise_level: Mapped[str] = mapped_column(String(20), nullable=False, index=True)  # 'basico', 'medio', 'avanzado'
-    topics: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # Lista de temas identificados
-    key_concepts: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # Conceptos clave
+    topics: Mapped[dict] = mapped_column(get_json_type(), nullable=False, default=dict)  # Lista de temas identificados
+    key_concepts: Mapped[dict] = mapped_column(get_json_type(), nullable=False, default=dict)  # Conceptos clave
 
     # NEW: Denormalized cache fields - nombres actualizados y tipos ajustados
     source_document_title = mapped_column(String(255), nullable=True)  # Optional cache

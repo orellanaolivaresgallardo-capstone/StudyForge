@@ -5,10 +5,10 @@
  */
 
 // Layout components
-export { Navbar, PublicHeader } from './layout';
+export { Navbar, PublicHeader, AuthenticatedLayout } from './layout';
 
 // UI components
-export { Modal, Toast, LoadingSpinner, EmptyState } from './ui';
+export { Modal, Toast, LoadingSpinner, EmptyState, ConfirmModal } from './ui';
 export type { ToastType } from './ui';
 
 // Feature components

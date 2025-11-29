@@ -69,7 +69,9 @@
       "Bash(git stash:*)",
       "Bash(git reset:*)",
       "Bash(rm:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      
+      "WebFetch"
     ]
   },
   "outputStyle": "default"

@@ -114,6 +114,52 @@ class StudySpaceService:
         self.get_space(db, space_id, user)  # Verificar ownership
         StudySpaceRepository.remove_document(db, space_id, document_id)
 
+    def add_summary_to_space(
+        self,
+        db: Session,
+        space_id: UUID,
+        summary_id: UUID,
+        user: User
+    ) -> None:
+        """Agregar resumen a espacio (actualizar study_space_id)."""
+        space = self.get_space(db, space_id, user)
+        summary = SummaryRepository.get_by_id(db, summary_id)
+        if not summary or summary.user_id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Summary not found"
+            )
+        # Actualizar el study_space_id del resumen
+        summary.study_space_id = space_id
+        db.commit()
+
+    def remove_summary_from_space(
+        self,
+        db: Session,
+        space_id: UUID,
+        summary_id: UUID,
+        user: User
+    ) -> None:
+        """Remover resumen de espacio (elimina el resumen).
+
+        Nota: Como un resumen debe pertenecer a un espacio (FK NOT NULL),
+        'remover' un resumen de un espacio significa eliminarlo.
+        """
+        self.get_space(db, space_id, user)  # Verificar ownership del espacio
+        summary = SummaryRepository.get_by_id(db, summary_id)
+        if not summary or summary.user_id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Summary not found"
+            )
+        if summary.study_space_id != space_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Summary does not belong to this study space"
+            )
+        # Eliminar el resumen
+        SummaryRepository.delete(db, summary)
+
     def get_space_stats(
         self,
         db: Session,

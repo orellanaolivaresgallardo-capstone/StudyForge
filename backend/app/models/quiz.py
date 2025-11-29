@@ -7,9 +7,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from sqlalchemy import String, Integer, DateTime, ForeignKey, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db import Base
+from app.db import Base, get_json_type
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -48,7 +48,7 @@ class Quiz(Base):
     source_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'document' | 'summary' | 'study_space'
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     difficulty_level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)  # 1-5
-    questions: Mapped[dict] = mapped_column(JSONB, nullable=False)  # Array de preguntas con opciones no aleatorizadas
+    questions: Mapped[dict] = mapped_column(get_json_type(), nullable=False)  # Array de preguntas con opciones no aleatorizadas
 
     # NEW: Source tracking con FKs opcionales (sin Mapped[] para evitar problemas con Optional)
     source_document_id = mapped_column(
@@ -66,8 +66,8 @@ class Quiz(Base):
     )
 
     # NEW: Denormalized cache (JSONB, opcionales)
-    source_names = mapped_column(JSONB, nullable=True)  # Cache de nombres de sources
-    source_metadata = mapped_column(JSONB, nullable=True)  # Cache de metadatos y estados
+    source_names = mapped_column(get_json_type(), nullable=True)  # Cache de nombres de sources
+    source_metadata = mapped_column(get_json_type(), nullable=True)  # Cache de metadatos y estados
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

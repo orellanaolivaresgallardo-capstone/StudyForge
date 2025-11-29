@@ -26,6 +26,12 @@ dist/
 
 # Test
 .coverage
+coverage.json
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+*.db
+test.db
+
+
+/.secrets/

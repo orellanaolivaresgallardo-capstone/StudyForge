@@ -135,6 +135,7 @@ class QuizService:
         db: Session,
         user: User,
         document_id: UUID,
+        study_space_id: UUID,
         max_questions: Optional[int] = None,
     ) -> Quiz:
         """
@@ -144,6 +145,7 @@ class QuizService:
             db: Sesión de base de datos
             user: Usuario autenticado
             document_id: ID del documento
+            study_space_id: ID del espacio de estudio (requerido)
             max_questions: Número de preguntas (opcional)
 
         Returns:
@@ -177,20 +179,27 @@ class QuizService:
             # Usar valor por defecto
             num_questions = settings.DEFAULT_QUIZ_QUESTIONS
 
-        # 4. Determinar study_space_id y calcular dificultad
-        space_context = None
-        study_space_id = None
-        difficulty_level = 2  # Dificultad por defecto
+        # 4. Verificar que el documento está en el espacio especificado y obtener contexto
+        from app.repositories.study_space_repository import StudySpaceRepository
+        from app.core.dependencies import verify_space_ownership
 
-        if len(document.study_spaces) > 0:
-            # Usar el primer espacio
-            first_space = document.study_spaces[0]
-            study_space_id = first_space.id
-            # Calcular dificultad basada en el espacio
-            difficulty_level = self.calculate_adaptive_difficulty(db, user.id, study_space_id)
-            # Obtener contexto del espacio
-            if first_space.description:
-                space_context = first_space.description
+        # Verificar que el espacio existe y pertenece al usuario
+        space = StudySpaceRepository.get_by_id(db, study_space_id)
+        space = verify_space_ownership(space, user)
+
+        # Verificar que el documento está asociado a este espacio
+        document_in_space = any(s.id == study_space_id for s in document.study_spaces)
+        if not document_in_space:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El documento no está asociado al espacio de estudio especificado"
+            )
+
+        # Calcular dificultad adaptativa basada en el espacio
+        difficulty_level = self.calculate_adaptive_difficulty(db, user.id, study_space_id)
+
+        # Obtener contexto del espacio si está disponible
+        space_context = space.description if space.description else None
 
         # 5. Generar cuestionario con OpenAI (con contexto del espacio si está disponible)
         questions_data = self.openai_service.generate_quiz(
@@ -285,7 +294,7 @@ class QuizService:
             title=f"Cuestionario: {summary.title}",
             difficulty_level=difficulty_level,
             questions=questions_data[:num_questions],
-            source_document_id=summary.document_id,  # Opcional, puede ser None
+            source_document_id=None,  # Must be NULL when source_type='summary' (constraint)
             source_summary_id=summary_id,
             source_names={"summary": summary.title, "document": summary.source_document_title or "Unknown"},
             source_metadata={"expertise_level": summary.expertise_level, "document_state": summary.document_state}

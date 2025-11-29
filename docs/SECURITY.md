@@ -6,9 +6,9 @@ Este documento describe las medidas de seguridad implementadas en StudyForge par
 
 ---
 
-## 1. Autenticación y Autorización
+## <a id="authentication-and-authorization"></a>1. Autenticación y Autorización
 
-### 1.1 JWT (JSON Web Tokens)
+### <a id="jwt-authentication"></a>1.1 JWT (JSON Web Tokens)
 - **Algoritmo**: HS256
 - **Expiración**: 24 horas (configurable)
 - **Secret Key**: Debe cambiarse en producción (almacenar en variable de entorno)
@@ -23,9 +23,9 @@ Todos los endpoints protegidos verifican que `user.is_active == True` antes de p
 
 ---
 
-## 2. Protección de Privacidad de Datos
+## <a id="data-privacy"></a>2. Protección de Privacidad de Datos
 
-### 2.1 Ownership Validation (Validación de Propiedad)
+### <a id="ownership-validation"></a>2.1 Ownership Validation (Validación de Propiedad)
 
 Todas las funciones están en [`app/core/dependencies.py`](../backend/app/core/dependencies.py):
 
@@ -374,7 +374,111 @@ def export_my_data(current_user: User = Depends(get_current_user)):
 
 ---
 
-## 10. Contacto para Reportes de Seguridad
+## 10. Compliance ISO/IEC 27001
+
+StudyForge sigue lineamientos de ISO/IEC 27001 para gestión de seguridad de la información.
+
+### Documentación Detallada
+
+Para información completa sobre compliance ISO 27001, consulta:
+
+- [ISO 27001 Overview](security/ISO27001_OVERVIEW.md) - Introducción y alcance del proyecto
+- [Compliance Checklist](security/COMPLIANCE_CHECKLIST.md) - Estado detallado de controles ISO
+- [Risk Assessment](security/RISK_ASSESSMENT.md) - Análisis de riesgos y plan de tratamiento
+- [Access Control Policy](security/ACCESS_CONTROL_POLICY.md) - Política de control de acceso (A.9)
+- [Secure Development](security/SECURE_DEVELOPMENT.md) - Ciclo de vida seguro (SSDLC, A.14)
+- [Audit Logging](security/AUDIT_LOGGING.md) - Guía de logs de auditoría (A.12.4)
+
+### Controles Implementados
+
+**✅ A.9 - Control de Acceso (IMPLEMENTADO)**
+- Ownership validation en todos los endpoints protegidos
+- JWT con expiración (24 horas)
+- Roles separados de base de datos (DDL vs DML)
+- Evidencia: `backend/app/core/dependencies.py:28-78`
+
+**✅ A.10 - Criptografía (IMPLEMENTADO)**
+- Argon2id para hashing de passwords (memory-hard, GPU-resistant)
+- JWT firmado con HS256
+- Evidencia: `backend/app/core/security.py:15-50`
+- Pendiente: Encriptación de datos en reposo
+
+**⚠️ A.12.4 - Logging y Monitoreo (PARCIAL)**
+- Logs estructurados implementados (`backend/app/core/logging.py`)
+- Logs de auditoría para eventos críticos (login, upload, delete)
+- Evidencia: Función `log_audit_event()` aplicada en routers
+- Pendiente: Centralización de logs, retención automática
+
+**⚠️ A.14 - Desarrollo Seguro (PARCIAL)**
+- Pydantic validation en todos los endpoints
+- Type hints obligatorios (Python/TypeScript)
+- SSDLC documentado en `docs/security/SECURE_DEVELOPMENT.md`
+- Evidencia: `.claude/conventions/code-style.md`, `CLAUDE.md`
+- Pendiente: Code review obligatorio en producción
+
+**⚠️ A.13 - Seguridad en Comunicaciones (DESARROLLO)**
+- JWT implementado
+- CORS configurado correctamente
+- Pendiente: HTTPS en producción, TLS 1.3
+
+### Gaps Identificados
+
+**Críticos (Requeridos para Producción):**
+- ❌ Backups automatizados no configurados (A.12.3)
+- ⚠️ Rate limiting no aplicado a endpoints de autenticación (A.9)
+- ⚠️ HTTPS no configurado en desarrollo (A.13)
+
+**Importantes (Mejoras Futuras):**
+- Encriptación de datos en reposo (`documents.file_content`)
+- Rotación automática de SECRET_KEY
+- Plan de respuesta a incidentes documentado (A.16)
+- Análisis estático de seguridad automatizado (SAST)
+
+### Auditoría de Eventos
+
+Los siguientes eventos se registran automáticamente en logs de auditoría:
+
+**Autenticación:**
+- `user_registration` - Registro de nuevos usuarios (success/failure)
+- `login_attempt` - Intentos de login (success/failure)
+
+**Documentos:**
+- `document_upload` - Subida de documentos
+- `document_deletion` - Eliminación de documentos
+
+**Resúmenes:**
+- `summary_creation` - Generación de resúmenes (file/document)
+- `summary_deletion` - Eliminación de resúmenes
+
+**Quizzes:**
+- `quiz_creation` - Generación de quizzes (file/summary/document)
+- `quiz_deletion` - Eliminación de quizzes
+
+**Formato de Log:**
+```json
+{
+  "event": "login_attempt",
+  "user_id": "uuid",
+  "action": "login",
+  "result": "success",
+  "timestamp": "2025-11-29T10:30:00Z",
+  "extra": {"email": "user@example.com"}
+}
+```
+
+**Ubicación:** `backend/logs/app.log` (con rotación automática)
+
+**Consulta:** `grep "AUDIT" backend/logs/app.log`
+
+### Para Más Información
+
+- **Overview completo:** `docs/security/ISO27001_OVERVIEW.md`
+- **Checklist de compliance:** `docs/security/COMPLIANCE_CHECKLIST.md`
+- **Evaluación de riesgos:** `docs/security/RISK_ASSESSMENT.md`
+
+---
+
+## 11. Contacto para Reportes de Seguridad
 
 **Si encuentras una vulnerabilidad de seguridad**:
 - NO crear un issue público
@@ -386,5 +490,5 @@ def export_my_data(current_user: User = Depends(get_current_user)):
 
 ---
 
-**Última revisión:** 2025-11-19
-**Próxima revisión:** 2025-12-19 (mensual)
+**Última revisión:** 2025-11-29
+**Próxima revisión:** 2025-12-29 (mensual)

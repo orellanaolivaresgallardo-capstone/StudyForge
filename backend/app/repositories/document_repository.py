@@ -66,7 +66,8 @@ class DocumentRepository:
             .options(joinedload(Document.study_spaces))
             .where(Document.id == document_id)
         )
-        return db.execute(stmt).scalar_one_or_none()
+        # NOTE: .unique() is required when using joinedload() with collections
+        return db.execute(stmt).unique().scalar_one_or_none()
 
     @staticmethod
     def get_by_user(
@@ -78,6 +79,9 @@ class DocumentRepository:
         """
         Obtiene documentos de un usuario con paginación y relaciones cargadas.
 
+        IMPORTANT: No carga file_content ni extracted_text para optimizar rendimiento.
+        Estos campos solo se cargan cuando se descarga el documento individual.
+
         Args:
             db: Sesión de base de datos
             user_id: ID del usuario
@@ -85,12 +89,17 @@ class DocumentRepository:
             limit: Máximo número de documentos a retornar
 
         Returns:
-            Lista de documentos
+            Lista de documentos (sin file_content ni extracted_text)
         """
-        from sqlalchemy.orm import joinedload
+        from sqlalchemy.orm import joinedload, defer
         stmt = (
             select(Document)
-            .options(joinedload(Document.study_spaces))
+            .options(
+                # Excluir campos pesados en listados (solo cargar metadatos)
+                defer(Document.file_content),      # Binario grande (MB de datos)
+                defer(Document.extracted_text),    # Texto extraído grande
+                joinedload(Document.study_spaces)  # Cargar espacios relacionados
+            )
             .where(Document.user_id == user_id)
             .order_by(Document.created_at.desc())
             .offset(skip)

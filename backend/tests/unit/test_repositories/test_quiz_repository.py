@@ -268,7 +268,7 @@ def test_get_quizzes_by_space():
         Mock(spec=Quiz, id=uuid4(), title="Space Quiz 2"),
     ]
 
-    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_quizzes
+    mock_db.execute.return_value.unique.return_value.scalars.return_value.all.return_value = mock_quizzes
 
     result = QuizRepository.get_quizzes_by_space(mock_db, space_id, user_id)
 

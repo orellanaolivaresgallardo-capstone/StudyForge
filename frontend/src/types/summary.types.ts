@@ -33,7 +33,7 @@ export interface SummaryResponse {
 }
 
 export interface SummaryDetailResponse extends SummaryResponse {
-  documents: DocumentResponse[];
+  document: DocumentResponse | null;
 }
 
 export interface SummaryListResponse {

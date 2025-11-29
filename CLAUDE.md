@@ -1201,6 +1201,452 @@ README.md (High-level Project Overview)
   └── Brief overview that links to detailed docs/
 ```
 
+#### 5. **commit-organizer** - Smart Git Commit Assistant
+
+**Purpose**: Automatically organizes file changes into logical atomic commits following Conventional Commits specification. Intelligently groups related files and generates properly formatted commit messages with type classification (feat, fix, refactor, etc.) and scope detection (backend, frontend, database, etc.).
+
+**Location**: [`.claude/agents/commit-organizer.md`](.claude/agents/commit-organizer.md)
+
+**When to use**:
+- Before committing code changes
+- When you have multiple unrelated changes
+- To ensure clean git history
+- Before creating pull requests
+- When unsure how to organize commits
+
+**Capabilities**:
+- ✅ Analyzes working directory changes (`git status`, `git diff`)
+- ✅ Automatically classifies changes by type (feat/fix/refactor/perf/docs/etc.)
+- ✅ Detects appropriate scope (backend/frontend/database/api/etc.)
+- ✅ Groups related files into atomic commits
+- ✅ Generates Conventional Commits formatted messages
+- ✅ Validates commit safety (no secrets, proper file sizes)
+- ✅ Prevents dangerous operations (checks before amending)
+- ✅ Creates descriptive commit bodies with bullet points
+
+**Usage**:
+```
+> Help me commit these changes
+> Use commit-organizer to organize my commits
+> Create commits following conventional commits
+> Organize these changes into logical commits
+```
+
+**Example workflow**:
+1. Agent runs `git status` and `git diff` to analyze changes
+2. Classifies each file by type (feat/fix/refactor/etc.)
+3. Detects scope (backend/frontend/database/etc.)
+4. Groups related files into logical commits
+5. Proposes commit plan with formatted messages
+6. Waits for user approval
+7. Creates commits with proper format
+8. Verifies commits were created successfully
+
+**Commit Message Format**:
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Supported Types**:
+- `feat`: New feature for the user
+- `fix`: Bug fix
+- `refactor`: Code restructuring without behavior change
+- `perf`: Performance improvements
+- `docs`: Documentation only changes
+- `test`: Adding or updating tests
+- `style`: Formatting, missing semicolons, etc.
+- `build`: Build system or dependency changes
+- `ci`: CI configuration changes
+- `chore`: Maintenance tasks
+
+**Supported Scopes**:
+- `backend`: Python/FastAPI/SQLAlchemy changes
+- `frontend`: React/TypeScript changes
+- `database`: Migrations, schema changes
+- `api`: API endpoints or schemas
+- `auth`: Authentication/authorization
+- `docs`: Documentation files
+- `config`: Configuration files
+
+**Example Output**:
+```markdown
+## Análisis de Cambios
+
+**Archivos modificados:** 5
+**Archivos sin seguimiento:** 2
+
+### Agrupación Propuesta
+
+He identificado **2 grupos lógicos** para commits atómicos:
+
+---
+
+### 📦 Commit 1: `feat(backend): Add user authentication endpoints`
+
+**Tipo:** feat
+**Alcance:** backend
+**Archivos incluidos:**
+- backend/app/routers/auth.py
+- backend/app/services/auth_service.py
+- backend/app/schemas/auth.py
+
+**Razón del agrupamiento:**
+Estos archivos implementan juntos la funcionalidad de autenticación JWT.
+
+**Mensaje completo:**
+```
+feat(backend): Add user authentication endpoints
+
+- Implement /auth/login and /auth/register endpoints
+- Add AuthService with Argon2 password hashing
+- Create Pydantic schemas for auth requests/responses
+- Add JWT token generation and validation
+```
+
+**Verificación de seguridad:** ✅ Sin secretos, ✅ Tamaño < 1MB
+
+---
+
+### 📦 Commit 2: `docs: Update API documentation for auth endpoints`
+
+**Tipo:** docs
+**Alcance:** docs
+**Archivos incluidos:**
+- docs/API.md
+- CLAUDE.md
+
+**Razón del agrupamiento:**
+Actualización de documentación para reflejar nuevos endpoints de autenticación.
+
+**Mensaje completo:**
+```
+docs: Update API documentation for auth endpoints
+
+- Document /auth/login and /auth/register
+- Add authentication section to API reference
+- Update CLAUDE.md with auth examples
+```
+
+**Verificación de seguridad:** ✅ Sin secretos, ✅ Tamaño < 1MB
+
+---
+
+## Siguiente Paso
+
+¿Deseas que proceda a crear estos commits?
+```
+
+**Safety Features**:
+- 🔒 Checks for secrets before committing (.env, API keys)
+- 🔒 Validates file sizes (warns on large files >1MB)
+- 🔒 Verifies authorship before amending
+- 🔒 Never skips git hooks without permission
+- 🔒 Detects if commits are already pushed before amending
+
+---
+
+#### 6. **git-historian** - Git History Analysis Agent
+
+**Purpose**: Analyzes git commit history to identify patterns, generate change reports, track component evolution, audit commit quality, and analyze branch lifecycles. Provides deep insights into project development over time.
+
+**Location**: [`.claude/agents/git-historian.md`](.claude/agents/git-historian.md)
+
+**When to use**:
+- Analyzing commits in a time range (last week, month, between dates)
+- Comparing versions or tags (what changed between v1.0 and v1.1)
+- Tracking component evolution (who worked on what)
+- Auditing commit message quality
+- Analyzing branch lifecycles
+- Preparing for releases or retrospectives
+
+**Capabilities**:
+- ✅ Analyzes commit history by time range, author, type, or scope
+- ✅ Generates change reports between versions/tags
+- ✅ Tracks component evolution and code ownership
+- ✅ Audits commit quality (Conventional Commits compliance)
+- ✅ Analyzes branch divergence and merge patterns
+- ✅ Identifies patterns, trends, and anomalies
+- ✅ Calculates development velocity and code churn
+- ✅ Detects breaking changes and highlights significant commits
+
+**Usage**:
+```
+> Analyze commits from last month
+> What changed between v1.0 and v1.1?
+> Who worked on authentication?
+> Audit commit message quality
+> Analyze the feature-auth branch
+> Show me the evolution of summary_service.py
+```
+
+**Example workflow**:
+1. Agent runs `git log` with appropriate filters
+2. Parses Conventional Commits format
+3. Groups commits by type, scope, or author
+4. Calculates statistics (lines changed, file churn)
+5. Identifies patterns and trends
+6. Generates formatted report with insights
+7. Provides actionable recommendations
+
+**Example Output**:
+```markdown
+## Análisis de Commits: Últimos 30 días
+
+**Período:** 2025-01-01 - 2025-01-30
+**Total de commits:** 45
+
+### Distribución por Tipo
+- **feat**: 15 commits (33%)
+- **fix**: 12 commits (27%)
+- **test**: 8 commits (18%)
+- **refactor**: 6 commits (13%)
+- **docs**: 4 commits (9%)
+
+### Distribución por Alcance
+- **backend**: 20 commits
+- **frontend**: 15 commits
+- **docs**: 7 commits
+- **database**: 3 commits
+
+### Commits Destacados
+- 6bd614d test(backend): Improve quiz_service coverage from 32% to 80%
+- 4445f87 feat(backend): Add audit logging for security-critical operations
+- 77a9710 docs: Add ISO 27001 compliance documentation
+
+### Tendencias Observadas
+- Alto enfoque en testing (18% de commits)
+- Mejora significativa en documentación de seguridad
+- Actividad balanceada entre backend y frontend
+```
+
+---
+
+#### 7. **changelog-manager** - CHANGELOG.md Generator
+
+**Purpose**: Generates and maintains CHANGELOG.md following Keep a Changelog format. Automatically parses Conventional Commits, organizes changes by version, detects breaking changes, and creates professional release notes.
+
+**Location**: [`.claude/agents/changelog-manager.md`](.claude/agents/changelog-manager.md)
+
+**When to use**:
+- Creating initial CHANGELOG.md
+- Updating changelog with unreleased changes
+- Preparing new version releases
+- Generating release notes
+- Validating changelog quality
+- Before creating tags or releases
+
+**Capabilities**:
+- ✅ Generates CHANGELOG.md from git history
+- ✅ Follows Keep a Changelog 1.1.0 format
+- ✅ Parses Conventional Commits automatically
+- ✅ Maps commit types to changelog categories (Added/Fixed/Changed)
+- ✅ Organizes changes by version (from git tags)
+- ✅ Detects breaking changes (! or BREAKING CHANGE)
+- ✅ Updates [Unreleased] section with new commits
+- ✅ Prepares version releases with proper dates
+- ✅ Generates release notes for GitHub/announcements
+- ✅ Validates changelog quality and format
+
+**Usage**:
+```
+> Generate CHANGELOG.md
+> Update changelog with unreleased changes
+> Prepare version v1.2.0 for release
+> Generate release notes for v1.2.0
+> Validate CHANGELOG.md format
+> What should the next version be?
+```
+
+**Example workflow**:
+1. Agent reads git tags and commit history
+2. Parses Conventional Commits format
+3. Maps types to changelog categories:
+   - `feat` → **Added**
+   - `fix` → **Fixed**
+   - `refactor`, `perf` → **Changed**
+4. Organizes by version (newest first)
+5. Detects breaking changes
+6. Generates or updates CHANGELOG.md
+7. Validates format compliance
+
+**Changelog Format**:
+```markdown
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- New features not yet released
+
+## [1.2.0] - 2025-01-20
+
+### Added
+- JWT authentication system
+- Adaptive quiz difficulty
+
+### Fixed
+- Password validation error messages
+- Quota calculation for large files
+
+[Unreleased]: https://github.com/username/repo/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/username/repo/compare/v1.1.0...v1.2.0
+```
+
+**Commit Type Mapping**:
+- `feat` → **Added** (new features)
+- `fix` → **Fixed** (bug fixes)
+- `refactor`, `perf` → **Changed** (improvements)
+- `docs`, `test` → Optional sections
+- `build`, `ci`, `chore` → Omitted (internal)
+
+**Breaking Changes Handling**:
+```markdown
+### Changed
+- ⚠️ **BREAKING**: API response format changed
+  - **Migration**: Update client code to use new field names
+  - **Impact**: All API consumers must update
+```
+
+**Semantic Versioning Guidance**:
+- **MAJOR** (X.0.0): Breaking changes
+- **MINOR** (0.X.0): New features (backward-compatible)
+- **PATCH** (0.0.X): Bug fixes (backward-compatible)
+
+---
+
+#### 8. **Conventions Reference Files**
+
+StudyForge utiliza archivos de convenciones para mantener consistencia en código generado por agentes AI.
+
+**Location:** `.claude/conventions/`
+
+**Available Conventions:**
+
+##### `code-style.md` - Syntax and Formatting Rules
+- Exact syntax for Python, TypeScript, SQL
+- Indentation, quotes, naming conventions
+- React component rules (<100 lines, reuse over create)
+- SQLAlchemy 2.0 patterns (mapped_column preferred)
+
+##### `testing-guide.md` - Testing Patterns
+- AAA pattern (Arrange-Act-Assert)
+- Available fixtures (fake_db, fake_user, etc.)
+- Commands for running tests
+- Anti-patterns to avoid
+
+##### `conventional-commits.md` - Commit Message Format
+- Types (feat, fix, refactor, docs, etc.)
+- Scopes (backend, frontend, database, etc.)
+- Examples and best practices
+
+**Usage by Agents:**
+- test-runner → reads testing-guide.md
+- commit-organizer → reads conventional-commits.md
+- All agents → follow code-style.md when generating code
+
+---
+
+#### 7. **ISO 27001 Security Compliance**
+
+StudyForge implementa controles de ISO/IEC 27001 para demostrar buenas prácticas de seguridad de la información en el contexto de un proyecto capstone académico.
+
+**Documentation Location:** `docs/security/`
+
+**Key Documents:**
+- `ISO27001_OVERVIEW.md` - What is ISO 27001, scope for capstone project
+- `COMPLIANCE_CHECKLIST.md` - Current state vs ISO controls (detailed mapping)
+- `RISK_ASSESSMENT.md` - Risk analysis and treatment plan
+- `SECURE_DEVELOPMENT.md` - Secure SDLC (A.14 control)
+- `ACCESS_CONTROL_POLICY.md` - Access control implementation (A.9 control)
+- `AUDIT_LOGGING.md` - Audit logging implementation (A.12.4 control)
+
+**Implemented Controls:**
+
+✅ **A.9 - Access Control (IMPLEMENTED)**
+- Ownership validation en todos los endpoints protegidos
+- JWT authentication con expiración (24 horas)
+- Roles separados de base de datos (DDL vs DML)
+- Evidence: `backend/app/core/dependencies.py:28-78`
+
+✅ **A.10 - Cryptography (IMPLEMENTED)**
+- Argon2id para password hashing (memory-hard, GPU-resistant)
+- JWT signing con HS256
+- Evidence: `backend/app/core/security.py:15-50`
+- Pending: Encryption at rest para `documents.file_content`
+
+⚠️ **A.12.4 - Logging and Monitoring (PARTIAL)**
+- Structured logging system (`backend/app/core/logging.py`)
+- Audit logging para eventos críticos (authentication, CRUD operations)
+- Function `log_audit_event()` aplicada en:
+  - `backend/app/routers/auth.py` - login, register
+  - `backend/app/routers/documents.py` - upload, delete
+  - `backend/app/routers/summaries.py` - create, delete
+  - `backend/app/routers/quizzes.py` - create, delete
+- Pending: Log centralization, automated retention
+
+⚠️ **A.14 - Secure Development (PARTIAL)**
+- Pydantic validation en todos los endpoints
+- Type hints obligatorios (Python/TypeScript)
+- SSDLC documentado en `docs/security/SECURE_DEVELOPMENT.md`
+- Evidence: `.claude/conventions/code-style.md`, `CLAUDE.md`
+- Pending: Mandatory code review en producción
+
+⚠️ **A.13 - Communications Security (DEVELOPMENT)**
+- JWT implemented
+- CORS configured correctly
+- Pending: HTTPS en producción, TLS 1.3
+
+**Critical for Capstone:**
+- ✅ Access control y ownership validation (A.9)
+- ✅ Password hashing con Argon2 (A.10)
+- ✅ Input validation con Pydantic (A.14)
+- ✅ Basic audit logging (A.12.4)
+
+**Identified Gaps:**
+- ❌ Automated backups no configurados (A.12.3)
+- ⚠️ Rate limiting no aplicado a auth endpoints (A.9)
+- ⚠️ HTTPS not configured en desarrollo (A.13)
+- ⚠️ Encryption at rest no implementada (A.10)
+
+**Audit Events Logged:**
+- `user_registration` - Usuario registrado (success/failure)
+- `login_attempt` - Intento de login (success/failure)
+- `document_upload` - Documento subido
+- `document_deletion` - Documento eliminado
+- `summary_creation` - Resumen generado
+- `summary_deletion` - Resumen eliminado
+- `quiz_creation` - Quiz generado
+- `quiz_deletion` - Quiz eliminado
+
+**Log Format:**
+```json
+{
+  "event": "login_attempt",
+  "user_id": "uuid",
+  "action": "login",
+  "result": "success",
+  "timestamp": "2025-11-29T10:30:00Z",
+  "extra": {"email": "user@example.com"}
+}
+```
+
+**Log Location:** `backend/logs/app.log` (rotating file handler)
+
+**Query Logs:** `grep "AUDIT" backend/logs/app.log`
+
+**See:** `docs/security/COMPLIANCE_CHECKLIST.md` para estado completo de controles
+
+---
+
 ### How Agents Work
 
 #### Automatic Invocation
@@ -1218,6 +1664,15 @@ User: "Check this code for security issues"
 
 User: "Update documentation for my changes"
 → Claude invokes docs-maintainer agent automatically
+
+User: "Help me commit these changes"
+→ Claude invokes commit-organizer agent automatically
+
+User: "Analyze commits from last month"
+→ Claude invokes git-historian agent automatically
+
+User: "Generate CHANGELOG.md"
+→ Claude invokes changelog-manager agent automatically
 ```
 
 #### Explicit Invocation
@@ -1228,6 +1683,9 @@ You can explicitly request a specific agent:
 > Ask the studyforge-assistant how to implement [feature]
 > Have the security-reviewer audit this endpoint
 > Use docs-maintainer to validate all documentation
+> Use commit-organizer to organize my commits
+> Use git-historian to analyze commits from last quarter
+> Use changelog-manager to generate CHANGELOG.md
 ```
 
 #### Agent Context
@@ -1344,7 +1802,108 @@ See the existing agents in [`.claude/agents/`](.claude/agents/) for complete exa
 - **`docs/NEXT_STEPS.md`**: Current tasks and roadmap
  
 ---
- 
+
+## 🎯 Task Complexity Evaluation (for AI Assistants)
+
+Before starting implementation, evaluate task complexity to determine if you need to gather context from documentation:
+
+### 🟢 Simple Task (proceed directly)
+
+**Characteristics**:
+- Modifying existing code you've already read
+- Small bug fixes, typos, formatting
+- Adding simple validation or logging
+- Tasks confined to 1-2 files
+- You're already familiar with the code
+
+**Examples**:
+- "fix typo in README"
+- "add email validation to schema"
+- "update error message"
+- "format code with black"
+
+**Action**: Proceed directly with implementation
+
+---
+
+### 🟡 Moderate Task (read relevant code first)
+
+**Characteristics**:
+- Feature enhancements in familiar area
+- Refactoring within single module
+- Tasks spanning 2-3 files
+- You need to understand existing patterns
+
+**Examples**:
+- "improve error messages in auth service"
+- "extract helper function from repository"
+- "add new field to existing model"
+
+**Action**: Use Read tool to understand context, then proceed
+
+---
+
+### 🔴 Complex Task (use context-gatherer)
+
+**Characteristics**:
+- Creating new endpoints/features
+- Multi-layer changes (Model → Repository → Service → Router)
+- Security-sensitive operations (auth, ownership)
+- Database schema changes
+- Tasks spanning 3+ architectural layers
+- Unfamiliar area without prior context
+
+**Examples**:
+- "implement user preferences endpoint"
+- "add OAuth authentication"
+- "implement user preferences endpoint with proper security"
+- "optimize summary listing query"
+- "add new quiz type with adaptive difficulty"
+
+**Action**: Invoke `context-gatherer` agent to gather relevant context in parallel
+
+---
+
+### Decision Keywords
+
+**✅ Use context-gatherer when task includes**:
+- "new endpoint"
+- "implement feature"
+- "add authentication"
+- "with proper security"
+- "update database"
+- "create new [resource type]"
+- Multiple concerns mentioned (e.g., "with security and database changes")
+
+**❌ Proceed directly when task is**:
+- "fix [simple issue]"
+- "typo"
+- "update comment"
+- "add log statement"
+- "format code"
+
+---
+
+### Decision Flow
+
+```
+User Request
+    ↓
+Have I read the relevant code?
+    ↓ No
+Is this multi-layer/security-sensitive/database change?
+    ↓ Yes
+🔴 Use context-gatherer
+    ↓ (gathers context in parallel)
+Receive consolidated context
+    ↓
+Proceed with implementation
+```
+
+**Important**: When in doubt, prefer using context-gatherer. It's better to have too much context than too little, especially for critical features.
+
+---
+
 ## 🤖 Best Practices for AI Assistants
  
 ### When Making Changes
@@ -1582,6 +2141,7 @@ Before considering changes complete:
  
 ### Internal Documentation
 - **Architecture**: `docs/ARCHITECTURE.md` - System design and component overview
+- **Components**: `docs/COMPONENTS.md` - Frontend UI components reference (modals, confirmations, configs)
 - **Database**: `docs/DATABASE.md` - Schema, indexes, migration guide
 - **API**: `docs/API.md` - Complete endpoint reference
 - **Security**: `docs/SECURITY.md` - Security model and best practices

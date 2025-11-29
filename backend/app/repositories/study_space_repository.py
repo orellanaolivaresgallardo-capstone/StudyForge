@@ -141,11 +141,34 @@ class StudySpaceRepository:
         total = db.execute(count_stmt).scalar() or 0
 
         # 2. Obtener espacios con paginación y relaciones cargadas
+        # IMPORTANT: Solo cargamos metadatos, NO el contenido pesado (file_content, extracted_text, content)
+        from sqlalchemy.orm import load_only
+        from app.models import Document, Summary
+
         spaces_stmt = (
             select(StudySpace)
             .options(
-                joinedload(StudySpace.documents),
-                joinedload(StudySpace.summaries)
+                # Documentos: solo metadatos (excluimos file_content y extracted_text)
+                joinedload(StudySpace.documents).load_only(
+                    Document.id,
+                    Document.user_id,
+                    Document.title,
+                    Document.file_name,
+                    Document.file_type,
+                    Document.file_size_bytes,
+                    Document.created_at,
+                    Document.updated_at
+                ),
+                # Resúmenes: solo metadatos (excluimos content, topics, key_concepts)
+                joinedload(StudySpace.summaries).load_only(
+                    Summary.id,
+                    Summary.user_id,
+                    Summary.study_space_id,
+                    Summary.title,
+                    Summary.expertise_level,
+                    Summary.created_at,
+                    Summary.updated_at
+                )
             )
             .where(StudySpace.user_id == user_id)
             .order_by(StudySpace.updated_at.desc())

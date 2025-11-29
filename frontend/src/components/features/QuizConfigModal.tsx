@@ -54,9 +54,11 @@ export function QuizConfigModal({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={handleClose}
+      onClose={onClose}
       title={title}
       size="md"
+      showCloseButton={!isGenerating}
+      allowClose={!isGenerating}
     >
       <div className="space-y-6">
         {/* Descripción */}
@@ -99,7 +101,7 @@ export function QuizConfigModal({
             disabled={isGenerating}
             className="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-white/20 text-white focus:outline-none focus:border-violet-500 transition-colors disabled:opacity-50"
           />
-          <p className="text-xs text-white/50 mt-1">
+          <p className="text-xs text-white/70 mt-1">
             Entre 5 y 30 preguntas (recomendado: 10)
           </p>
           {validationError && (

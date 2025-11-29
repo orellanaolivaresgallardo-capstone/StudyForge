@@ -259,11 +259,16 @@ Authorization: Bearer <access_token>
 {
   "id": "uuid-del-resumen",
   "user_id": "uuid-del-usuario",
+  "document_id": "uuid-documento-o-null",
+  "study_space_id": "uuid-espacio",
   "title": "Título del resumen",
   "content": "Contenido completo del resumen...",
   "expertise_level": "medio",
   "topics": ["tema1", "tema2"],
   "key_concepts": ["concepto1", "concepto2"],
+  "source_document_title": "documento.pdf",
+  "source_document_filename": "documento.pdf",
+  "document_state": "active_in_space",
   "created_at": "2025-01-15T10:30:00Z",
   "updated_at": "2025-01-15T10:30:00Z",
   "documents": [
@@ -277,6 +282,12 @@ Authorization: Bearer <access_token>
   ]
 }
 ```
+
+**Notas sobre campos**:
+- `document_id`: Puede ser `null` si el documento fuente fue eliminado
+- `study_space_id`: Siempre presente (NOT NULL, CASCADE on delete)
+- `source_document_title`, `source_document_filename`: Campos denormalizados que preservan información histórica
+- `document_state`: Estado del documento fuente ('active_in_space' | 'removed_from_space' | 'permanently_deleted')
 
 **Errores:**
 - `403` - Resumen no pertenece al usuario

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException, s
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.core.dependencies import get_current_user
+from app.core.logging import log_audit_event
 from app.services.summary_service import SummaryService
 from app.schemas.summary import (
     SummaryResponse,
@@ -57,6 +58,22 @@ async def upload_and_generate_summary(
         file=file,
         expertise_level=expertise_level,
     )
+
+    # Audit log: successful summary creation from file
+    log_audit_event(
+        event="summary_creation",
+        user_id=str(current_user.id),
+        resource_type="summary",
+        resource_id=str(summary.id),
+        action="create",
+        result="success",
+        extra={
+            "expertise_level": expertise_level.value,
+            "study_space_id": str(study_space_id),
+            "source": "file_upload"
+        }
+    )
+
     return summary
 
 
@@ -91,6 +108,23 @@ def generate_summary_from_documents(
         study_space_id=request.study_space_id,
         expertise_level=request.expertise_level,
     )
+
+    # Audit log: successful summary creation from existing document
+    log_audit_event(
+        event="summary_creation",
+        user_id=str(current_user.id),
+        resource_type="summary",
+        resource_id=str(summary.id),
+        action="create",
+        result="success",
+        extra={
+            "expertise_level": request.expertise_level.value,
+            "study_space_id": str(request.study_space_id),
+            "document_id": str(request.document_id),
+            "source": "existing_document"
+        }
+    )
+
     return summary
 
 
@@ -176,4 +210,15 @@ def delete_summary(
         summary_id=summary_id,
         user=current_user,
     )
+
+    # Audit log: successful summary deletion
+    log_audit_event(
+        event="summary_deletion",
+        user_id=str(current_user.id),
+        resource_type="summary",
+        resource_id=str(summary_id),
+        action="delete",
+        result="success"
+    )
+
     return None

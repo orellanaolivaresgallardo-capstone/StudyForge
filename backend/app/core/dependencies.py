@@ -53,8 +53,18 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Convertir user_id string a UUID (necesario para SQLite y más seguro)
+    try:
+        user_uuid = UUID(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token malformado: ID inválido",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     # Buscar usuario en la base de datos
-    stmt = select(User).where(User.id == user_id)
+    stmt = select(User).where(User.id == user_uuid)
     user = db.execute(stmt).scalar_one_or_none()
     if user is None:
         raise HTTPException(

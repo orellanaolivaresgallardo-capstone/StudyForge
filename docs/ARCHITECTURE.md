@@ -34,9 +34,9 @@ StudyForge es una aplicación web de acompañamiento y apoyo para el aprendizaje
 - **Hosting**: Render / GCP
 - **CI/CD**: GitHub Actions
 
-## Arquitectura del Backend
+## <a id="backend-architecture"></a>Arquitectura del Backend
 
-### Estructura de Carpetas
+### <a id="backend-folder-structure"></a>Estructura de Carpetas
 
 ```
 backend/
@@ -110,9 +110,9 @@ backend/
 
 ---
 
-## Arquitectura del Frontend
+## <a id="frontend-architecture"></a>Arquitectura del Frontend
 
-### Estructura de Carpetas
+### <a id="frontend-folder-structure"></a>Estructura de Carpetas
 
 ```
 frontend/
@@ -257,13 +257,30 @@ interface AuthContextType {
 
 #### 4. Componentes Principales
 
+**Para documentación completa de componentes UI, ver**: [`docs/COMPONENTS.md`](./COMPONENTS.md)
+
+**Componentes Base (UI)**:
+- **Modal**: Modal reutilizable con soporte para bloqueo durante async ops (`allowClose` prop)
+- **ConfirmModal**: Modal de confirmación profesional (reemplaza `window.confirm()`)
+- **Toast**: Sistema de notificaciones temporales (success, error, warning, info)
+- **LoadingSpinner**: Indicador de carga animado
+- **EmptyState**: Componente para estados vacíos con ícono y mensaje
+
+**Componentes de Confirmación**:
+- **DeleteSpaceModal**: Modal especializado para eliminación segura de espacios con validación de contraseña
+
+**Componentes de Configuración**:
+- **QuizConfigModal**: Configuración de generación de quizzes (5-30 preguntas)
+- **CreateSummaryModal**: Generación de resúmenes con selección de nivel de expertise
+
+**Componentes de Layout**:
 - **Navbar**: Navegación responsive con links a secciones principales
   - Muestra diferentes menús según estado de autenticación
   - Menú hamburguesa móvil con animaciones
   - QuotaWidget integrado (solo para usuarios autenticados)
   - Avatar de usuario con dropdown (logout)
 
-- **LandingPage**: Landing page para usuarios no autenticados (✨ Nuevo componente)
+- **LandingPage**: Landing page para usuarios no autenticados
   - **Hero section** con gradientes glassmorphism (`.hero-bg`, `.frame`)
   - **Menú hamburguesa móvil** funcional con estado local
   - **Navegación React Router** a: `/`, `/features`, `/aboutus`, `/login`, `/signup`
@@ -271,11 +288,13 @@ interface AuthContextType {
   - **Efectos visuales**: Grid overlay animado, bordes con gradientes, botones con glow
   - **Clases CSS personalizadas**: `.glass`, `.btn-glow`, `.shadow-glass`, `.grid-overlay`
 
+**Componentes de Protección**:
 - **ProtectedRoute**: HOC que verifica autenticación antes de renderizar
   - Redirige a `/login` si no autenticado
   - Muestra spinner mientras verifica token
   - Renderiza children si autenticación exitosa
 
+**Componentes de Features**:
 - **QuotaWidget**: Muestra uso de almacenamiento del usuario
   - Barra de progreso con animación shimmer
   - Alerta visual si supera 80%
@@ -351,7 +370,7 @@ VITE_API_BASE=http://localhost:8000  # URL del backend
 
 ---
 
-## Base de Datos
+## <a id="database-overview"></a>Base de Datos
 
 **Schema**: `studyforge` con roles separados (`studyforge_owner` para migraciones, `studyforge_app` para runtime)
 
@@ -471,9 +490,9 @@ Algoritmo adaptativo → Ajusta nivel de dificultad futuro
 - ❌ Datos que cambian frecuentemente
 - ❌ Datos grandes (>1KB por campo)
 
-## API Endpoints
+## <a id="api-endpoints"></a>API Endpoints
 
-### Autenticación
+### <a id="api-authentication"></a>Autenticación
 - `POST /auth/register` - Registro de usuario
 - `POST /auth/login` - Login (retorna JWT)
 - `GET /auth/me` - Información del usuario actual
@@ -508,7 +527,7 @@ Algoritmo adaptativo → Ajusta nivel de dificultad futuro
 - `DELETE /study-spaces/{id}/resources` - Quitar recursos del espacio
 - `POST /study-spaces/{id}/quizzes` - Generar quiz desde espacio
 
-## Seguridad
+## <a id="security-overview"></a>Seguridad
 
 - **Autenticación**: JWT + Argon2 para contraseñas
 - **Privacidad**: Aislamiento de datos por usuario (ownership validation)

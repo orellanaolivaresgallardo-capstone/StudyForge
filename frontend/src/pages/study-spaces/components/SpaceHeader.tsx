@@ -3,11 +3,12 @@ import type { StudySpaceResponse, StudySpaceStatsResponse } from "@/types";
 
 interface SpaceHeaderProps {
   space: StudySpaceResponse;
-  stats: StudySpaceStatsResponse | null;
+  stats?: StudySpaceStatsResponse | null;
   onEdit: () => void;
+  onCreateQuiz?: () => void;
 }
 
-export default function SpaceHeader({ space, stats, onEdit }: SpaceHeaderProps) {
+export default function SpaceHeader({ space, stats, onEdit, onCreateQuiz }: SpaceHeaderProps) {
   return (
     <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8 mb-8">
       <div className="flex items-center gap-4 mb-4">
