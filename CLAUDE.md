@@ -1381,6 +1381,98 @@ StudyForge utiliza archivos de convenciones para mantener consistencia en códig
 
 ---
 
+#### 7. **ISO 27001 Security Compliance**
+
+StudyForge implementa controles de ISO/IEC 27001 para demostrar buenas prácticas de seguridad de la información en el contexto de un proyecto capstone académico.
+
+**Documentation Location:** `docs/security/`
+
+**Key Documents:**
+- `ISO27001_OVERVIEW.md` - What is ISO 27001, scope for capstone project
+- `COMPLIANCE_CHECKLIST.md` - Current state vs ISO controls (detailed mapping)
+- `RISK_ASSESSMENT.md` - Risk analysis and treatment plan
+- `SECURE_DEVELOPMENT.md` - Secure SDLC (A.14 control)
+- `ACCESS_CONTROL_POLICY.md` - Access control implementation (A.9 control)
+- `AUDIT_LOGGING.md` - Audit logging implementation (A.12.4 control)
+
+**Implemented Controls:**
+
+✅ **A.9 - Access Control (IMPLEMENTED)**
+- Ownership validation en todos los endpoints protegidos
+- JWT authentication con expiración (24 horas)
+- Roles separados de base de datos (DDL vs DML)
+- Evidence: `backend/app/core/dependencies.py:28-78`
+
+✅ **A.10 - Cryptography (IMPLEMENTED)**
+- Argon2id para password hashing (memory-hard, GPU-resistant)
+- JWT signing con HS256
+- Evidence: `backend/app/core/security.py:15-50`
+- Pending: Encryption at rest para `documents.file_content`
+
+⚠️ **A.12.4 - Logging and Monitoring (PARTIAL)**
+- Structured logging system (`backend/app/core/logging.py`)
+- Audit logging para eventos críticos (authentication, CRUD operations)
+- Function `log_audit_event()` aplicada en:
+  - `backend/app/routers/auth.py` - login, register
+  - `backend/app/routers/documents.py` - upload, delete
+  - `backend/app/routers/summaries.py` - create, delete
+  - `backend/app/routers/quizzes.py` - create, delete
+- Pending: Log centralization, automated retention
+
+⚠️ **A.14 - Secure Development (PARTIAL)**
+- Pydantic validation en todos los endpoints
+- Type hints obligatorios (Python/TypeScript)
+- SSDLC documentado en `docs/security/SECURE_DEVELOPMENT.md`
+- Evidence: `.claude/conventions/code-style.md`, `CLAUDE.md`
+- Pending: Mandatory code review en producción
+
+⚠️ **A.13 - Communications Security (DEVELOPMENT)**
+- JWT implemented
+- CORS configured correctly
+- Pending: HTTPS en producción, TLS 1.3
+
+**Critical for Capstone:**
+- ✅ Access control y ownership validation (A.9)
+- ✅ Password hashing con Argon2 (A.10)
+- ✅ Input validation con Pydantic (A.14)
+- ✅ Basic audit logging (A.12.4)
+
+**Identified Gaps:**
+- ❌ Automated backups no configurados (A.12.3)
+- ⚠️ Rate limiting no aplicado a auth endpoints (A.9)
+- ⚠️ HTTPS not configured en desarrollo (A.13)
+- ⚠️ Encryption at rest no implementada (A.10)
+
+**Audit Events Logged:**
+- `user_registration` - Usuario registrado (success/failure)
+- `login_attempt` - Intento de login (success/failure)
+- `document_upload` - Documento subido
+- `document_deletion` - Documento eliminado
+- `summary_creation` - Resumen generado
+- `summary_deletion` - Resumen eliminado
+- `quiz_creation` - Quiz generado
+- `quiz_deletion` - Quiz eliminado
+
+**Log Format:**
+```json
+{
+  "event": "login_attempt",
+  "user_id": "uuid",
+  "action": "login",
+  "result": "success",
+  "timestamp": "2025-11-29T10:30:00Z",
+  "extra": {"email": "user@example.com"}
+}
+```
+
+**Log Location:** `backend/logs/app.log` (rotating file handler)
+
+**Query Logs:** `grep "AUDIT" backend/logs/app.log`
+
+**See:** `docs/security/COMPLIANCE_CHECKLIST.md` para estado completo de controles
+
+---
+
 ### How Agents Work
 
 #### Automatic Invocation
