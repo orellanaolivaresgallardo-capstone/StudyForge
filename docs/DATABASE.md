@@ -6,9 +6,9 @@ Este documento describe la arquitectura de base de datos de StudyForge con Postg
 
 ---
 
-## Schema y Roles
+## <a id="schema-and-roles"></a>Schema y Roles
 
-### Schema Aislado
+### <a id="isolated-schema"></a>Schema Aislado
 
 **Schema**: `studyforge` (no `public`)
 
@@ -298,9 +298,9 @@ Quizzes (1) ──< (N) QuizAttempts [CASCADE DELETE]
 
 ---
 
-## Migraciones con Alembic
+## <a id="migrations"></a>Migraciones con Alembic
 
-### Comandos Comunes
+### <a id="migration-commands"></a>Comandos Comunes
 
 ```bash
 # Generar nueva migración automática
@@ -431,9 +431,9 @@ LIMIT 10;
 
 ---
 
-## Consideraciones de Performance
+## <a id="performance"></a>Consideraciones de Performance
 
-### Índices
+### <a id="indexes"></a>Índices
 
 **Cuándo agregar índices**:
 - Columnas en WHERE frecuente

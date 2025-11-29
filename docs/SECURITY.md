@@ -6,9 +6,9 @@ Este documento describe las medidas de seguridad implementadas en StudyForge par
 
 ---
 
-## 1. Autenticación y Autorización
+## <a id="authentication-and-authorization"></a>1. Autenticación y Autorización
 
-### 1.1 JWT (JSON Web Tokens)
+### <a id="jwt-authentication"></a>1.1 JWT (JSON Web Tokens)
 - **Algoritmo**: HS256
 - **Expiración**: 24 horas (configurable)
 - **Secret Key**: Debe cambiarse en producción (almacenar en variable de entorno)
@@ -23,9 +23,9 @@ Todos los endpoints protegidos verifican que `user.is_active == True` antes de p
 
 ---
 
-## 2. Protección de Privacidad de Datos
+## <a id="data-privacy"></a>2. Protección de Privacidad de Datos
 
-### 2.1 Ownership Validation (Validación de Propiedad)
+### <a id="ownership-validation"></a>2.1 Ownership Validation (Validación de Propiedad)
 
 Todas las funciones están en [`app/core/dependencies.py`](../backend/app/core/dependencies.py):
 
