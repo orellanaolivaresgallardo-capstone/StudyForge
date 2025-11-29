@@ -1582,6 +1582,7 @@ Before considering changes complete:
  
 ### Internal Documentation
 - **Architecture**: `docs/ARCHITECTURE.md` - System design and component overview
+- **Components**: `docs/COMPONENTS.md` - Frontend UI components reference (modals, confirmations, configs)
 - **Database**: `docs/DATABASE.md` - Schema, indexes, migration guide
 - **API**: `docs/API.md` - Complete endpoint reference
 - **Security**: `docs/SECURITY.md` - Security model and best practices
