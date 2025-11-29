@@ -21,55 +21,52 @@ class TestEnrichQuizResponse:
     """Tests para la función de enriquecimiento"""
 
     def test_enrich_quiz_response_from_space(self, fake_user, fake_db, fake_quiz):
-        """Debe enriquecer quiz con source_type='space'"""
+        """Debe enriquecer quiz con source_type='study_space'"""
         fake_quiz.study_space_id = uuid4()
-        fake_quiz.summary_id = None
+        fake_quiz.source_type = "study_space"  # NEW: Explicit source_type
         fake_quiz.study_space = Mock()
         fake_quiz.study_space.name = "Test Space"
-        fake_quiz.summary = None
 
         with patch('app.routers.quizzes.QuizAttemptRepository') as MockRepo:
             MockRepo.count_attempts_by_quiz.return_value = 3
 
             result = _enrich_quiz_response(fake_quiz, fake_db, fake_user.id)
 
-            assert result["source_type"] == "space"
+            assert result["source_type"] == "study_space"  # NEW: Correct value
             assert result["study_space_name"] == "Test Space"
             assert result["num_attempts"] == 3
 
     def test_enrich_quiz_response_from_summary(self, fake_user, fake_db, fake_quiz):
         """Debe enriquecer quiz con source_type='summary'"""
-        fake_quiz.study_space_id = None
-        fake_quiz.summary_id = uuid4()
-        fake_quiz.study_space = None
-        fake_quiz.summary = Mock()
-        fake_quiz.summary.title = "Test Summary"
-        fake_quiz.summary.documents = []
+        fake_quiz.study_space_id = uuid4()  # NEW: Always required (NOT NULL)
+        fake_quiz.source_type = "summary"  # NEW: Explicit source_type
+        fake_quiz.study_space = Mock()
+        fake_quiz.study_space.name = "Test Space"
 
         with patch('app.routers.quizzes.QuizAttemptRepository') as MockRepo:
             MockRepo.count_attempts_by_quiz.return_value = 5
 
             result = _enrich_quiz_response(fake_quiz, fake_db, fake_user.id)
 
-            assert result["source_type"] == "summary"
-            assert result["summary_title"] == "Test Summary"
-            assert result["document_names"] == []
+            assert result["source_type"] == "summary"  # Correct value
+            assert result["study_space_name"] == "Test Space"  # Study space always present
 
     def test_enrich_quiz_response_from_file(self, fake_user, fake_db, fake_quiz):
-        """Debe enriquecer quiz con source_type='file'"""
-        fake_quiz.study_space_id = None
-        fake_quiz.summary_id = None
-        fake_quiz.study_space = None
-        fake_quiz.summary = None
+        """Debe enriquecer quiz con source_type='document' (from uploaded file)"""
+        fake_quiz.study_space_id = uuid4()  # NEW: Always required (NOT NULL)
+        fake_quiz.source_type = "document"  # NEW: Files now create 'document' source type
+        fake_quiz.source_document_id = uuid4()  # NEW: Reference to document
+        fake_quiz.source_summary_id = None
+        fake_quiz.study_space = Mock()
+        fake_quiz.study_space.name = "Test Space"
 
         with patch('app.routers.quizzes.QuizAttemptRepository') as MockRepo:
             MockRepo.count_attempts_by_quiz.return_value = 0
 
             result = _enrich_quiz_response(fake_quiz, fake_db, fake_user.id)
 
-            assert result["source_type"] == "file"
-            assert result["study_space_name"] is None
-            assert result["summary_title"] is None
+            assert result["source_type"] == "document"  # NEW: Correct value
+            assert result["study_space_name"] == "Test Space"  # Study space always present
 
 
 class TestGenerateQuizFromFile:
@@ -80,9 +77,11 @@ class TestGenerateQuizFromFile:
         """Debe generar quiz desde archivo"""
         mock_file = Mock()
         mock_file.filename = "test.pdf"
+        study_space_id = uuid4()  # NEW: Required parameter
 
-        fake_quiz.study_space = None
-        fake_quiz.summary = None
+        fake_quiz.study_space = Mock()
+        fake_quiz.study_space.name = "Test Space"
+        fake_quiz.source_type = "document"  # NEW: Explicit source_type
 
         with patch('app.services.quiz_service.QuizService.create_quiz_from_file', new_callable=AsyncMock) as mock_create, \
              patch('app.routers.quizzes.QuizAttemptRepository') as MockRepo:
@@ -92,6 +91,7 @@ class TestGenerateQuizFromFile:
 
             result = await generate_quiz_from_file(
                 file=mock_file,
+                study_space_id=study_space_id,  # NEW: Required parameter
                 max_questions=10,
                 current_user=fake_user,
                 db=fake_db
@@ -99,6 +99,7 @@ class TestGenerateQuizFromFile:
 
             assert result.id == fake_quiz.id
             assert result.title == fake_quiz.title
+            assert result.source_type == "document"  # NEW: Files create 'document' source type
             mock_create.assert_called_once()
 
 
@@ -109,11 +110,10 @@ class TestGenerateQuizFromSummary:
         """Debe generar quiz desde resumen"""
         summary_id = uuid4()
 
-        fake_quiz.summary_id = summary_id
-        fake_quiz.study_space = None
-        fake_quiz.summary = Mock()
-        fake_quiz.summary.title = "Test Summary"
-        fake_quiz.summary.documents = []
+        fake_quiz.source_type = "summary"  # NEW: Explicit source_type
+        fake_quiz.source_summary_id = summary_id  # NEW: Source tracking field
+        fake_quiz.study_space = Mock()  # NEW: Study space always present (NOT NULL)
+        fake_quiz.study_space.name = "Test Space"
 
         with patch('app.services.quiz_service.QuizService.create_quiz_from_summary') as mock_create, \
              patch('app.routers.quizzes.QuizAttemptRepository') as MockRepo:
@@ -129,7 +129,7 @@ class TestGenerateQuizFromSummary:
             )
 
             assert result.id == fake_quiz.id
-            assert result.source_type == "summary"
+            assert result.source_type == "summary"  # Now should match
             mock_create.assert_called_once_with(
                 db=fake_db,
                 user=fake_user,
@@ -144,9 +144,11 @@ class TestGenerateQuizFromDocument:
     def test_generate_quiz_from_document_success(self, fake_user, fake_db, fake_quiz):
         """Debe generar quiz desde documento"""
         document_id = uuid4()
+        study_space_id = uuid4()  # NEW: Required parameter
 
-        fake_quiz.study_space = None
-        fake_quiz.summary = None
+        fake_quiz.study_space = Mock()
+        fake_quiz.study_space.name = "Test Space"
+        fake_quiz.source_type = "document"  # NEW: Explicit source_type
 
         with patch('app.services.quiz_service.QuizService.create_quiz_from_document') as mock_create, \
              patch('app.routers.quizzes.QuizAttemptRepository') as MockRepo:
@@ -156,17 +158,19 @@ class TestGenerateQuizFromDocument:
 
             result = generate_quiz_from_document(
                 document_id=document_id,
+                study_space_id=study_space_id,  # NEW: Required parameter
                 max_questions=20,
                 current_user=fake_user,
                 db=fake_db
             )
 
             assert result.id == fake_quiz.id
-            assert result.source_type == "file"
+            assert result.source_type == "document"  # NEW: Correct value ('document' not 'file')
             mock_create.assert_called_once_with(
                 db=fake_db,
                 user=fake_user,
                 document_id=document_id,
+                study_space_id=study_space_id,  # NEW: Required parameter
                 max_questions=20
             )
 

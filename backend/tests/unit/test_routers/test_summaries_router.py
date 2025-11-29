@@ -82,14 +82,13 @@ class TestListSummaries:
         """Debe listar resúmenes del usuario"""
         from uuid import uuid4
 
-        # Set all denormalized fields (document and study_space)
+        # Set all denormalized fields (document cache fields only)
         fake_summary.document_id = uuid4()
-        fake_summary.document_title = "Test Document"
-        fake_summary.document_file_name = "test.pdf"
-        fake_summary.document_state = "active"
+        fake_summary.source_document_title = "Test Document"  # NEW: Renamed from document_title
+        fake_summary.source_document_filename = "test.pdf"  # NEW: Renamed from document_file_name
+        fake_summary.document_state = "active_in_space"
         fake_summary.study_space_id = fake_study_space.id
-        fake_summary.study_space_name = fake_study_space.name
-        fake_summary.study_space_color = fake_study_space.color
+        # NOTE: study_space_name and study_space_color no longer denormalized
         fake_summary.expertise_level = ExpertiseLevelEnum.BASICO
 
         with patch('app.services.summary_service.SummaryService.get_summaries') as mock_get:
@@ -104,7 +103,7 @@ class TestListSummaries:
 
             assert result.total == 1
             assert len(result.items) == 1
-            assert result.items[0].study_space_name == fake_study_space.name
+            assert result.items[0].study_space_id == fake_study_space.id  # NEW: Check FK instead
             mock_get.assert_called_once_with(
                 db=fake_db,
                 user_id=fake_user.id,
@@ -154,12 +153,11 @@ class TestGetSummary:
 
         # Set all required denormalized fields
         fake_summary.document_id = uuid4()
-        fake_summary.document_title = "Test Document"
-        fake_summary.document_file_name = "test.pdf"
-        fake_summary.document_state = "active"
+        fake_summary.source_document_title = "Test Document"  # NEW: Renamed from document_title
+        fake_summary.source_document_filename = "test.pdf"  # NEW: Renamed from document_file_name
+        fake_summary.document_state = "active_in_space"
         fake_summary.study_space_id = uuid4()
-        fake_summary.study_space_name = "Test Space"
-        fake_summary.study_space_color = "#8B5CF6"
+        # NOTE: study_space_name and study_space_color no longer denormalized
         fake_summary.document = None  # Optional relationship
         fake_summary.expertise_level = ExpertiseLevelEnum.MEDIO
 
