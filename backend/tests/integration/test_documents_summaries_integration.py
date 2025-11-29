@@ -38,8 +38,9 @@ class TestDocumentsAndSummariesFlow:
         filename, file_content, content_type = sample_text_file
 
         upload_response = client.post(
-            f"/documents/?study_space_id={space_id}",
-            files={"file": (filename, file_content, content_type)}
+            "/documents/",
+            files={"file": (filename, file_content, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
 
         assert upload_response.status_code == 201
@@ -111,14 +112,16 @@ class TestDocumentsAndSummariesFlow:
         # Subir dos documentos
         filename1, content1, content_type = sample_text_file
         upload1 = client.post(
-            f"/documents/?study_space_id={space_id}",
-            files={"file": ("doc1.txt", content1, content_type)}
+            "/documents/",
+            files={"file": ("doc1.txt", content1, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
         doc1_id = upload1.json()["id"]
 
         upload2 = client.post(
-            f"/documents/?study_space_id={space_id}",
-            files={"file": ("doc2.txt", content1, content_type)}
+            "/documents/",
+            files={"file": ("doc2.txt", content1, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
         doc2_id = upload2.json()["id"]
 
@@ -241,9 +244,10 @@ class TestDocumentsAndSummariesFlow:
 
         filename, content, content_type = sample_text_file
         client.post(
-            f"/documents/?study_space_id={space1_id}",
+            "/documents/",
             headers={"Authorization": f"Bearer {token1}"},
-            files={"file": (filename, content, content_type)}
+            files={"file": (filename, content, content_type)},
+            data={"study_space_ids": str(space1_id)}
         )
 
         # Crear segundo usuario

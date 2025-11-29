@@ -30,8 +30,9 @@ class TestQuizzesFlow:
 
         filename, content, content_type = sample_text_file
         upload_response = client.post(
-            f"/documents/?study_space_id={space_id}",
-            files={"file": (filename, content, content_type)}
+            "/documents/",
+            files={"file": (filename, content, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
         document_id = upload_response.json()["id"]
 
@@ -144,8 +145,9 @@ class TestQuizzesFlow:
 
         filename, content, content_type = sample_text_file
         upload_response = client.post(
-            f"/documents/?study_space_id={space_id}",
-            files={"file": (filename, content, content_type)}
+            "/documents/",
+            files={"file": (filename, content, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
         document_id = upload_response.json()["id"]
 
@@ -210,8 +212,9 @@ class TestQuizzesFlow:
 
         filename, content, content_type = sample_text_file
         upload_response = client.post(
-            f"/documents/?study_space_id={space_id}",
-            files={"file": (filename, content, content_type)}
+            "/documents/",
+            files={"file": (filename, content, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
         document_id = upload_response.json()["id"]
 
@@ -259,8 +262,9 @@ class TestQuizzesFlow:
 
         filename, content, content_type = sample_text_file
         upload_response = client.post(
-            f"/documents/?study_space_id={space_id}",
-            files={"file": (filename, content, content_type)}
+            "/documents/",
+            files={"file": (filename, content, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
         document_id = upload_response.json()["id"]
 
@@ -313,8 +317,9 @@ class TestQuizzesFlow:
 
         filename, content, content_type = sample_text_file
         upload_response = client.post(
-            f"/documents/?study_space_id={space_id}",
-            files={"file": (filename, content, content_type)}
+            "/documents/",
+            files={"file": (filename, content, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
         document_id = upload_response.json()["id"]
 
