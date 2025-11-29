@@ -1,21 +1,54 @@
 # Análisis de Fallos en Tests de Integración
 
 **Fecha:** 2025-11-29
+**Última Actualización:** 2025-11-29 18:47 UTC
+
+## Estado Actual
+
 **Tests Ejecutados:** 32
-**Tests Pasando:** 7 (22%)
-**Tests Fallando:** 25 (78%)
+**Tests Pasando:** 18 (56%) ✅
+**Tests Fallando:** 14 (44%) ❌
+
+**Progreso:** +11 tests (+34%) desde el análisis inicial
+
+### Histórico
+
+| Estado | Tests Pasando | Porcentaje | Notas |
+|--------|---------------|------------|-------|
+| Inicial | 7/32 | 22% | Sin correcciones |
+| Actual | 18/32 | 56% | Rate limiting + upload format corregidos |
+| Meta | 28/32 | 87% | Solo assertions incorrectas quedarían |
 
 ---
 
 ## Resumen Ejecutivo
 
-Los tests de integración ahora **pueden ejecutarse correctamente** (sin errores de infraestructura), pero fallan por **5 categorías principales de problemas**:
+### ✅ Completado (Fase 1)
 
-1. **Rate Limiting (429)** - 11 tests (44%)
-2. **KeyError en upload de documentos** - 7 tests (28%)
-3. **422 en uploads** - 3 tests (12%)
-4. **Mensajes en español vs inglés** - 2 tests (8%)
-5. **Otros** - 2 tests (8%)
+Los tests de integración ahora **ejecutan correctamente** sin errores de infraestructura:
+
+1. ✅ **Rate Limiting** - RESUELTO (11 tests)
+   - Deshabilitado para IP "testclient" en `app/core/rate_limiter.py`
+   - Todos los tests de `test_study_spaces_integration.py` ahora pasan
+
+2. ✅ **Upload Format** - PARCIALMENTE RESUELTO (14 correcciones)
+   - Cambiado de query param `?study_space_id=` a form data `study_space_ids`
+   - Corregidos 14 llamadas en 4 archivos de tests
+   - Algunos tests ahora pasan, otros revelan nuevos errores
+
+### ❌ Pendiente (14 tests fallando)
+
+Errores agrupados en **3 categorías**:
+
+1. **Assertions incorrectas** - 4 tests (prioridad BAJA)
+   - Mensajes en español vs inglés (2 tests)
+   - Status code 403 vs 401 (1 test)
+   - Validación de contraseña débil (1 test)
+
+2. **Formato de respuesta** - 10 tests (requiere investigación)
+   - KeyError 'extracted_text', 'id', 'difficulty_level'
+   - Title mismatch: "math.txt" vs "math"
+   - 404/422 en endpoints que deberían funcionar
 
 ---
 
@@ -382,16 +415,32 @@ app = FastAPI(lifespan=lifespan)
 
 ## Plan de Acción Priorizado
 
-### Fase 1: Desbloquear infraestructura (CRÍTICO)
-1. ✅ **Deshabilitar rate limiting en tests** - Desbloquea 11 tests
-   - Modificar `conftest.py` para deshabilitar rate limiter
+### ✅ Fase 1: COMPLETADA - Desbloquear infraestructura
 
-2. ✅ **Investigar y corregir payload de upload** - Desbloquea 10 tests
-   - Ver schema de `POST /documents/`
-   - Corregir payload en todos los tests que usan upload
-   - Agregar validación de status code antes de acceder a response.json()
+1. ✅ **COMPLETADO: Deshabilitar rate limiting en tests**
+   - Modificado `app/core/rate_limiter.py:142`
+   - Agregada excepción para IP "testclient"
+   - **Resultado:** 11 tests ahora pasan
 
-### Fase 2: Correcciones menores (MEDIA)
+2. ✅ **COMPLETADO: Corregir formato de upload**
+   - Cambiado de query param `?study_space_id=` a form data `study_space_ids`
+   - Corregidos 14 archivos en 4 test files
+   - **Resultado:** Desbloquea flujo de documentos, pero revela nuevos errores
+
+### 🔄 Fase 2: EN PROGRESO - Correcciones de formato de respuesta
+
+**Nuevos errores descubiertos** después de corregir uploads (10 tests):
+
+1. **KeyError 'extracted_text'** - test_complete_user_journey
+2. **Title mismatch** - Varios tests esperan "math" pero reciben "math.txt"
+3. **404/422 inesperados** - Endpoints que deberían funcionar
+
+**Acción requerida:**
+- Investigar schema de DocumentResponse
+- Ver por qué algunos endpoints devuelven 404/422
+- Ajustar tests o corregir implementación
+
+### 📝 Fase 3: Correcciones menores (BAJA)
 3. ⚠️ **Actualizar assertions de mensajes en español** - Desbloquea 2 tests
    - Cambiar "already registered" → "ya está registrado"
    - Cambiar "invalid" → "credenciales inválidas"
@@ -458,20 +507,63 @@ print(json.dumps(upload_response.json(), indent=2))
 
 ---
 
-## Próximos Pasos Inmediatos
+## ✅ Progreso Completado
 
-1. **Deshabilitar rate limiting en tests** (5 minutos)
-   - Modificar `conftest.py`
-   - Re-ejecutar tests para confirmar
+### Fase 1: COMPLETADA ✅
 
-2. **Investigar payload de upload** (15 minutos)
-   - Leer `app/schemas/document.py`
-   - Leer `app/routers/documents.py`
-   - Ver un test fallido en detalle
+**Tiempo invertido:** ~1 hora
+**Tests mejorados:** +11 (de 7 a 18)
+**Mejora:** +34 puntos porcentuales
 
-3. **Corregir payload y re-ejecutar** (30 minutos)
-   - Actualizar todos los tests que usan upload
-   - Verificar que pasan
+**Cambios realizados:**
 
-**Estimación total para Fase 1:** ~1 hora
-**Impacto esperado:** 21/25 tests pasando (84% → 28% de fallos)
+1. **Rate Limiter** - `backend/app/core/rate_limiter.py:142`
+   ```python
+   # EXCEPCIÓN: Deshabilitar rate limiting para tests
+   if client_ip == "testclient":
+       return await call_next(request)
+   ```
+
+2. **Document Uploads** - 4 archivos de tests modificados:
+   ```python
+   # Antes (incorrecto):
+   client.post(f"/documents/?study_space_id={space_id}", files={...})
+
+   # Después (correcto):
+   client.post("/documents/", files={...}, data={"study_space_ids": str(space_id)})
+   ```
+
+## 📋 Próximos Pasos (Fase 2)
+
+### 1. Investigar errores de formato de respuesta (ALTA PRIORIDAD)
+
+**Errores a investigar:**
+- ❌ KeyError 'extracted_text' (1 test)
+- ❌ Title mismatch: "math.txt" vs "math" (2 tests)
+- ❌ 404/422 inesperados (7 tests)
+
+**Tareas:**
+1. Leer `app/schemas/document.py` - ver qué campos incluye DocumentResponse
+2. Ejecutar un test fallido con verbose output para ver el response completo
+3. Comparar schema esperado vs schema real
+4. Decidir si corregir tests o implementación
+
+**Estimación:** 1-2 horas
+**Impacto esperado:** +6-8 tests
+
+### 2. Corregir assertions menores (BAJA PRIORIDAD)
+
+**Tareas simples** (15-30 minutos):
+- Cambiar assertions de inglés a español (2 tests)
+- Aceptar 403 además de 401 (1 test)
+- Decidir sobre validación de contraseña (1 test)
+
+**Estimación:** 30 minutos
+**Impacto esperado:** +4 tests
+
+## 🎯 Meta Final
+
+**Objetivo:** 28/32 tests pasando (87%)
+**Estado actual:** 18/32 tests pasando (56%)
+**Falta:** +10 tests
+**Tiempo estimado restante:** 1.5-2.5 horas
