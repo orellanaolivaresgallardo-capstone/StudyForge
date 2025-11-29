@@ -1201,6 +1201,186 @@ README.md (High-level Project Overview)
   └── Brief overview that links to detailed docs/
 ```
 
+#### 5. **commit-organizer** - Smart Git Commit Assistant
+
+**Purpose**: Automatically organizes file changes into logical atomic commits following Conventional Commits specification. Intelligently groups related files and generates properly formatted commit messages with type classification (feat, fix, refactor, etc.) and scope detection (backend, frontend, database, etc.).
+
+**Location**: [`.claude/agents/commit-organizer.md`](.claude/agents/commit-organizer.md)
+
+**When to use**:
+- Before committing code changes
+- When you have multiple unrelated changes
+- To ensure clean git history
+- Before creating pull requests
+- When unsure how to organize commits
+
+**Capabilities**:
+- ✅ Analyzes working directory changes (`git status`, `git diff`)
+- ✅ Automatically classifies changes by type (feat/fix/refactor/perf/docs/etc.)
+- ✅ Detects appropriate scope (backend/frontend/database/api/etc.)
+- ✅ Groups related files into atomic commits
+- ✅ Generates Conventional Commits formatted messages
+- ✅ Validates commit safety (no secrets, proper file sizes)
+- ✅ Prevents dangerous operations (checks before amending)
+- ✅ Creates descriptive commit bodies with bullet points
+
+**Usage**:
+```
+> Help me commit these changes
+> Use commit-organizer to organize my commits
+> Create commits following conventional commits
+> Organize these changes into logical commits
+```
+
+**Example workflow**:
+1. Agent runs `git status` and `git diff` to analyze changes
+2. Classifies each file by type (feat/fix/refactor/etc.)
+3. Detects scope (backend/frontend/database/etc.)
+4. Groups related files into logical commits
+5. Proposes commit plan with formatted messages
+6. Waits for user approval
+7. Creates commits with proper format
+8. Verifies commits were created successfully
+
+**Commit Message Format**:
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Supported Types**:
+- `feat`: New feature for the user
+- `fix`: Bug fix
+- `refactor`: Code restructuring without behavior change
+- `perf`: Performance improvements
+- `docs`: Documentation only changes
+- `test`: Adding or updating tests
+- `style`: Formatting, missing semicolons, etc.
+- `build`: Build system or dependency changes
+- `ci`: CI configuration changes
+- `chore`: Maintenance tasks
+
+**Supported Scopes**:
+- `backend`: Python/FastAPI/SQLAlchemy changes
+- `frontend`: React/TypeScript changes
+- `database`: Migrations, schema changes
+- `api`: API endpoints or schemas
+- `auth`: Authentication/authorization
+- `docs`: Documentation files
+- `config`: Configuration files
+
+**Example Output**:
+```markdown
+## Análisis de Cambios
+
+**Archivos modificados:** 5
+**Archivos sin seguimiento:** 2
+
+### Agrupación Propuesta
+
+He identificado **2 grupos lógicos** para commits atómicos:
+
+---
+
+### 📦 Commit 1: `feat(backend): Add user authentication endpoints`
+
+**Tipo:** feat
+**Alcance:** backend
+**Archivos incluidos:**
+- backend/app/routers/auth.py
+- backend/app/services/auth_service.py
+- backend/app/schemas/auth.py
+
+**Razón del agrupamiento:**
+Estos archivos implementan juntos la funcionalidad de autenticación JWT.
+
+**Mensaje completo:**
+```
+feat(backend): Add user authentication endpoints
+
+- Implement /auth/login and /auth/register endpoints
+- Add AuthService with Argon2 password hashing
+- Create Pydantic schemas for auth requests/responses
+- Add JWT token generation and validation
+```
+
+**Verificación de seguridad:** ✅ Sin secretos, ✅ Tamaño < 1MB
+
+---
+
+### 📦 Commit 2: `docs: Update API documentation for auth endpoints`
+
+**Tipo:** docs
+**Alcance:** docs
+**Archivos incluidos:**
+- docs/API.md
+- CLAUDE.md
+
+**Razón del agrupamiento:**
+Actualización de documentación para reflejar nuevos endpoints de autenticación.
+
+**Mensaje completo:**
+```
+docs: Update API documentation for auth endpoints
+
+- Document /auth/login and /auth/register
+- Add authentication section to API reference
+- Update CLAUDE.md with auth examples
+```
+
+**Verificación de seguridad:** ✅ Sin secretos, ✅ Tamaño < 1MB
+
+---
+
+## Siguiente Paso
+
+¿Deseas que proceda a crear estos commits?
+```
+
+**Safety Features**:
+- 🔒 Checks for secrets before committing (.env, API keys)
+- 🔒 Validates file sizes (warns on large files >1MB)
+- 🔒 Verifies authorship before amending
+- 🔒 Never skips git hooks without permission
+- 🔒 Detects if commits are already pushed before amending
+
+---
+
+#### 6. **Conventions Reference Files**
+
+StudyForge utiliza archivos de convenciones para mantener consistencia en código generado por agentes AI.
+
+**Location:** `.claude/conventions/`
+
+**Available Conventions:**
+
+##### `code-style.md` - Syntax and Formatting Rules
+- Exact syntax for Python, TypeScript, SQL
+- Indentation, quotes, naming conventions
+- React component rules (<100 lines, reuse over create)
+- SQLAlchemy 2.0 patterns (mapped_column preferred)
+
+##### `testing-guide.md` - Testing Patterns
+- AAA pattern (Arrange-Act-Assert)
+- Available fixtures (fake_db, fake_user, etc.)
+- Commands for running tests
+- Anti-patterns to avoid
+
+##### `conventional-commits.md` - Commit Message Format
+- Types (feat, fix, refactor, docs, etc.)
+- Scopes (backend, frontend, database, etc.)
+- Examples and best practices
+
+**Usage by Agents:**
+- test-runner → reads testing-guide.md
+- commit-organizer → reads conventional-commits.md
+- All agents → follow code-style.md when generating code
+
+---
+
 ### How Agents Work
 
 #### Automatic Invocation
@@ -1218,6 +1398,9 @@ User: "Check this code for security issues"
 
 User: "Update documentation for my changes"
 → Claude invokes docs-maintainer agent automatically
+
+User: "Help me commit these changes"
+→ Claude invokes commit-organizer agent automatically
 ```
 
 #### Explicit Invocation
@@ -1228,6 +1411,7 @@ You can explicitly request a specific agent:
 > Ask the studyforge-assistant how to implement [feature]
 > Have the security-reviewer audit this endpoint
 > Use docs-maintainer to validate all documentation
+> Use commit-organizer to organize my commits
 ```
 
 #### Agent Context
