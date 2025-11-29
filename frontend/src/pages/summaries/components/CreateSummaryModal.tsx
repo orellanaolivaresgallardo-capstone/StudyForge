@@ -59,7 +59,7 @@ export function CreateSummaryModal({
             value={summaryTitle}
             onChange={(e) => setSummaryTitle(e.target.value)}
             placeholder="Ej: Resumen de Matemáticas"
-            className="w-full bg-slate-900/50 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-violet-500 transition-colors"
+            className="w-full bg-white/10 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/50 transition-all"
           />
         </div>
 
@@ -98,11 +98,11 @@ export function CreateSummaryModal({
             <select
               value={selectedSpaceId}
               onChange={(e) => setSelectedSpaceId(e.target.value)}
-              className="w-full bg-slate-900/50 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-white/10 border border-white/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/50 transition-all [&>option]:bg-slate-800 [&>option]:text-white"
             >
-              <option value="">Selecciona un espacio...</option>
+              <option value="" className="bg-slate-800 text-white">Selecciona un espacio...</option>
               {studySpaces.map((space) => (
-                <option key={space.id} value={space.id}>
+                <option key={space.id} value={space.id} className="bg-slate-800 text-white">
                   {space.name}
                 </option>
               ))}

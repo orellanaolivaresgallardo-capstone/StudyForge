@@ -93,12 +93,12 @@ export function SpaceCard({ space, onEdit, onDelete }: SpaceCardProps) {
         </div>
       </div>
 
-      <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-violet-300 transition-colors">
+      <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-violet-300 transition-colors break-words" title={space.name}>
         {space.name}
       </h3>
 
       {space.description && (
-        <p className="text-white/60 text-sm mb-4 line-clamp-2">
+        <p className="text-white/75 text-sm mb-4 line-clamp-2 break-words" title={space.description}>
           {space.description}
         </p>
       )}
@@ -115,21 +115,21 @@ export function SpaceCard({ space, onEdit, onDelete }: SpaceCardProps) {
         {/* Counters */}
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-white/5 rounded-lg py-2">
-            <div className="text-white/50 text-xs">📄 Docs</div>
+            <div className="text-white/70 text-xs">📄 Docs</div>
             <div className="text-white font-semibold">{space.num_documents}</div>
           </div>
           <div className="bg-white/5 rounded-lg py-2">
-            <div className="text-white/50 text-xs">📚 Resúm.</div>
+            <div className="text-white/70 text-xs">📚 Resúm.</div>
             <div className="text-white font-semibold">{space.num_summaries}</div>
           </div>
           <div className="bg-white/5 rounded-lg py-2">
-            <div className="text-white/50 text-xs">📝 Quizzes</div>
+            <div className="text-white/70 text-xs">📝 Quizzes</div>
             <div className="text-white font-semibold">{space.num_quizzes}</div>
           </div>
         </div>
       </div>
 
-      <div className="text-xs text-white/50">
+      <div className="text-xs text-white/70">
         Creado el {formatDate(space.created_at)}
       </div>
     </div>
