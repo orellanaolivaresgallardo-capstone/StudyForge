@@ -55,9 +55,11 @@ export async function createQuizFromSummary(
 
 export async function createQuizFromDocument(
   documentId: string,
+  studySpaceId: string,
   maxQuestions?: number
 ): Promise<QuizResponse> {
   const formData = new FormData();
+  formData.append('study_space_id', studySpaceId); // NEW: Required field
   if (maxQuestions !== undefined) {
     formData.append('max_questions', maxQuestions.toString());
   }

@@ -11,24 +11,25 @@ export interface KeyConceptItem {
   definition: string;
 }
 
-export interface DeletedDocumentInfo {
-  id: string;
-  title: string;
-  file_name: string;
-}
+// Estado del documento source (para tracking de documentos eliminados)
+export type DocumentState = "active_in_space" | "removed_from_space" | "permanently_deleted";
 
 export interface SummaryResponse {
   id: string;
   user_id: string;
+  document_id: string | null; // FK al documento (nullable si fue eliminado)
+  study_space_id: string; // FK al espacio de estudio (required, NOT NULL)
   title: string;
-  content: Record<string, any>; // JSONB
+  content: Record<string, unknown>; // JSONB
   expertise_level: ExpertiseLevel;
   topics: string[];
   key_concepts: KeyConceptItem[];
-  deleted_documents_info?: DeletedDocumentInfo[] | null;
+  // Denormalized cache fields (para preservar info si documento se elimina)
+  source_document_title: string | null;
+  source_document_filename: string | null;
+  document_state: DocumentState | null; // Estado del documento source
   created_at: string;
   updated_at: string;
-  study_space_names: string[];
 }
 
 export interface SummaryDetailResponse extends SummaryResponse {
@@ -43,7 +44,8 @@ export interface SummaryListResponse {
 }
 
 export interface SummaryCreateFromDocuments {
-  document_ids: string[];
+  document_id: string; // Ahora es singular (un documento por resumen)
+  study_space_id: string; // Required: espacio de estudio donde se creará el resumen
   expertise_level: ExpertiseLevel;
   title?: string;
 }

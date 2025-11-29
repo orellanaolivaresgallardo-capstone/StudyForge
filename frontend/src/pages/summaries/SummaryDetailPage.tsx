@@ -65,12 +65,13 @@ export default function SummaryDetailPage() {
   }
 
   async function handleGenerateQuiz(numQuestions: number) {
-    if (!id) return;
+    if (!id || !summary) return;
 
     try {
       setIsGeneratingQuiz(true);
       const quiz = await createQuizFromSummary({
         summary_id: id,
+        study_space_id: summary.study_space_id, // NEW: Required field
         max_questions: numQuestions,
       });
       showToast("Quiz generado exitosamente", "success");
@@ -427,7 +428,7 @@ export default function SummaryDetailPage() {
               </h2>
               <div className="prose prose-invert prose-slate max-w-none">
                 <p className="text-white/90 leading-relaxed whitespace-pre-wrap">
-                  {summary.content.summary || "No hay contenido disponible"}
+                  {(summary.content.summary as string) || "No hay contenido disponible"}
                 </p>
               </div>
             </div>

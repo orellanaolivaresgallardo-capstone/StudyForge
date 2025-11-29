@@ -26,23 +26,28 @@ export interface QuestionWithRandomizedOptions {
   explanation: string;
 }
 
+// Tipo de fuente del quiz
+export type QuizSourceType = "document" | "summary" | "study_space";
+
 export interface QuizResponse {
   id: string;
   user_id: string;
-  summary_id: string | null;
-  study_space_id: string | null;
-  study_space_name: string | null;
-  summary_title: string | null;
-  document_names: string[];
-  source_type: string; // "file" | "summary" | "space"
+  study_space_id: string; // Required FK (NOT NULL)
+  source_type: QuizSourceType; // Tipo de fuente: 'document', 'summary', 'study_space'
   title: string;
   difficulty_level: number; // 1-5
   created_at: string;
   questions: QuestionData[]; // Preguntas en formato JSON
-  source_document_ids?: string[] | null;
-  source_summary_ids?: string[] | null;
-  num_questions: number;
-  num_attempts: number;
+  // Source tracking fields (nullable, SET NULL on delete)
+  source_document_id: string | null; // FK singular al documento fuente
+  source_summary_id: string | null; // FK singular al resumen fuente
+  // Denormalized cache fields (JSONB)
+  source_names: Record<string, string> | null; // e.g., {"summary": "My Summary", "space": "My Space"}
+  source_metadata: Record<string, unknown> | null; // e.g., {"summary_count": 2}
+  // Computed fields
+  study_space_name: string | null; // Computed from relationship
+  num_questions: number; // Número de preguntas
+  num_attempts: number; // Número de intentos del usuario
 }
 
 export interface QuizListResponse {
@@ -52,11 +57,17 @@ export interface QuizListResponse {
 
 export interface QuizCreateFromFile {
   file: File;
+  study_space_id: string; // Required: espacio de estudio donde se creará el quiz
   max_questions?: number;
   difficulty_level?: number;
 }
 
 export interface QuizCreateFromSummary {
   summary_id: string;
+  study_space_id: string; // Required: espacio de estudio donde se creará el quiz
   max_questions?: number;
+}
+
+export interface QuizCreateFromSpace {
+  max_questions?: number; // study_space_id viene del parámetro de ruta
 }

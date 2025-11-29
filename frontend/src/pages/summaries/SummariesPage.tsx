@@ -4,7 +4,6 @@
  * Permite crear resúmenes desde documentos existentes y visualizar todos los resúmenes.
  */
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Navbar, Toast, Modal, LoadingSpinner, EmptyState } from "@/components";
 import type { ToastType } from "@/components";
@@ -13,17 +12,17 @@ import {
   createSummaryFromDocuments,
   deleteSummary,
   listDocuments,
-  getCurrentUser,
+  listStudySpaces,
 } from "@/services/api";
 import { getErrorMessage } from "@/utils/errorHandler";
 import type {
   SummaryResponse,
   DocumentResponse,
   ExpertiseLevel,
+  StudySpaceResponse,
 } from "@/types";
 
 export default function SummariesPage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   // Estado de resúmenes
@@ -34,7 +33,9 @@ export default function SummariesPage() {
   // Estado de creación de resumen
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
-  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+  const [studySpaces, setStudySpaces] = useState<StudySpaceResponse[]>([]);
+  const [selectedDocId, setSelectedDocId] = useState<string>("");
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>("");
   const [expertiseLevel, setExpertiseLevel] = useState<ExpertiseLevel>("medio");
   const [summaryTitle, setSummaryTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -42,22 +43,9 @@ export default function SummariesPage() {
   // Estado de modal de confirmación de eliminación
   const [deleteModal, setDeleteModal] = useState<{ id: string; title: string } | null>(null);
 
-  // Máximo de documentos permitidos
-  const [maxDocs, setMaxDocs] = useState(2);
-
   useEffect(() => {
     loadSummaries();
-    loadUserConfig();
   }, []);
-
-  async function loadUserConfig() {
-    try {
-      const userData = await getCurrentUser();
-      setMaxDocs(userData.max_documents_per_summary || 2);
-    } catch (error) {
-      console.error("Error loading user config:", error);
-    }
-  }
 
   async function loadSummaries() {
     try {
@@ -72,12 +60,16 @@ export default function SummariesPage() {
     }
   }
 
-  async function loadDocuments() {
+  async function loadDocumentsAndSpaces() {
     try {
-      const response = await listDocuments();
-      setDocuments(response.items);
+      const [docsResponse, spacesResponse] = await Promise.all([
+        listDocuments(),
+        listStudySpaces(),
+      ]);
+      setDocuments(docsResponse.items);
+      setStudySpaces(spacesResponse.items);
     } catch (error) {
-      console.error("Error loading documents:", error);
+      console.error("Error loading data:", error);
       setToast({ message: getErrorMessage(error), type: "error" });
     }
   }
@@ -88,34 +80,29 @@ export default function SummariesPage() {
 
   function handleOpenCreateModal() {
     setShowCreateModal(true);
-    setSelectedDocIds([]);
+    setSelectedDocId("");
+    setSelectedSpaceId("");
     setSummaryTitle("");
     setExpertiseLevel("medio");
-    loadDocuments();
-  }
-
-  function toggleDocumentSelection(docId: string) {
-    if (selectedDocIds.includes(docId)) {
-      setSelectedDocIds(selectedDocIds.filter((id) => id !== docId));
-    } else {
-      if (selectedDocIds.length >= maxDocs) {
-        showToast(`Solo puedes seleccionar hasta ${maxDocs} documentos`, "warning");
-        return;
-      }
-      setSelectedDocIds([...selectedDocIds, docId]);
-    }
+    loadDocumentsAndSpaces();
   }
 
   async function handleCreateSummary() {
-    if (selectedDocIds.length === 0) {
-      showToast("Debes seleccionar al menos un documento", "warning");
+    if (!selectedDocId) {
+      showToast("Debes seleccionar un documento", "warning");
+      return;
+    }
+
+    if (!selectedSpaceId) {
+      showToast("Debes seleccionar un espacio de estudio", "warning");
       return;
     }
 
     try {
       setIsCreating(true);
       await createSummaryFromDocuments({
-        document_ids: selectedDocIds,
+        document_id: selectedDocId,
+        study_space_id: selectedSpaceId,
         expertise_level: expertiseLevel,
         title: summaryTitle || undefined,
       });
@@ -307,35 +294,24 @@ export default function SummariesPage() {
                   </div>
                 )}
 
-                {/* Study Spaces */}
-                {summary.study_space_names && summary.study_space_names.length > 0 && (
+                {/* Document State Badge */}
+                {summary.document_state && (
                   <div className="mb-4">
-                    <p className="text-xs text-white/60 mb-2">
-                      Espacios de estudio:
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {summary.study_space_names.map((spaceName, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-block px-2 py-1 rounded-lg text-xs font-medium bg-pink-500/20 text-pink-300 border border-pink-500/30"
-                        >
-                          <svg
-                            className="w-3 h-3 inline mr-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                            />
-                          </svg>
-                          {spaceName}
-                        </span>
-                      ))}
-                    </div>
+                    <span
+                      className={`inline-block px-2 py-1 rounded-lg text-xs font-medium border ${
+                        summary.document_state === "active_in_space"
+                          ? "bg-green-500/20 text-green-300 border-green-500/30"
+                          : summary.document_state === "removed_from_space"
+                          ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+                          : "bg-red-500/20 text-red-300 border-red-500/30"
+                      }`}
+                    >
+                      {summary.document_state === "active_in_space"
+                        ? "✅ Documento activo"
+                        : summary.document_state === "removed_from_space"
+                        ? "⚠️ Documento removido"
+                        : "🗑️ Documento eliminado"}
+                    </span>
                   </div>
                 )}
 
@@ -447,10 +423,35 @@ export default function SummariesPage() {
               </div>
             </div>
 
-            {/* Document Selection */}
+            {/* Study Space Selection */}
             <div>
               <label className="block text-white/80 font-semibold mb-2">
-                Selecciona documentos ({selectedDocIds.length} / {maxDocs})
+                Espacio de estudio *
+              </label>
+              {studySpaces.length === 0 ? (
+                <div className="text-center py-8 text-white/60">
+                  No tienes espacios de estudio. Crea uno primero.
+                </div>
+              ) : (
+                <select
+                  value={selectedSpaceId}
+                  onChange={(e) => setSelectedSpaceId(e.target.value)}
+                  className="w-full bg-slate-900/50 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors"
+                >
+                  <option value="">Selecciona un espacio...</option>
+                  {studySpaces.map((space) => (
+                    <option key={space.id} value={space.id}>
+                      {space.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Document Selection (Single) */}
+            <div>
+              <label className="block text-white/80 font-semibold mb-2">
+                Selecciona un documento *
               </label>
               {documents.length === 0 ? (
                 <div className="text-center py-8 text-white/60">
@@ -461,35 +462,23 @@ export default function SummariesPage() {
                   {documents.map((doc) => (
                     <div
                       key={doc.id}
-                      onClick={() => toggleDocumentSelection(doc.id)}
+                      onClick={() => setSelectedDocId(doc.id)}
                       className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                        selectedDocIds.includes(doc.id)
+                        selectedDocId === doc.id
                           ? "bg-violet-500/20 border-violet-500/50"
                           : "bg-white/5 border-white/10 hover:border-violet-400/30"
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                            selectedDocIds.includes(doc.id)
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            selectedDocId === doc.id
                               ? "bg-violet-500 border-violet-500"
                               : "border-white/30"
                           }`}
                         >
-                          {selectedDocIds.includes(doc.id) && (
-                            <svg
-                              className="w-3 h-3 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
+                          {selectedDocId === doc.id && (
+                            <div className="w-2 h-2 bg-white rounded-full" />
                           )}
                         </div>
                         <div className="flex-1">
@@ -518,7 +507,7 @@ export default function SummariesPage() {
               </button>
               <button
                 onClick={handleCreateSummary}
-                disabled={isCreating || selectedDocIds.length === 0}
+                disabled={isCreating || !selectedDocId || !selectedSpaceId}
                 className="flex-1 px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCreating ? "Generando..." : "Generar resumen"}

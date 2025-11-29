@@ -1,14 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { QuizResponse } from '@/types';
-import SpaceBadge from './SpaceBadge';
 
 export interface QuizCardProps {
   quiz: QuizResponse;
-  showSpaceBadge?: boolean;
 }
 
-const QuizCard: React.FC<QuizCardProps> = ({ quiz, showSpaceBadge = true }) => {
+const QuizCard: React.FC<QuizCardProps> = ({ quiz }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -28,7 +26,7 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, showSpaceBadge = true }) => {
   };
 
   const getSourceIcon = () => {
-    if (quiz.source_type === 'space') {
+    if (quiz.source_type === 'study_space') { // NEW: Updated value
       return (
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -51,6 +49,7 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, showSpaceBadge = true }) => {
         </svg>
       );
     }
+    // source_type === 'document' (NEW: Updated from 'file')
     return (
       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
         <path
@@ -60,6 +59,36 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, showSpaceBadge = true }) => {
         />
       </svg>
     );
+  };
+
+  const getSourceLabel = () => {
+    switch (quiz.source_type) {
+      case 'study_space':
+        return 'Espacio';
+      case 'summary':
+        return 'Resumen';
+      case 'document':
+        return 'Documento';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  const getSourceName = () => {
+    if (!quiz.source_names) return null;
+
+    // Get the first available source name from the JSONB object
+    if (quiz.source_type === 'study_space' && quiz.source_names.space) {
+      return quiz.source_names.space;
+    }
+    if (quiz.source_type === 'summary' && quiz.source_names.summary) {
+      return quiz.source_names.summary;
+    }
+    if (quiz.source_type === 'document' && quiz.source_names.document) {
+      return quiz.source_names.document;
+    }
+
+    return null;
   };
 
   return (
@@ -77,17 +106,16 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, showSpaceBadge = true }) => {
         </span>
       </div>
 
-      {/* Origin Info */}
-      <div className="flex items-center gap-2 mb-3 text-sm text-slate-400">
-        {getSourceIcon()}
-        {quiz.source_type === 'space' && quiz.study_space_name && showSpaceBadge && (
-          <span>Desde espacio: <span className="text-slate-300">{quiz.study_space_name}</span></span>
-        )}
-        {quiz.source_type === 'summary' && quiz.summary_title && (
-          <span>Desde resumen: <span className="text-slate-300">{quiz.summary_title}</span></span>
-        )}
-        {quiz.source_type === 'file' && quiz.document_names.length > 0 && (
-          <span>Desde archivo: <span className="text-slate-300">{quiz.document_names[0]}</span></span>
+      {/* Origin Info - NEW: Source Type Badge */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium bg-violet-500/20 text-violet-300 border border-violet-500/30">
+          {getSourceIcon()}
+          {getSourceLabel()}
+        </span>
+        {getSourceName() && (
+          <span className="text-sm text-slate-400">
+            <span className="text-slate-300">{getSourceName()}</span>
+          </span>
         )}
       </div>
 

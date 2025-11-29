@@ -148,7 +148,8 @@ export default function StudySpaceDetailPage() {
     try {
       setIsCreatingSummary(true);
       await createSummaryFromDocuments({
-        document_ids: [selectedDocumentForSummary.id],
+        document_id: selectedDocumentForSummary.id, // NEW: Singular (one document per summary)
+        study_space_id: id, // NEW: Required field from route param
         expertise_level: summaryExpertiseLevel,
       });
       showToast("Resumen creado exitosamente", "success");
@@ -235,6 +236,7 @@ export default function StudySpaceDetailPage() {
           if (!quizSource.data) return;
           quiz = await createQuizFromDocument(
             (quizSource.data as DocumentResponse).id,
+            id, // NEW: study_space_id from route param
             numQuestions
           );
           break;
@@ -243,6 +245,7 @@ export default function StudySpaceDetailPage() {
           if (!quizSource.data) return;
           quiz = await createQuizFromSummary({
             summary_id: (quizSource.data as SummaryResponse).id,
+            study_space_id: id, // NEW: study_space_id from route param
             max_questions: numQuestions,
           });
           break;
@@ -498,7 +501,7 @@ export default function StudySpaceDetailPage() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {quizzes.map((quiz) => (
-                <QuizCard key={quiz.id} quiz={quiz} showSpaceBadge={false} />
+                <QuizCard key={quiz.id} quiz={quiz} />
               ))}
             </div>
           )}
@@ -676,6 +679,11 @@ export default function StudySpaceDetailPage() {
                         {topic}
                       </span>
                     ))}
+                    {summary.topics.length > 3 && (
+                      <span className="px-2 py-1 bg-white/10 text-white/60 rounded-lg text-xs">
+                        +{summary.topics.length - 3}
+                      </span>
+                    )}
                   </div>
 
                   {/* Acción */}
@@ -803,6 +811,11 @@ export default function StudySpaceDetailPage() {
                         {topic}
                       </span>
                     ))}
+                    {resource.topics.length > 3 && (
+                      <span className="px-2 py-1 bg-white/10 text-white/60 rounded text-xs">
+                        +{resource.topics.length - 3}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

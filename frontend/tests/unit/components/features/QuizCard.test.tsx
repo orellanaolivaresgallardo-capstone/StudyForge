@@ -15,7 +15,7 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
-const renderQuizCard = (props: any) => {
+const renderQuizCard = (props: { quiz: QuizResponse }) => {
   return render(
     <BrowserRouter>
       <QuizCard {...props} />
