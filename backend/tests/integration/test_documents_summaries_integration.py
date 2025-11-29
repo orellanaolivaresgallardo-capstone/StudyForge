@@ -151,8 +151,9 @@ class TestDocumentsAndSummariesFlow:
 
             # Verificar que OpenAI fue llamado con el texto del documento
             call_args = mock_openai.call_args
-            text_arg = call_args.kwargs.get("text") or call_args[0][0] if call_args[0] else None
+            text_arg = call_args.kwargs.get("text") or (call_args.args[0] if call_args.args else None)
             assert text_arg is not None
+            assert len(text_arg) > 0  # El texto no debe estar vacío
 
     def test_upload_document_without_space_fails(
         self, authenticated_client, sample_text_file

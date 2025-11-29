@@ -1,6 +1,6 @@
 """
 Fixtures para tests de integración E2E.
-Estos fixtures usan base de datos PostgreSQL real y autenticación completa.
+Estos fixtures usan base de datos PostgreSQL si está disponible, sino SQLite.
 """
 import pytest
 import os
@@ -12,17 +12,31 @@ from app.db import Base, get_db
 from app.config import settings
 
 
-# Base de datos PostgreSQL para tests de integración
-# Usa la misma DB que desarrollo pero con un esquema diferente para aislamiento
-TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql://studyforge_app:studyforge_password@localhost:5432/studyforge"
-)
+# Intentar PostgreSQL primero, fallback a SQLite
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+if not TEST_DATABASE_URL:
+    # Intentar PostgreSQL en localhost
+    try:
+        pg_url = "postgresql+psycopg://studyforge_app:studyforge_password@localhost:5432/studyforge"
+        test_engine = create_engine(pg_url, pool_pre_ping=True)
+        test_engine.connect().close()
+        TEST_DATABASE_URL = pg_url
+    except Exception:
+        # Fallback a SQLite en memoria
+        TEST_DATABASE_URL = "sqlite:///:memory:"
 
-engine = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
+engine = create_engine(
+    TEST_DATABASE_URL,
+    pool_pre_ping=True,
+    connect_args={"check_same_thread": False} if "sqlite" in TEST_DATABASE_URL else {}
+)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# No modificar schemas - PostgreSQL soporta JSONB y UUID nativamente
+# Si es SQLite, remover schema de las tablas y crear todas
+if "sqlite" in TEST_DATABASE_URL:
+    for table in Base.metadata.tables.values():
+        table.schema = None
+    Base.metadata.create_all(bind=engine)
 
 
 @pytest.fixture(scope="function")
