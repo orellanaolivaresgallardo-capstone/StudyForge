@@ -4,8 +4,9 @@ Estos fixtures usan base de datos real y autenticación completa.
 """
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import JSONB
 from app.main import app
 from app.db import Base, get_db
 from app.config import settings
@@ -24,6 +25,10 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 # Remover schemas de las tablas para compatibilidad con SQLite
 for table in Base.metadata.tables.values():
     table.schema = None
+    # Convertir columnas JSONB a TEXT para SQLite
+    for column in table.columns:
+        if isinstance(column.type, JSONB):
+            column.type = Text()
 
 
 @pytest.fixture(scope="function")
