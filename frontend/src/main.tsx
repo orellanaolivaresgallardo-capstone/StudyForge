@@ -24,6 +24,8 @@ import QuizzesPage from "./pages/quizzes/QuizzesPage";
 import QuizAttemptPage from "./pages/quizzes/QuizAttemptPage";
 import QuizResultsPage from "./pages/quizzes/QuizResultsPage";
 import StatsPage from "./pages/stats/StatsPage";
+import ProfilePage from "./pages/profile/ProfilePage";
+import SettingsPage from "./pages/settings/SettingsPage";
 import ErrorPage from "./pages/ErrorPage";
 
 const router = createBrowserRouter([
@@ -110,6 +112,24 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <QuizResultsPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <ProfilePage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/settings",
+    element: (
+      <ProtectedRoute>
+        <SettingsPage />
       </ProtectedRoute>
     ),
     errorElement: <ErrorPage />,
