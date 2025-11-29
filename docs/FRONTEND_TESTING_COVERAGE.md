@@ -1,7 +1,7 @@
 # 🧪 Análisis de Cobertura de Testing - Frontend
 
 **Fecha:** 2025-11-29
-**Estado:** MVP con cobertura parcial - **Fase 1 Completada** ✅
+**Estado:** MVP con cobertura parcial - **Fases 1 y 2 Completadas** ✅
 **Framework:** Vitest + React Testing Library + axios-mock-adapter
 
 ---
@@ -11,10 +11,10 @@
 | Métrica | Valor | Estado |
 |---------|-------|--------|
 | **Archivos fuente totales** | 141 archivos | - |
-| **Archivos de test** | 16 archivos | 🟡 Cobertura baja |
-| **Tests totales** | 339 tests | ✅ Buena cantidad |
-| **Tests pasando** | 339 (100%) | ✅ **TODOS PASANDO** ✅ |
-| **Tests fallando** | 0 (0%) | ✅ **Fase 1 completada** |
+| **Archivos de test** | 20 archivos | 🟡 Cobertura baja |
+| **Tests totales** | 409 tests | ✅ Buena cantidad |
+| **Tests pasando** | 409 (100%) | ✅ **TODOS PASANDO** ✅ |
+| **Tests fallando** | 0 (0%) | ✅ **Fases 1-2 completadas** |
 | **Cobertura objetivo** | 70% líneas/funciones/ramas | ⚠️ No alcanzada |
 
 ---
@@ -84,6 +84,178 @@ Duration    15.53s
 ```
 
 **🎉 Resultado:** 100% de tests pasando (339/339) ✅
+
+---
+
+## ✅ Fase 2: Context y Hooks Críticos - COMPLETADA
+
+**Fecha de completación:** 2025-11-29
+**Duración:** ~2.5 horas
+**Commits:** `e64aafa`, `2aa7ac9`, `5ccaf01`, `ac4a3e5`
+
+### Objetivo
+Agregar tests comprehensivos para Context API y hooks críticos de gestión de datos.
+
+### Archivos Creados
+
+| Archivo | Tests | Descripción |
+|---------|-------|-------------|
+| `StorageContext.test.tsx` | 13 tests | Context para almacenamiento del usuario |
+| `useStudySpacesData.test.ts` | 16 tests | Hook de gestión de espacios de estudio |
+| `useSummariesData.test.ts` | 20 tests | Hook de gestión de resúmenes |
+| `useStudySpace.test.ts` | 21 tests | Hook de detalle de espacio (4 APIs en paralelo) |
+| **TOTAL** | **70 tests** | **✅ 100% pasando** |
+
+### Detalles de Implementación
+
+#### 1. StorageContext.test.tsx (13 tests)
+**Cobertura completa del contexto de almacenamiento:**
+- ✅ Estado inicial del contexto
+- ✅ Carga exitosa de datos (`getStorageInfo`)
+- ✅ Manejo de estados `isLoading` durante fetch
+- ✅ Manejo de errores de API
+- ✅ Recuperación después de errores
+- ✅ Limpieza de error en refresh exitoso
+- ✅ Hook validation (error fuera de provider)
+- ✅ `useCallback` stability (función estable entre renders)
+- ✅ Ciclos de integración completos
+
+**Patrón de testing:**
+```typescript
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <StorageProvider>{children}</StorageProvider>
+)
+
+const { result } = renderHook(() => useStorage(), { wrapper })
+```
+
+#### 2. useStudySpacesData.test.ts (16 tests)
+**Hook de gestión de espacios con actualización optimista:**
+- ✅ Estado inicial y carga automática al montar
+- ✅ `refreshSpaces()` exitoso
+- ✅ Manejo de errores personalizados (`error.response.data.detail`)
+- ✅ `removeSpace()` - actualización optimista local
+- ✅ Casos edge: IDs inexistentes, lista vacía
+- ✅ Preservación de datos anteriores en caso de error
+- ✅ Múltiples refreshes consecutivos
+
+**APIs mockeadas:**
+- `listStudySpacesWithStats()` → `StudySpaceListWithStatsResponse`
+
+#### 3. useSummariesData.test.ts (20 tests)
+**Hook complejo con 3 arrays y 2 funciones de carga:**
+- ✅ Estado inicial (summaries, documents, studySpaces)
+- ✅ Carga automática de `summaries` al montar
+- ✅ `refreshSummaries()` - recarga solo summaries
+- ✅ `loadDocumentsAndSpaces()` - carga en paralelo con `Promise.all`
+- ✅ Manejo de errores diferenciado por API
+- ✅ `removeSummary()` - actualización optimista
+- ✅ Integración completa: summaries + documents + spaces
+- ✅ Refresh después de removeOptimistic restaura datos desde API
+
+**APIs mockeadas (3):**
+- `listSummaries()` → auto al montar
+- `listDocuments()` → manual con `loadDocumentsAndSpaces()`
+- `listStudySpaces()` → manual con `loadDocumentsAndSpaces()`
+
+**Patrón Promise.all verificado:**
+```typescript
+// Hook ejecuta en paralelo:
+await Promise.all([listDocuments(), listStudySpaces()])
+
+// Tests verifican que ambas APIs se llaman simultáneamente
+expect(apiModule.listDocuments).toHaveBeenCalledTimes(1)
+expect(apiModule.listStudySpaces).toHaveBeenCalledTimes(1)
+```
+
+#### 4. useStudySpace.test.ts (21 tests) ⭐
+**Hook más complejo: parámetro `spaceId` y 4 loaders en paralelo:**
+
+**Características únicas:**
+- ✅ Parámetro `spaceId?: string` (puede ser undefined)
+- ✅ NO carga datos si `spaceId` es undefined
+- ✅ 4 APIs en paralelo: `getStudySpace()`, `getStudySpaceStats()`, `getStudySpaceQuizzes()`, `getUserPerformance()`
+- ✅ Manejo diferenciado de errores:
+  - `loadSpace()` → establece `error` global (rechaza Promise)
+  - `loadStats()`, `loadQuizzes()`, `loadPerformance()` → solo `console.error` (no afectan estado global)
+- ✅ 4 funciones de refresh individuales: `refreshSpace()`, `refreshStats()`, `refreshQuizzes()`, `refreshAll()`
+- ✅ Cambio dinámico de `spaceId` con `rerender()` → recarga automática
+- ✅ Limpieza de error al cambiar a `spaceId` válido
+- ✅ `useCallback` stability para las 4 funciones de refresh
+
+**Manejo especial de errores no manejados:**
+```typescript
+// Hook lanza error en loadSpace, causando unhandled rejection en Promise.all
+// Tests suprimen con process.on('unhandledRejection')
+const unhandledRejectionHandler = () => {}
+process.on('unhandledRejection', unhandledRejectionHandler)
+// ... test code ...
+process.off('unhandledRejection', unhandledRejectionHandler)
+```
+
+**APIs mockeadas (4):**
+- `getStudySpace(id)` → detalle del espacio
+- `getStudySpaceStats(id)` → estadísticas del espacio
+- `getStudySpaceQuizzes(id)` → quizzes del espacio
+- `getUserPerformance(limit)` → performance global del usuario
+
+### Patrones de Testing Aplicados
+
+#### Pattern 1: Hook con Provider
+```typescript
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <StorageProvider>{children}</StorageProvider>
+)
+const { result } = renderHook(() => useStorage(), { wrapper })
+```
+
+#### Pattern 2: Mock de APIs con vi.mocked
+```typescript
+vi.mocked(apiModule.listSummaries).mockResolvedValue(mockResponse)
+await act(async () => {
+  await result.current.refreshSummaries()
+})
+```
+
+#### Pattern 3: Testeo de Promise.all
+```typescript
+// Verificar que se llaman en paralelo, no secuencialmente
+expect(apiModule.listDocuments).toHaveBeenCalledTimes(1)
+expect(apiModule.listStudySpaces).toHaveBeenCalledTimes(1)
+```
+
+#### Pattern 4: Testeo de cambio de parámetros
+```typescript
+const { result, rerender } = renderHook(
+  ({ id }) => useStudySpace(id),
+  { initialProps: { id: 'space-1' } }
+)
+
+// Cambiar parámetro → hook recarga automáticamente
+rerender({ id: 'space-2' })
+```
+
+#### Pattern 5: Supresión de errores esperados
+```typescript
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+// ... test con error esperado ...
+expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading:', expect.any(Error))
+consoleErrorSpy.mockRestore()
+```
+
+### Métricas Finales
+
+```
+Test Files  20 passed (20)  ← +4 archivos nuevos
+Tests       409 passed (409) ← +70 tests nuevos
+Duration    18.65s
+```
+
+**🎉 Resultado:** +70 tests de Context/Hooks críticos, 100% pasando ✅
+
+**Tests por categoría:**
+- **Context**: 13 tests (StorageContext)
+- **Data Hooks**: 57 tests (useStudySpacesData, useSummariesData, useStudySpace)
 
 ---
 
