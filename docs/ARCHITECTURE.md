@@ -34,9 +34,9 @@ StudyForge es una aplicación web de acompañamiento y apoyo para el aprendizaje
 - **Hosting**: Render / GCP
 - **CI/CD**: GitHub Actions
 
-## Arquitectura del Backend
+## <a id="backend-architecture"></a>Arquitectura del Backend
 
-### Estructura de Carpetas
+### <a id="backend-folder-structure"></a>Estructura de Carpetas
 
 ```
 backend/
@@ -110,9 +110,9 @@ backend/
 
 ---
 
-## Arquitectura del Frontend
+## <a id="frontend-architecture"></a>Arquitectura del Frontend
 
-### Estructura de Carpetas
+### <a id="frontend-folder-structure"></a>Estructura de Carpetas
 
 ```
 frontend/
@@ -370,7 +370,7 @@ VITE_API_BASE=http://localhost:8000  # URL del backend
 
 ---
 
-## Base de Datos
+## <a id="database-overview"></a>Base de Datos
 
 **Schema**: `studyforge` con roles separados (`studyforge_owner` para migraciones, `studyforge_app` para runtime)
 
@@ -490,9 +490,9 @@ Algoritmo adaptativo → Ajusta nivel de dificultad futuro
 - ❌ Datos que cambian frecuentemente
 - ❌ Datos grandes (>1KB por campo)
 
-## API Endpoints
+## <a id="api-endpoints"></a>API Endpoints
 
-### Autenticación
+### <a id="api-authentication"></a>Autenticación
 - `POST /auth/register` - Registro de usuario
 - `POST /auth/login` - Login (retorna JWT)
 - `GET /auth/me` - Información del usuario actual
@@ -527,7 +527,7 @@ Algoritmo adaptativo → Ajusta nivel de dificultad futuro
 - `DELETE /study-spaces/{id}/resources` - Quitar recursos del espacio
 - `POST /study-spaces/{id}/quizzes` - Generar quiz desde espacio
 
-## Seguridad
+## <a id="security-overview"></a>Seguridad
 
 - **Autenticación**: JWT + Argon2 para contraseñas
 - **Privacidad**: Aislamiento de datos por usuario (ownership validation)
