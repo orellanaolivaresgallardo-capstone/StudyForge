@@ -48,8 +48,8 @@ export function DocumentCard({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-2xl flex-shrink-0">{getFileIcon(document.file_type)}</span>
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-white truncate">{document.title}</h3>
-            <p className="text-sm text-white/60 truncate">{document.file_name}</p>
+            <h3 className="font-semibold text-white truncate" title={document.title}>{document.title}</h3>
+            <p className="text-sm text-white/80 truncate" title={document.file_name}>{document.file_name}</p>
           </div>
         </div>
         {onDelete && showActions && (
@@ -74,7 +74,7 @@ export function DocumentCard({
       </div>
 
       {/* Metadata */}
-      <div className="flex items-center gap-3 text-sm text-white/70 mb-3">
+      <div className="flex items-center gap-3 text-sm text-white/80 mb-3">
         <span className="bg-white/10 px-2 py-1 rounded">{document.file_type.toUpperCase()}</span>
         <span>{formatBytes(document.file_size_bytes)}</span>
       </div>

@@ -98,10 +98,10 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz }) => {
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <h3 className="text-lg font-semibold text-white group-hover:text-brand-300 transition-colors flex-1 line-clamp-2">
+        <h3 className="text-lg font-semibold text-white group-hover:text-brand-300 transition-colors flex-1 line-clamp-2 break-words" title={quiz.title}>
           {quiz.title}
         </h3>
-        <span className={`text-sm font-medium ${getDifficultyColor(quiz.difficulty_level)} ml-3`}>
+        <span className={`text-sm font-medium ${getDifficultyColor(quiz.difficulty_level)} ml-3 flex-shrink-0`}>
           {getDifficultyLabel(quiz.difficulty_level)}
         </span>
       </div>
@@ -113,14 +113,14 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz }) => {
           {getSourceLabel()}
         </span>
         {getSourceName() && (
-          <span className="text-sm text-slate-400">
-            <span className="text-slate-300">{getSourceName()}</span>
+          <span className="text-sm text-white/80 truncate" title={getSourceName() || undefined}>
+            {getSourceName()}
           </span>
         )}
       </div>
 
       {/* Metadata */}
-      <div className="flex items-center gap-4 text-xs text-slate-400 pt-3 border-t border-slate-700">
+      <div className="flex items-center gap-4 text-xs text-white/75 pt-3 border-t border-slate-700">
         <div className="flex items-center gap-1.5">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
