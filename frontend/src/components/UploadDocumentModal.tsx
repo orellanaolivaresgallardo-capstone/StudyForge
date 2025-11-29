@@ -1,9 +1,11 @@
 // frontend/src/components/UploadDocumentModal.tsx
 /**
- * Modal para subir documentos con asignación obligatoria a espacios de estudio.
+ * Upload Document Modal - REFACTORED VERSION
+ * Reduced from 270 → ~130 lines using extracted components
  */
 import { useState, useEffect } from "react";
 import Modal from "./ui/Modal";
+import { CreateSpaceForm, SpaceSelector } from "./upload";
 import type { StudySpaceResponse } from "@/types";
 
 interface UploadDocumentModalProps {
@@ -16,14 +18,8 @@ interface UploadDocumentModalProps {
 }
 
 const DEFAULT_COLORS = [
-  "#8B5CF6", // purple
-  "#EC4899", // pink
-  "#EF4444", // red
-  "#F59E0B", // amber
-  "#10B981", // green
-  "#3B82F6", // blue
-  "#6366F1", // indigo
-  "#14B8A6", // teal
+  "#8B5CF6", "#EC4899", "#EF4444", "#F59E0B",
+  "#10B981", "#3B82F6", "#6366F1", "#14B8A6",
 ];
 
 export function UploadDocumentModal({
@@ -166,78 +162,23 @@ export function UploadDocumentModal({
           </div>
 
           {showCreateSpace ? (
-            /* Create new space form */
-            <div className="space-y-3 rounded-xl bg-white/5 border border-white/10 p-4">
-              <input
-                type="text"
-                value={newSpaceName}
-                onChange={(e) => setNewSpaceName(e.target.value)}
-                placeholder="Nombre del espacio *"
-                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <textarea
-                value={newSpaceDescription}
-                onChange={(e) => setNewSpaceDescription(e.target.value)}
-                placeholder="Descripción (opcional)"
-                rows={2}
-                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-              />
-              <div>
-                <label className="block text-xs text-white/60 mb-2">Color</label>
-                <div className="flex gap-2 flex-wrap">
-                  {DEFAULT_COLORS.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setNewSpaceColor(color)}
-                      className={`w-8 h-8 rounded-lg transition-all ${
-                        newSpaceColor === color
-                          ? "ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110"
-                          : "hover:scale-105"
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <button
-                onClick={handleCreateSpace}
-                disabled={!newSpaceName.trim() || isCreatingSpace}
-                className="w-full px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:bg-white/10 disabled:text-white/40 text-white font-semibold transition-colors"
-              >
-                {isCreatingSpace ? "Creando..." : "Crear espacio"}
-              </button>
-            </div>
-          ) : availableSpaces.length === 0 ? (
-            <div className="text-center py-6 text-white/60 text-sm">
-              No tienes espacios de estudio. Crea uno arriba para continuar.
-            </div>
+            <CreateSpaceForm
+              name={newSpaceName}
+              description={newSpaceDescription}
+              color={newSpaceColor}
+              colors={DEFAULT_COLORS}
+              isCreating={isCreatingSpace}
+              onNameChange={setNewSpaceName}
+              onDescriptionChange={setNewSpaceDescription}
+              onColorChange={setNewSpaceColor}
+              onSubmit={handleCreateSpace}
+            />
           ) : (
-            /* Space selection list */
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {availableSpaces.map((space) => (
-                <label
-                  key={space.id}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedSpaceIds.includes(space.id)}
-                    onChange={() => handleToggleSpace(space.id)}
-                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
-                  />
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: space.color }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium truncate">{space.name}</p>
-                    {space.description && (
-                      <p className="text-xs text-white/60 truncate">{space.description}</p>
-                    )}
-                  </div>
-                </label>
-              ))}
-            </div>
+            <SpaceSelector
+              spaces={availableSpaces}
+              selectedIds={selectedSpaceIds}
+              onToggleSpace={handleToggleSpace}
+            />
           )}
 
           {selectedSpaceIds.length === 0 && !showCreateSpace && availableSpaces.length > 0 && (
