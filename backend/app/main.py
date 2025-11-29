@@ -3,6 +3,7 @@
 Aplicación principal de FastAPI - StudyForge.
 Sistema de apoyo al aprendizaje con IA.
 """
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -12,7 +13,19 @@ from app.routers import auth, documents, summaries, quizzes, quiz_attempts, stat
 
 # Inicializar logging
 setup_logging()
-logger = get_logger(__name__)
+logger = get_logger("studyforge")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle startup and shutdown events."""
+    # Startup logic
+    logger.info(f"Starting StudyForge API v2.0.0 in {settings.ENV} mode")
+    logger.info(f"Logging level: {settings.LOG_LEVEL}")
+    yield
+    # Shutdown logic (optional)
+    logger.info("Shutting down StudyForge API")
+
 
 app = FastAPI(
     title="StudyForge API",
@@ -20,6 +33,7 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Configurar CORS
@@ -38,13 +52,6 @@ app.add_middleware(
     window_seconds=settings.RATE_LIMIT_WINDOW,
     exempt_paths=["/health", "/docs", "/redoc", "/openapi.json"]
 )
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Evento ejecutado al iniciar la aplicación."""
-    logger.info(f"Starting StudyForge API v2.0.0 in {settings.ENV} mode")
-    logger.info(f"Logging level: {settings.LOG_LEVEL}")
 
 
 @app.get("/health", tags=["health"])
