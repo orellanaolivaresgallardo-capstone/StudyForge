@@ -67,9 +67,10 @@ class TestCompleteE2EFlow:
         filename, content, content_type = sample_text_file
 
         upload_response = client.post(
-            f"/documents/?study_space_id={space_id}",
+            "/documents/",
             headers=headers,
-            files={"file": (filename, content, content_type)}
+            files={"file": (filename, content, content_type)},
+            data={"study_space_ids": str(space_id)}
         )
         assert upload_response.status_code == 201
         document = upload_response.json()
@@ -301,16 +302,18 @@ class TestCompleteE2EFlow:
         # Subir documento a espacio 1
         filename, content, content_type = sample_text_file
         client.post(
-            f"/documents/?study_space_id={space1['id']}",
+            "/documents/",
             headers=headers,
-            files={"file": ("math.txt", content, content_type)}
+            files={"file": ("math.txt", content, content_type)},
+            data={"study_space_ids": str(space1['id'])}
         )
 
         # Subir documento a espacio 2
         client.post(
-            f"/documents/?study_space_id={space2['id']}",
+            "/documents/",
             headers=headers,
-            files={"file": ("physics.txt", content, content_type)}
+            files={"file": ("physics.txt", content, content_type)},
+            data={"study_space_ids": str(space2['id'])}
         )
 
         # Verificar aislamiento

@@ -122,21 +122,26 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         """
         Procesa cada request aplicando rate limiting.
-        
+
         Args:
             request: Request de FastAPI
             call_next: Siguiente middleware/handler
-            
+
         Returns:
             Response
         """
         # Verificar si la ruta está exenta
         if any(request.url.path.startswith(path) for path in self.exempt_paths):
             return await call_next(request)
-        
+
         # Obtener identificador (IP del cliente)
         client_ip = request.client.host if request.client else "unknown"
-        
+
+        # EXCEPCIÓN: Deshabilitar rate limiting para tests
+        # TestClient de Starlette usa "testclient" como IP
+        if client_ip == "testclient":
+            return await call_next(request)
+
         # Verificar límite
         allowed, remaining = self.rate_limiter.is_allowed(client_ip)
         

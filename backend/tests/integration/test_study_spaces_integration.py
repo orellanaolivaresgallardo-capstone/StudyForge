@@ -24,8 +24,9 @@ def test_upload_document_to_space(client):
     file_content = b"Test document content for mathematics."
 
     response = client.post(
-        f"/documents/?study_space_id={space_id}",
-        files={"file": ("test.txt", file_content, "text/plain")}
+        "/documents/",
+        files={"file": ("test.txt", file_content, "text/plain")},
+        data={"study_space_ids": str(space_id)}
     )
 
     # Sin autenticación, debe retornar 401/403/422
