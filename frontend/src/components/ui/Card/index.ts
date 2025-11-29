@@ -5,3 +5,4 @@
 export { DocumentCard } from './DocumentCard';
 export { SummaryCard } from './SummaryCard';
 export { StatCard } from './StatCard';
+export { SpaceCard } from './SpaceCard';
