@@ -126,9 +126,10 @@ class TestDocumentsAndSummariesFlow:
         )
         doc2_id = upload2.json()["id"]
 
-        # Crear resumen desde ambos documentos
+        # Crear resumen desde el primer documento
         mock_summary = {
-            "summary": "Resumen combinado de ambos documentos",
+            "title": "Resumen Combinado",
+            "summary": "Resumen del documento",
             "key_points": ["Punto 1", "Punto 2"]
         }
 
@@ -136,10 +137,10 @@ class TestDocumentsAndSummariesFlow:
             mock_openai.return_value = mock_summary
 
             summary_response = client.post(
-                f"/summaries/from-documents?study_space_id={space_id}",
+                "/summaries/from-documents",
                 json={
-                    "title": "Resumen Combinado",
-                    "document_ids": [doc1_id, doc2_id],
+                    "document_id": doc1_id,
+                    "study_space_id": space_id,
                     "expertise_level": "avanzado"
                 }
             )
@@ -148,11 +149,10 @@ class TestDocumentsAndSummariesFlow:
             summary = summary_response.json()
             assert summary["expertise_level"] == "avanzado"
 
-            # Verificar que OpenAI recibió texto combinado
+            # Verificar que OpenAI fue llamado con el texto del documento
             call_args = mock_openai.call_args
-            combined_text = call_args[1]["text"]
-            # El texto debe incluir contenido de ambos documentos
-            assert len(combined_text) > len(content1.decode())
+            text_arg = call_args.kwargs.get("text") or call_args[0][0] if call_args[0] else None
+            assert text_arg is not None
 
     def test_upload_document_without_space_fails(
         self, authenticated_client, sample_text_file
@@ -187,10 +187,10 @@ class TestDocumentsAndSummariesFlow:
         fake_uuid = "00000000-0000-0000-0000-000000000000"
 
         response = client.post(
-            f"/summaries/from-documents?study_space_id={space_id}",
+            "/summaries/from-documents",
             json={
-                "title": "Resumen Fake",
-                "document_ids": [fake_uuid],
+                "document_id": fake_uuid,
+                "study_space_id": space_id,
                 "expertise_level": "basico"
             }
         )
@@ -212,15 +212,15 @@ class TestDocumentsAndSummariesFlow:
         space_id = space_response.json()["id"]
 
         response = client.post(
-            f"/summaries/from-documents?study_space_id={space_id}",
+            "/summaries/from-documents",
             json={
-                "title": "Resumen Vacío",
-                "document_ids": [],
+                # No incluir document_id (campo requerido)
+                "study_space_id": space_id,
                 "expertise_level": "basico"
             }
         )
 
-        # Validación de Pydantic debe rechazar lista vacía
+        # Validación de Pydantic debe rechazar falta de document_id
         assert response.status_code == 422
 
     def test_list_documents_shows_only_user_documents(

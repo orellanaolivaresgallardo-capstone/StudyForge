@@ -74,7 +74,7 @@ class TestQuizzesFlow:
             mock_openai.return_value = mock_questions
 
             quiz_response = client.post(
-                f"/quizzes/from-document/{document_id}",
+                f"/quizzes/generate-from-document/{document_id}",
                 json={"num_questions": 3}
             )
 
@@ -169,7 +169,7 @@ class TestQuizzesFlow:
             mock_openai.return_value = mock_questions
 
             quiz1_response = client.post(
-                f"/quizzes/from-document/{document_id}",
+                f"/quizzes/generate-from-document/{document_id}",
                 json={"num_questions": 1}
             )
             quiz1 = quiz1_response.json()
@@ -188,7 +188,7 @@ class TestQuizzesFlow:
                 mock_openai2.return_value = mock_questions
 
                 quiz2_response = client.post(
-                    f"/quizzes/from-document/{document_id}",
+                    f"/quizzes/generate-from-document/{document_id}",
                     json={"num_questions": 1}
                 )
                 quiz2 = quiz2_response.json()
@@ -238,7 +238,7 @@ class TestQuizzesFlow:
 
             # Solicitar 10 preguntas
             quiz_response = client.post(
-                f"/quizzes/from-document/{document_id}",
+                f"/quizzes/generate-from-document/{document_id}",
                 json={"num_questions": 10}
             )
 
@@ -285,7 +285,7 @@ class TestQuizzesFlow:
             mock_openai.return_value = mock_questions
 
             quiz_response = client.post(
-                f"/quizzes/from-document/{document_id}",
+                f"/quizzes/generate-from-document/{document_id}",
                 json={"num_questions": 1}
             )
             quiz_id = quiz_response.json()["id"]
@@ -329,7 +329,7 @@ class TestQuizzesFlow:
             mock_openai.return_value = mock_questions
 
             quiz_response = client.post(
-                f"/quizzes/from-document/{document_id}",
+                f"/quizzes/generate-from-document/{document_id}",
                 json={"num_questions": 1}
             )
             quiz_id = quiz_response.json()["id"]

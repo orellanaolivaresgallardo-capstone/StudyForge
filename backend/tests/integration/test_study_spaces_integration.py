@@ -40,11 +40,11 @@ def test_generate_summary_from_document(client):
     doc_id = str(uuid4())
 
     response = client.post(
-        f"/summaries/from-documents?study_space_id={space_id}",
+        "/summaries/from-documents",
         json={
-            "title": "Calculus Summary",
-            "document_ids": [doc_id],
-            "expertise_level": "medium"
+            "document_id": doc_id,
+            "study_space_id": space_id,
+            "expertise_level": "medio"
         }
     )
 
@@ -58,7 +58,7 @@ def test_generate_quiz_from_document(client):
     doc_id = str(uuid4())
 
     response = client.post(
-        f"/quizzes/from-document/{doc_id}",
+        f"/quizzes/generate-from-document/{doc_id}",
         json={
             "title": "Calculus Quiz",
             "num_questions": 5,
@@ -76,7 +76,7 @@ def test_generate_quiz_from_summary(client):
     summary_id = str(uuid4())
 
     response = client.post(
-        f"/quizzes/from-summary/{summary_id}",
+        f"/quizzes/generate-from-summary/{summary_id}",
         json={
             "title": "Calculus Quiz from Summary",
             "num_questions": 10,
@@ -123,7 +123,7 @@ def test_generate_quiz_invalid_num_questions(client):
 
     # Request con 50 preguntas (excede el límite de 30)
     response = client.post(
-        f"/quizzes/from-document/{doc_id}",
+        f"/quizzes/generate-from-document/{doc_id}",
         json={
             "title": "Invalid Quiz",
             "num_questions": 50,
@@ -140,18 +140,18 @@ def test_generate_summary_no_documents(client):
     """EDGE: Intentar generar resumen sin documentos"""
     space_id = str(uuid4())
 
-    # Request sin document_ids
+    # Request sin document_id (campo requerido)
     response = client.post(
-        f"/summaries/from-documents?study_space_id={space_id}",
+        "/summaries/from-documents",
         json={
-            "title": "Empty Summary",
-            "document_ids": [],
-            "expertise_level": "basic"
+            # No incluir document_id
+            "study_space_id": space_id,
+            "expertise_level": "basico"
         }
     )
 
-    # Debe rechazar por auth o validación
-    assert response.status_code in [400, 401, 403, 422]
+    # Debe rechazar por auth o validación (422 por falta de document_id)
+    assert response.status_code in [401, 403, 422]
 
 
 # TEST: Listar espacios sin estadísticas (comportamiento por defecto)
