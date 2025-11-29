@@ -2,9 +2,10 @@
 """
 Configuración de la base de datos y sesiones.
 """
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, JSON, TypeDecorator
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
-from typing import Generator
+from typing import Generator, Any
 from app.config import settings
 
 # Motor de base de datos
@@ -30,6 +31,36 @@ convention = {
 class Base(DeclarativeBase):
     """Clase base para todos los modelos SQLAlchemy."""
     metadata = MetaData(naming_convention=convention)
+
+
+class JSONBType(TypeDecorator):
+    """
+    Tipo JSON que se adapta automáticamente al dialecto de DB.
+
+    - PostgreSQL: Usa JSONB (indexable, más eficiente)
+    - SQLite/Otros: Usa JSON (compatible)
+
+    Esto permite que los tests de integración usen SQLite mientras
+    que producción usa PostgreSQL sin cambiar código.
+    """
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        """Selecciona el tipo correcto según el dialecto."""
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(JSONB())
+        else:
+            return dialect.type_descriptor(JSON())
+
+def get_json_type() -> Any:
+    """
+    Retorna la clase JSONBType para usar en columnas.
+
+    Ejemplo:
+        content: Mapped[dict] = mapped_column(get_json_type(), nullable=False)
+    """
+    return JSONBType
 
 
 def get_db() -> Generator[Session, None, None]:

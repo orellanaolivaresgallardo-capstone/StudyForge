@@ -7,9 +7,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from sqlalchemy import Float, DateTime, ForeignKey, String
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db import Base
+from app.db import Base, get_json_type
 
 if TYPE_CHECKING:
     from app.models.quiz import Quiz
@@ -41,12 +41,12 @@ class QuizAttempt(Base):
     score = mapped_column(Float, nullable=True)  # Porcentaje 0-100, Optional
 
     # Respuestas en formato JSON
-    correct_answers: Mapped[dict] = mapped_column(JSONB, nullable=False)  # ["A", "B", "C", "D", "A"] - Respuestas correctas aleatorizadas
-    user_answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)  # ["A", "C", "C", "D", "A"] - Respuestas del usuario
+    correct_answers: Mapped[dict] = mapped_column(get_json_type(), nullable=False)  # ["A", "B", "C", "D", "A"] - Respuestas correctas aleatorizadas
+    user_answers: Mapped[dict] = mapped_column(get_json_type(), nullable=False, default=list)  # ["A", "C", "C", "D", "A"] - Respuestas del usuario
 
     # Snapshots para preservar información después de eliminaciones
-    quiz_snapshot = mapped_column(JSONB, nullable=True)  # {"id": "uuid", "title": "...", "difficulty_level": 3}
-    study_space_snapshot = mapped_column(JSONB, nullable=True)  # {"id": "uuid", "name": "...", "color": "#8B5CF6"}
+    quiz_snapshot = mapped_column(get_json_type(), nullable=True)  # {"id": "uuid", "title": "...", "difficulty_level": 3}
+    study_space_snapshot = mapped_column(get_json_type(), nullable=True)  # {"id": "uuid", "name": "...", "color": "#8B5CF6"}
 
     # Denormalización: caché de metadatos del quiz (actualizado automáticamente vía triggers + service layer)
     quiz_title: Mapped[str] = mapped_column(String(255), nullable=False, default="Untitled Quiz")  # Cached from quizzes.title
