@@ -2,12 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import QuotaWidget from '@/components/features/QuotaWidget'
+import { StorageProvider } from '@/context/StorageContext'
 import * as apiModule from '@/services/api'
 import type { StorageInfo } from '@/types'
 
 vi.mock('@/services/api', () => ({
   getStorageInfo: vi.fn(),
 }))
+
+// Helper para renderizar con StorageProvider
+const renderWithStorage = (ui: React.ReactElement) => {
+  return render(<StorageProvider>{ui}</StorageProvider>)
+}
 
 describe('QuotaWidget', () => {
   const mockStorageInfo: StorageInfo = {
@@ -31,7 +37,7 @@ describe('QuotaWidget', () => {
         () => new Promise(() => {}) // Never resolves
       )
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       expect(screen.getByText('Cargando...')).toBeInTheDocument()
       const spinner = document.querySelector('.animate-spin')
@@ -43,7 +49,7 @@ describe('QuotaWidget', () => {
         () => new Promise(() => {})
       )
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
       const loadingDiv = container.querySelector('.bg-slate-800\\/50')
       expect(loadingDiv).toBeInTheDocument()
     })
@@ -55,7 +61,7 @@ describe('QuotaWidget', () => {
         new Error('Network error')
       )
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(
@@ -69,7 +75,7 @@ describe('QuotaWidget', () => {
         new Error('Network error')
       )
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const errorDiv = container.querySelector('.bg-red-900\\/20')
@@ -80,7 +86,7 @@ describe('QuotaWidget', () => {
     it('debe mostrar "Error desconocido" si storageInfo es null', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(null as any)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('Error desconocido')).toBeInTheDocument()
@@ -92,7 +98,7 @@ describe('QuotaWidget', () => {
     it('debe mostrar información de almacenamiento correctamente', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('Almacenamiento')).toBeInTheDocument()
@@ -104,7 +110,7 @@ describe('QuotaWidget', () => {
     it('debe mostrar el porcentaje de uso', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('48.8% usado')).toBeInTheDocument()
@@ -114,7 +120,7 @@ describe('QuotaWidget', () => {
     it('debe mostrar el número de documentos', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('15 documentos')).toBeInTheDocument()
@@ -125,7 +131,7 @@ describe('QuotaWidget', () => {
       const singleDocInfo = { ...mockStorageInfo, total_documents: 1 }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(singleDocInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('1 documento')).toBeInTheDocument()
@@ -141,7 +147,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(zeroInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('0 B')).toBeInTheDocument()
@@ -155,7 +161,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(kbInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('5.0 KB')).toBeInTheDocument()
@@ -170,7 +176,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(gbInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('2.5 GB')).toBeInTheDocument()
@@ -186,7 +192,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(lowUsage)
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const progressBar = container.querySelector('.from-purple-500')
@@ -201,7 +207,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mediumUsage)
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const progressBar = container.querySelector('.from-yellow-500')
@@ -216,7 +222,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(highUsage)
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const progressBar = container.querySelector('.from-orange-500')
@@ -231,7 +237,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(criticalUsage)
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const progressBar = container.querySelector('.from-red-500')
@@ -248,7 +254,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(criticalUsage)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(
@@ -266,7 +272,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(normalUsage)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(
@@ -280,7 +286,7 @@ describe('QuotaWidget', () => {
     it('debe tener botón de actualizar en modo normal', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const refreshButton = screen.getByTitle('Actualizar')
@@ -292,7 +298,7 @@ describe('QuotaWidget', () => {
       const user = userEvent.setup()
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('Almacenamiento')).toBeInTheDocument()
@@ -316,7 +322,7 @@ describe('QuotaWidget', () => {
         .mockResolvedValueOnce(initialData)
         .mockResolvedValueOnce(updatedData)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(screen.getByText('100.0 KB')).toBeInTheDocument()
@@ -336,7 +342,7 @@ describe('QuotaWidget', () => {
       vi.mocked(apiModule.getStorageInfo).mockClear()
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget compact={true} />)
+      renderWithStorage(<QuotaWidget compact={true} />)
 
       await waitFor(
         () => {
@@ -353,7 +359,7 @@ describe('QuotaWidget', () => {
       vi.mocked(apiModule.getStorageInfo).mockClear()
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget compact={true} />)
+      renderWithStorage(<QuotaWidget compact={true} />)
 
       await waitFor(
         () => {
@@ -372,7 +378,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(criticalUsage)
 
-      render(<QuotaWidget compact={true} />)
+      renderWithStorage(<QuotaWidget compact={true} />)
 
       await waitFor(() => {
         expect(screen.getByText('500.0 MB')).toBeInTheDocument()
@@ -386,7 +392,7 @@ describe('QuotaWidget', () => {
     it('debe aplicar clases de padding correctas en modo compacto', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      const { container } = render(<QuotaWidget compact={true} />)
+      const { container } = renderWithStorage(<QuotaWidget compact={true} />)
 
       await waitFor(() => {
         const compactDiv = container.querySelector('.px-3.py-2')
@@ -399,7 +405,7 @@ describe('QuotaWidget', () => {
     it('debe aplicar className personalizado', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      const { container } = render(<QuotaWidget className="custom-class" />)
+      const { container } = renderWithStorage(<QuotaWidget className="custom-class" />)
 
       await waitFor(() => {
         const widget = container.querySelector('.custom-class')
@@ -410,7 +416,7 @@ describe('QuotaWidget', () => {
     it('debe combinar className con clases existentes', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      const { container } = render(
+      const { container } = renderWithStorage(
         <QuotaWidget className="my-custom-class" />
       )
 
@@ -431,7 +437,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(halfUsage)
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const progressBar = container.querySelector('[style*="width: 50%"]')
@@ -446,7 +452,7 @@ describe('QuotaWidget', () => {
       }
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(overUsage)
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const progressBar = container.querySelector('[style*="width: 100%"]')
@@ -457,7 +463,7 @@ describe('QuotaWidget', () => {
     it('debe tener efectos de animación en la barra', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      const { container } = render(<QuotaWidget />)
+      const { container } = renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         const pulseEffect = container.querySelector('.animate-pulse')
@@ -470,7 +476,7 @@ describe('QuotaWidget', () => {
     it('debe llamar a getStorageInfo al montar el componente', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       await waitFor(() => {
         expect(apiModule.getStorageInfo).toHaveBeenCalledTimes(1)
@@ -480,7 +486,7 @@ describe('QuotaWidget', () => {
     it('debe manejar cambio de loading a success correctamente', async () => {
       vi.mocked(apiModule.getStorageInfo).mockResolvedValue(mockStorageInfo)
 
-      render(<QuotaWidget />)
+      renderWithStorage(<QuotaWidget />)
 
       // Primero debe mostrar loading
       expect(screen.getByText('Cargando...')).toBeInTheDocument()

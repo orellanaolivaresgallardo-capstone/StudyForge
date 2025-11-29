@@ -186,12 +186,13 @@ describe('quizzes.api', () => {
         .onPost('/quizzes/generate-from-document/doc1')
         .reply((config) => {
           const formData = config.data as FormData
+          expect(formData.get('study_space_id')).toBe('space1')
           expect(formData.get('max_questions')).toBe('12')
           expect(config.headers?.['Content-Type']).toBe('multipart/form-data')
           return [200, mockResponse]
         })
 
-      const result = await createQuizFromDocument('doc1', 12)
+      const result = await createQuizFromDocument('doc1', 'space1', 12)
 
       expect(result).toEqual(mockResponse)
     })
@@ -201,11 +202,12 @@ describe('quizzes.api', () => {
         .onPost('/quizzes/generate-from-document/doc1')
         .reply((config) => {
           const formData = config.data as FormData
+          expect(formData.get('study_space_id')).toBe('space1')
           expect(formData.get('max_questions')).toBeNull()
           return [200, { id: 'quiz1' }]
         })
 
-      await createQuizFromDocument('doc1')
+      await createQuizFromDocument('doc1', 'space1')
     })
 
     it('debe fallar si el documento no existe', async () => {
@@ -214,7 +216,7 @@ describe('quizzes.api', () => {
       })
 
       await expect(
-        createQuizFromDocument('nonexistent')
+        createQuizFromDocument('nonexistent', 'space1')
       ).rejects.toThrow()
     })
 
@@ -223,7 +225,7 @@ describe('quizzes.api', () => {
         detail: 'Not authorized',
       })
 
-      await expect(createQuizFromDocument('doc1')).rejects.toThrow()
+      await expect(createQuizFromDocument('doc1', 'space1')).rejects.toThrow()
     })
   })
 
