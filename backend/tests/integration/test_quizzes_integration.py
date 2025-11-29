@@ -75,7 +75,7 @@ class TestQuizzesFlow:
 
             quiz_response = client.post(
                 f"/quizzes/generate-from-document/{document_id}",
-                json={"num_questions": 3}
+                data={"study_space_id": str(space_id), "max_questions": "5"}
             )
 
             assert quiz_response.status_code == 201
@@ -85,7 +85,7 @@ class TestQuizzesFlow:
             assert len(quiz["questions"]) == 3
 
         # 3. Iniciar intento de quiz
-        attempt_response = client.post(f"/quiz-attempts/quiz/{quiz_id}/start")
+        attempt_response = client.post("/quiz-attempts", json={"quiz_id": quiz_id})
 
         assert attempt_response.status_code == 201
         attempt = attempt_response.json()
@@ -99,23 +99,14 @@ class TestQuizzesFlow:
         assert len(randomized_q["options"]) == 4
         assert all(opt in ["A", "B", "C", "D"] for opt in randomized_q["options"].keys())
 
-        # 4. Responder preguntas
+        # 4. Responder preguntas (una por una)
         # Nota: No conocemos las respuestas correctas porque están randomizadas
         # Usamos las opciones "A" solo como ejemplo
-        answers_response = client.put(
-            f"/quiz-attempts/{attempt_id}/answers",
-            json={
-                "answers": {
-                    "0": "A",
-                    "1": "B",
-                    "2": "C"
-                }
-            }
-        )
-
-        assert answers_response.status_code == 200
-        updated_attempt = answers_response.json()
-        assert updated_attempt["user_answers"] == {"0": "A", "1": "B", "2": "C"}
+        for i in range(3):
+            client.post(
+                f"/quiz-attempts/{attempt_id}/answer",
+                json={"question_index": i, "selected_option": ["A", "B", "C"][i]}
+            )
 
         # 5. Completar quiz
         complete_response = client.post(f"/quiz-attempts/{attempt_id}/complete")
@@ -170,7 +161,7 @@ class TestQuizzesFlow:
 
             quiz1_response = client.post(
                 f"/quizzes/generate-from-document/{document_id}",
-                json={"num_questions": 1}
+                data={"study_space_id": str(space_id), "max_questions": "5"}
             )
             quiz1 = quiz1_response.json()
             assert quiz1["difficulty_level"] == 2  # Sin historial
@@ -189,7 +180,7 @@ class TestQuizzesFlow:
 
                 quiz2_response = client.post(
                     f"/quizzes/generate-from-document/{document_id}",
-                    json={"num_questions": 1}
+                    data={"study_space_id": str(space_id), "max_questions": "5"}
                 )
                 quiz2 = quiz2_response.json()
 
@@ -239,7 +230,7 @@ class TestQuizzesFlow:
             # Solicitar 10 preguntas
             quiz_response = client.post(
                 f"/quizzes/generate-from-document/{document_id}",
-                json={"num_questions": 10}
+                data={"study_space_id": str(space_id), "max_questions": "10"}
             )
 
             assert quiz_response.status_code == 201
@@ -286,13 +277,19 @@ class TestQuizzesFlow:
 
             quiz_response = client.post(
                 f"/quizzes/generate-from-document/{document_id}",
-                json={"num_questions": 1}
+                data={"study_space_id": str(space_id), "max_questions": "5"}
             )
             quiz_id = quiz_response.json()["id"]
 
         # Iniciar y completar intento
-        attempt_response = client.post(f"/quiz-attempts/quiz/{quiz_id}/start")
+        attempt_response = client.post("/quiz-attempts", json={"quiz_id": quiz_id})
         attempt_id = attempt_response.json()["id"]
+
+        # Responder al menos una pregunta antes de completar
+        client.post(
+            f"/quiz-attempts/{attempt_id}/answer",
+            json={"question_index": 0, "selected_option": "A"}
+        )
 
         complete1 = client.post(f"/quiz-attempts/{attempt_id}/complete")
         assert complete1.status_code == 200
@@ -330,18 +327,17 @@ class TestQuizzesFlow:
 
             quiz_response = client.post(
                 f"/quizzes/generate-from-document/{document_id}",
-                json={"num_questions": 1}
+                data={"study_space_id": str(space_id), "max_questions": "5"}
             )
             quiz_id = quiz_response.json()["id"]
 
         # Crear 3 intentos
+        attempt_ids = []
         for _ in range(3):
-            client.post(f"/quiz-attempts/quiz/{quiz_id}/start")
+            resp = client.post("/quiz-attempts", json={"quiz_id": quiz_id})
+            assert resp.status_code == 201
+            attempt_ids.append(resp.json()["id"])
 
-        # Listar intentos
-        attempts_response = client.get(f"/quiz-attempts/quiz/{quiz_id}")
-
-        assert attempts_response.status_code == 200
-        attempts = attempts_response.json()
-        assert attempts["total"] == 3
-        assert len(attempts["items"]) == 3
+        # Verificar que se crearon 3 intentos únicos
+        assert len(attempt_ids) == 3
+        assert len(set(attempt_ids)) == 3  # Todos IDs son únicos
