@@ -118,9 +118,39 @@ def setup_sql_logging(formatter: StructuredFormatter) -> None:
     Args:
         formatter: Formatter a usar para los logs SQL
     """
+    # ========== SIEMPRE mostrar warnings y errores de SQLAlchemy ==========
+    # Esto asegura que los errores de DB se muestren incluso si LOG_SQL_QUERIES=False
+    sqlalchemy_error_loggers = [
+        "sqlalchemy.engine.Engine",  # Errores de ejecución SQL
+        "sqlalchemy.pool",           # Errores de pool de conexiones
+        "sqlalchemy.dialects",       # Errores de dialecto (PostgreSQL, etc.)
+        "sqlalchemy.orm",            # Errores de ORM (flush, commit, etc.)
+    ]
+
+    studyforge_logger = logging.getLogger("studyforge")
+
+    for logger_name in sqlalchemy_error_loggers:
+        error_logger = logging.getLogger(logger_name)
+        error_logger.setLevel(logging.WARNING)  # WARNING y ERROR siempre visibles
+
+        # Agregar handlers del logger principal si no existen
+        if not error_logger.handlers:
+            # SIEMPRE agregar handler de consola (para ver errores en vivo)
+            console_handler = logging.StreamHandler(sys.stdout)
+            console_handler.setLevel(logging.WARNING)
+            console_handler.setFormatter(formatter)
+            error_logger.addHandler(console_handler)
+
+            # También agregar handler de archivo si está habilitado
+            for handler in studyforge_logger.handlers:
+                if isinstance(handler, RotatingFileHandler):
+                    error_logger.addHandler(handler)
+
+            error_logger.propagate = False
+
+    # ========== Logging de queries SQL (opcional) ==========
     if not settings.LOG_SQL_QUERIES:
-        # Desactivar completamente el logging SQL
-        logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+        # No mostrar queries INFO/DEBUG, solo errores (ya configurados arriba)
         return
 
     # Logger de SQLAlchemy engine (queries ejecutadas)
@@ -384,3 +414,55 @@ def log_error(
         exc_info=error,
         extra=extra
     )
+
+
+def log_audit_event(
+    event: str,
+    user_id: Optional[str] = None,
+    resource_type: Optional[str] = None,
+    resource_id: Optional[str] = None,
+    action: Optional[str] = None,
+    result: str = "success",
+    ip_address: Optional[str] = None,
+    extra: Optional[dict] = None
+) -> None:
+    """
+    Registra eventos de auditoría de seguridad (ISO 27001 A.12.4).
+
+    Args:
+        event: Tipo de evento (login_attempt, access_resource, modify_resource, delete_resource)
+        user_id: UUID del usuario que realiza la acción
+        resource_type: Tipo de recurso (document, summary, quiz, etc.)
+        resource_id: UUID del recurso
+        action: Acción realizada (read, create, update, delete, login)
+        result: Resultado de la acción (success, failure, forbidden)
+        ip_address: Dirección IP de la request
+        extra: Contexto adicional
+    """
+    log_message = f"AUDIT: {event}"
+
+    audit_data = {
+        "action": action or event,
+        "event": event,
+        "user_id": user_id,
+        "resource_type": resource_type,
+        "resource_id": resource_id,
+        "status": result,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+    # Agregar IP si está disponible
+    if ip_address:
+        audit_data["ip_address"] = ip_address
+
+    # Merge con datos extra si existen
+    if extra:
+        audit_data.update(extra)
+
+    # Nivel de log basado en resultado
+    if result == "failure":
+        logger.warning(log_message, extra=audit_data)
+    elif result == "forbidden":
+        logger.warning(log_message, extra=audit_data)
+    else:
+        logger.info(log_message, extra=audit_data)
