@@ -32,3 +32,6 @@ htmlcov/
 .mypy_cache/
 *.db
 test.db
+
+
+/.secrets/
