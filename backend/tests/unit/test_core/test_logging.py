@@ -208,6 +208,9 @@ def test_structured_formatter_all_fields():
 def test_setup_logging_default_level(mock_settings):
     """setup_logging debe configurar el logger con nivel INFO por defecto"""
     mock_settings.LOG_LEVEL = "INFO"
+    mock_settings.LOG_TO_FILE = False  # Disable file logging to avoid mock issues
+    mock_settings.LOG_SQL_QUERIES = False  # Disable SQL logging to avoid mock issues
+    mock_settings.LOG_SQL_LEVEL = "WARNING"  # Set SQL log level (in case it's enabled)
 
     # Limpiar handlers previos
     logger = logging.getLogger("studyforge")
