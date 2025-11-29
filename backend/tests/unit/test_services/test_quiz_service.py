@@ -118,6 +118,55 @@ def test_adaptive_difficulty_with_less_than_5_attempts(mock_settings):
     assert difficulty == 4
 
 
+@patch('app.services.openai_service.settings')
+def test_adaptive_difficulty_all_scores_none(mock_settings):
+    """Con attempts que tienen score=None, debe retornar dificultad 2 (default)"""
+    mock_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_settings.OPENAI_MODEL = "gpt-4"
+
+    mock_db = Mock()
+
+    # Attempts existen pero todos tienen score=None
+    attempts = [
+        Mock(score=None),
+        Mock(score=None),
+        Mock(score=None),
+    ]
+    mock_db.execute.return_value.scalars.return_value.all.return_value = attempts
+
+    service = QuizService()
+    difficulty = service.calculate_adaptive_difficulty(mock_db, "user-123", "mathematics")
+
+    # Cuando todos los scores son None, la lista de scores válidos está vacía
+    # Debe retornar 2 (dificultad por defecto)
+    assert difficulty == 2
+
+
+@patch('app.services.openai_service.settings')
+def test_adaptive_difficulty_easy_range(mock_settings):
+    """Scores en rango 40-60% retornan dificultad 2 (Fácil)"""
+    mock_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_settings.OPENAI_MODEL = "gpt-4"
+
+    mock_db = Mock()
+
+    # Scores en el rango 40-60%
+    attempts = [
+        Mock(score=45.0),
+        Mock(score=50.0),
+        Mock(score=55.0),
+        Mock(score=48.0),
+        Mock(score=52.0),
+    ]
+    mock_db.execute.return_value.scalars.return_value.all.return_value = attempts
+
+    service = QuizService()
+    difficulty = service.calculate_adaptive_difficulty(mock_db, "user-123", "mathematics")
+
+    # avg = 50%, debería ser dificultad 2 (Fácil)
+    assert difficulty == 2
+
+
 # ========================================
 # TESTS PARA create_quiz_from_file()
 # ========================================
@@ -327,6 +376,99 @@ def test_create_quiz_from_document_empty_text_fails(mock_verify, mock_doc_repo):
     assert "texto extraído" in exc_info.value.detail.lower()
 
 
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
+@patch('app.core.dependencies.verify_space_ownership')
+@patch('app.repositories.document_repository.DocumentRepository')
+@patch('app.core.dependencies.verify_document_ownership')
+def test_create_quiz_from_document_not_in_space(mock_verify_doc, mock_doc_repo, mock_verify_space, mock_space_repo):
+    """create_quiz_from_document debe fallar si documento no está en el espacio"""
+    mock_db = MagicMock()
+    user = Mock(id=uuid4())
+    document_id = uuid4()
+    space_id = uuid4()
+    other_space_id = uuid4()
+
+    # Mock document con texto válido pero pertenece a OTRO espacio
+    mock_other_space = Mock()
+    mock_other_space.id = other_space_id
+
+    mock_document = Mock()
+    mock_document.id = document_id
+    mock_document.extracted_text = "Valid text content"
+    mock_document.study_spaces = [mock_other_space]  # Documento en OTRO espacio
+
+    mock_doc_repo.get_by_id.return_value = mock_document
+    mock_verify_doc.return_value = mock_document
+
+    # Mock del espacio solicitado
+    mock_space = Mock()
+    mock_space.id = space_id
+    mock_space.user_id = user.id
+    mock_space_repo.get_by_id.return_value = mock_space
+    mock_verify_space.return_value = mock_space
+
+    service = QuizService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.create_quiz_from_document(mock_db, user, document_id, space_id, max_questions=None)
+
+    assert exc_info.value.status_code == 400
+    assert "no está asociado al espacio" in exc_info.value.detail.lower()
+
+
+@patch('app.services.quiz_service.settings')
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
+@patch('app.core.dependencies.verify_space_ownership')
+@patch('app.repositories.document_repository.DocumentRepository')
+@patch('app.core.dependencies.verify_document_ownership')
+@patch('app.services.quiz_service.QuizRepository')
+@patch('app.services.openai_service.settings')
+def test_create_quiz_from_document_with_max_questions(mock_openai_settings, mock_quiz_repo, mock_verify_doc, mock_doc_repo, mock_verify_space, mock_space_repo, mock_settings):
+    """create_quiz_from_document debe ajustar max_questions al rango válido"""
+    mock_openai_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_openai_settings.OPENAI_MODEL = "gpt-4"
+    mock_settings.MIN_QUESTIONS_PER_QUIZ = 5
+    mock_settings.MAX_QUESTIONS_PER_QUIZ = 30
+    mock_settings.DEFAULT_QUIZ_QUESTIONS = 10
+
+    mock_db = MagicMock()
+    user = Mock(id=uuid4())
+    document_id = uuid4()
+    space_id = uuid4()
+
+    # Mock space
+    mock_space = Mock()
+    mock_space.id = space_id
+    mock_space.user_id = user.id
+    mock_space.description = "Math space"
+
+    # Mock document válido en el espacio
+    mock_document = Mock()
+    mock_document.id = document_id
+    mock_document.extracted_text = "Valid document content"
+    mock_document.study_spaces = [mock_space]
+
+    mock_doc_repo.get_by_id.return_value = mock_document
+    mock_verify_doc.return_value = mock_document
+    mock_space_repo.get_by_id.return_value = mock_space
+    mock_verify_space.return_value = mock_space
+
+    # Mock adaptive difficulty
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
+
+    mock_quiz = Mock(id=uuid4())
+    mock_quiz_repo.create_quiz.return_value = mock_quiz
+
+    service = QuizService()
+    with patch.object(service.openai_service, 'generate_quiz', return_value=[{"q": "1"}] * 50):
+        # max_questions = 2 debería ajustarse a MIN (5)
+        result = service.create_quiz_from_document(mock_db, user, document_id, space_id, max_questions=2)
+
+        call_args = service.openai_service.generate_quiz.call_args
+        # num_questions debería ser 5 (MIN_QUESTIONS_PER_QUIZ)
+        assert call_args.kwargs['num_questions'] == 5
+
+
 # ========================================
 # TESTS PARA create_quiz_from_summary()
 # ========================================
@@ -429,6 +571,46 @@ def test_get_quizzes_with_pagination(mock_quiz_repo):
     mock_quiz_repo.count_quizzes_by_user.assert_called_once_with(mock_db, user_id)
 
 
+@patch('app.services.quiz_service.settings')
+@patch('app.services.quiz_service.SummaryRepository')
+@patch('app.services.quiz_service.verify_summary_ownership')
+@patch('app.services.quiz_service.QuizRepository')
+@patch('app.services.openai_service.settings')
+def test_create_quiz_from_summary_with_max_questions(mock_openai_settings, mock_quiz_repo, mock_verify, mock_summary_repo, mock_settings):
+    """create_quiz_from_summary debe ajustar max_questions al rango válido"""
+    mock_openai_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_openai_settings.OPENAI_MODEL = "gpt-4"
+    mock_settings.MIN_QUESTIONS_PER_QUIZ = 5
+    mock_settings.MAX_QUESTIONS_PER_QUIZ = 30
+    mock_settings.DEFAULT_QUIZ_QUESTIONS = 10
+
+    mock_db = MagicMock()
+    user = Mock(id=uuid4())
+    summary_id = uuid4()
+
+    # Mock summary con contenido válido
+    mock_summary = Mock()
+    mock_summary.id = summary_id
+    mock_summary.content = {"summary": "Valid summary content for quiz generation"}
+    mock_summary.study_space_id = None  # Sin espacio asociado
+    mock_summary.study_space = None
+
+    mock_summary_repo.get_by_id.return_value = mock_summary
+    mock_verify.return_value = mock_summary
+
+    mock_quiz = Mock(id=uuid4())
+    mock_quiz_repo.create_quiz.return_value = mock_quiz
+
+    service = QuizService()
+    with patch.object(service.openai_service, 'generate_quiz', return_value=[{"q": "1"}] * 50):
+        # max_questions = 100 debería ajustarse a MAX (30)
+        result = service.create_quiz_from_summary(mock_db, user, summary_id, max_questions=100)
+
+        call_args = service.openai_service.generate_quiz.call_args
+        # num_questions debería ser 30 (MAX_QUESTIONS_PER_QUIZ)
+        assert call_args.kwargs['num_questions'] == 30
+
+
 # ========================================
 # TESTS PARA create_quiz_from_space()
 # ========================================
@@ -509,3 +691,79 @@ def test_create_quiz_from_space_no_summaries_fails(mock_verify, mock_space_repo)
 
     assert exc_info.value.status_code == 400
     assert "resúmenes" in exc_info.value.detail.lower()
+
+
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
+@patch('app.core.dependencies.verify_space_ownership')
+def test_create_quiz_from_space_with_empty_content(mock_verify, mock_space_repo):
+    """create_quiz_from_space debe fallar si summaries tienen contenido vacío"""
+    mock_db = MagicMock()
+    user = Mock(id=uuid4())
+    space_id = uuid4()
+
+    # Summaries existen pero con contenido vacío
+    mock_summary1 = Mock()
+    mock_summary1.content = {"summary": ""}  # Contenido vacío
+    mock_summary2 = Mock()
+    mock_summary2.content = {}  # Sin key "summary"
+    mock_summary3 = Mock()
+    mock_summary3.content = {"other": "data"}  # Sin key "summary"
+
+    mock_space = Mock()
+    mock_space.summaries = [mock_summary1, mock_summary2, mock_summary3]
+
+    mock_space_repo.get_by_id.return_value = mock_space
+    mock_verify.return_value = mock_space
+
+    service = QuizService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.create_quiz_from_space(mock_db, user, space_id, max_questions=None)
+
+    assert exc_info.value.status_code == 400
+    assert "no contienen contenido válido" in exc_info.value.detail.lower()
+
+
+@patch('app.services.quiz_service.settings')
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
+@patch('app.core.dependencies.verify_space_ownership')
+@patch('app.services.quiz_service.QuizRepository')
+@patch('app.services.openai_service.settings')
+def test_create_quiz_from_space_with_max_questions(mock_openai_settings, mock_quiz_repo, mock_verify, mock_space_repo, mock_settings):
+    """create_quiz_from_space debe ajustar max_questions al rango válido"""
+    mock_openai_settings.OPENAI_API_KEY = "sk-test-key"
+    mock_openai_settings.OPENAI_MODEL = "gpt-4"
+    mock_settings.MIN_QUESTIONS_PER_QUIZ = 5
+    mock_settings.MAX_QUESTIONS_PER_QUIZ = 30
+    mock_settings.DEFAULT_QUIZ_QUESTIONS = 10
+
+    mock_db = MagicMock()
+    user = Mock(id=uuid4())
+    space_id = uuid4()
+
+    # Summary con contenido válido
+    mock_summary = Mock()
+    mock_summary.content = {"summary": "Valid summary content for quiz generation"}
+
+    mock_space = Mock()
+    mock_space.id = space_id
+    mock_space.summaries = [mock_summary]
+    mock_space.description = "Test space"
+
+    mock_space_repo.get_by_id.return_value = mock_space
+    mock_verify.return_value = mock_space
+
+    # Mock adaptive difficulty
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
+
+    mock_quiz = Mock(id=uuid4())
+    mock_quiz_repo.create_quiz.return_value = mock_quiz
+
+    service = QuizService()
+    with patch.object(service.openai_service, 'generate_quiz', return_value=[{"q": "1"}] * 50):
+        # max_questions = 100 debería ajustarse a MAX (30)
+        result = service.create_quiz_from_space(mock_db, user, space_id, max_questions=100)
+
+        call_args = service.openai_service.generate_quiz.call_args
+        # num_questions debería ser 30 (MAX_QUESTIONS_PER_QUIZ)
+        assert call_args.kwargs['num_questions'] == 30
