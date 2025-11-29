@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Navbar, Toast, LoadingSpinner, EmptyState } from '@/components';
 import { SpaceCard } from '@/components/ui/Card';
 import { CreateEditSpaceModal } from './components/CreateEditSpaceModal';
+import { DeleteSpaceModal } from './components/DeleteSpaceModal';
 import { useStudySpacesData } from '@/hooks/useStudySpacesData';
 import { useToast } from '@/hooks/useToast';
 import { useModal } from '@/hooks/useModal';
@@ -17,10 +18,15 @@ export default function StudySpacesPage() {
   const { spaces, isLoading, error, refreshSpaces, removeSpace } = useStudySpacesData();
   const { toast, showToast, showSuccess, showError, hideToast } = useToast();
   const modal = useModal();
+  const deleteModal = useModal();
 
   // Edit state
   const [editingSpace, setEditingSpace] = useState<StudySpaceWithStatsResponse | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Delete state
+  const [deletingSpace, setDeletingSpace] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Show error from hook
   useEffect(() => {
@@ -71,20 +77,27 @@ export default function StudySpacesPage() {
   };
 
   // ========== Delete Space ==========
-  const handleDeleteSpace = async (spaceId: string, name: string) => {
-    const password = prompt(
-      `Para eliminar el espacio "${name}", por favor ingresa tu contraseña:`
-    );
-    if (!password) return;
+  const handleOpenDeleteModal = (spaceId: string, name: string) => {
+    setDeletingSpace({ id: spaceId, name });
+    deleteModal.open();
+  };
+
+  const handleConfirmDelete = async (password: string) => {
+    if (!deletingSpace) return;
 
     try {
-      await deleteStudySpace(spaceId, password);
-      showSuccess('Espacio eliminado');
-      removeSpace(spaceId);
+      setIsDeleting(true);
+      await deleteStudySpace(deletingSpace.id, password);
+      showSuccess('Espacio eliminado exitosamente');
+      removeSpace(deletingSpace.id);
+      deleteModal.close();
+      setDeletingSpace(null);
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'No se pudo eliminar el espacio';
       showError(errorMessage);
       console.error('Error deleting study space:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -153,7 +166,7 @@ export default function StudySpacesPage() {
                 key={space.id}
                 space={space}
                 onEdit={handleOpenEditModal}
-                onDelete={handleDeleteSpace}
+                onDelete={handleOpenDeleteModal}
               />
             ))}
           </div>
@@ -168,6 +181,17 @@ export default function StudySpacesPage() {
           onSubmit={handleSaveSpace}
           isSaving={isSaving}
         />
+
+        {/* Delete Confirmation Modal */}
+        {deletingSpace && (
+          <DeleteSpaceModal
+            isOpen={deleteModal.isOpen}
+            onClose={deleteModal.close}
+            onConfirm={handleConfirmDelete}
+            spaceName={deletingSpace.name}
+            isDeleting={isDeleting}
+          />
+        )}
       </main>
 
       {/* Toast Notification */}
