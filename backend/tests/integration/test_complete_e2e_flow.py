@@ -173,7 +173,7 @@ class TestCompleteE2EFlow:
             mock_openai_quiz.return_value = mock_quiz_questions
 
             quiz_response = client.post(
-                f"/quizzes/from-summary/{summary_id}",
+                f"/quizzes/generate-from-summary/{summary_id}",
                 headers=headers,
                 json={"num_questions": 5}
             )
