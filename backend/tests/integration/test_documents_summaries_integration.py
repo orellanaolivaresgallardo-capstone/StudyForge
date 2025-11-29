@@ -59,6 +59,7 @@ class TestDocumentsAndSummariesFlow:
 
         # 4. Generar resumen desde documento (mockeando OpenAI)
         mock_summary_content = {
+            "title": "Resumen de Cálculo",  # Título generado por OpenAI
             "summary": "Resumen sobre matemáticas y cálculo",
             "key_points": ["Derivadas", "Integrales", "Teorema fundamental"],
             "detailed_sections": [
@@ -73,10 +74,10 @@ class TestDocumentsAndSummariesFlow:
             mock_openai.return_value = mock_summary_content
 
             summary_response = client.post(
-                f"/summaries/from-documents?study_space_id={space_id}",
+                "/summaries/from-documents",
                 json={
-                    "title": "Resumen de Cálculo",
-                    "document_ids": [document_id],
+                    "document_id": document_id,
+                    "study_space_id": space_id,
                     "expertise_level": "medio"
                 }
             )

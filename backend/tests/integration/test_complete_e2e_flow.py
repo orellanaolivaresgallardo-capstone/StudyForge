@@ -102,11 +102,11 @@ class TestCompleteE2EFlow:
             mock_openai_summary.return_value = mock_summary_content
 
             summary_response = client.post(
-                f"/summaries/from-documents?study_space_id={space_id}",
+                "/summaries/from-documents",
                 headers=headers,
                 json={
-                    "title": "Resumen: Introducción al Cálculo",
-                    "document_ids": [document_id],
+                    "document_id": document_id,
+                    "study_space_id": space_id,
                     "expertise_level": "medio"
                 }
             )
