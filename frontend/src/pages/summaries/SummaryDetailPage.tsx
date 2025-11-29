@@ -237,8 +237,7 @@ export default function SummaryDetailPage() {
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  {summary.documents.length}{" "}
-                  {summary.documents.length === 1 ? "documento" : "documentos"}
+                  {summary.document ? "1 documento" : "Sin documento"}
                 </span>
               </div>
 
@@ -267,7 +266,7 @@ export default function SummaryDetailPage() {
             </div>
 
             {/* Documents Section */}
-            {summary.documents.length > 0 && (
+            {summary.document && (
               <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <svg
@@ -283,10 +282,10 @@ export default function SummaryDetailPage() {
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  Documentos fuente
+                  Documento fuente
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {summary.documents.map((doc) => (
+                  {[summary.document].map((doc) => (
                     <button
                       key={doc.id}
                       onClick={() => navigate(`/documents`)}
