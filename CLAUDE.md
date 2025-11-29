@@ -1349,7 +1349,181 @@ docs: Update API documentation for auth endpoints
 
 ---
 
-#### 6. **Conventions Reference Files**
+#### 6. **git-historian** - Git History Analysis Agent
+
+**Purpose**: Analyzes git commit history to identify patterns, generate change reports, track component evolution, audit commit quality, and analyze branch lifecycles. Provides deep insights into project development over time.
+
+**Location**: [`.claude/agents/git-historian.md`](.claude/agents/git-historian.md)
+
+**When to use**:
+- Analyzing commits in a time range (last week, month, between dates)
+- Comparing versions or tags (what changed between v1.0 and v1.1)
+- Tracking component evolution (who worked on what)
+- Auditing commit message quality
+- Analyzing branch lifecycles
+- Preparing for releases or retrospectives
+
+**Capabilities**:
+- ✅ Analyzes commit history by time range, author, type, or scope
+- ✅ Generates change reports between versions/tags
+- ✅ Tracks component evolution and code ownership
+- ✅ Audits commit quality (Conventional Commits compliance)
+- ✅ Analyzes branch divergence and merge patterns
+- ✅ Identifies patterns, trends, and anomalies
+- ✅ Calculates development velocity and code churn
+- ✅ Detects breaking changes and highlights significant commits
+
+**Usage**:
+```
+> Analyze commits from last month
+> What changed between v1.0 and v1.1?
+> Who worked on authentication?
+> Audit commit message quality
+> Analyze the feature-auth branch
+> Show me the evolution of summary_service.py
+```
+
+**Example workflow**:
+1. Agent runs `git log` with appropriate filters
+2. Parses Conventional Commits format
+3. Groups commits by type, scope, or author
+4. Calculates statistics (lines changed, file churn)
+5. Identifies patterns and trends
+6. Generates formatted report with insights
+7. Provides actionable recommendations
+
+**Example Output**:
+```markdown
+## Análisis de Commits: Últimos 30 días
+
+**Período:** 2025-01-01 - 2025-01-30
+**Total de commits:** 45
+
+### Distribución por Tipo
+- **feat**: 15 commits (33%)
+- **fix**: 12 commits (27%)
+- **test**: 8 commits (18%)
+- **refactor**: 6 commits (13%)
+- **docs**: 4 commits (9%)
+
+### Distribución por Alcance
+- **backend**: 20 commits
+- **frontend**: 15 commits
+- **docs**: 7 commits
+- **database**: 3 commits
+
+### Commits Destacados
+- 6bd614d test(backend): Improve quiz_service coverage from 32% to 80%
+- 4445f87 feat(backend): Add audit logging for security-critical operations
+- 77a9710 docs: Add ISO 27001 compliance documentation
+
+### Tendencias Observadas
+- Alto enfoque en testing (18% de commits)
+- Mejora significativa en documentación de seguridad
+- Actividad balanceada entre backend y frontend
+```
+
+---
+
+#### 7. **changelog-manager** - CHANGELOG.md Generator
+
+**Purpose**: Generates and maintains CHANGELOG.md following Keep a Changelog format. Automatically parses Conventional Commits, organizes changes by version, detects breaking changes, and creates professional release notes.
+
+**Location**: [`.claude/agents/changelog-manager.md`](.claude/agents/changelog-manager.md)
+
+**When to use**:
+- Creating initial CHANGELOG.md
+- Updating changelog with unreleased changes
+- Preparing new version releases
+- Generating release notes
+- Validating changelog quality
+- Before creating tags or releases
+
+**Capabilities**:
+- ✅ Generates CHANGELOG.md from git history
+- ✅ Follows Keep a Changelog 1.1.0 format
+- ✅ Parses Conventional Commits automatically
+- ✅ Maps commit types to changelog categories (Added/Fixed/Changed)
+- ✅ Organizes changes by version (from git tags)
+- ✅ Detects breaking changes (! or BREAKING CHANGE)
+- ✅ Updates [Unreleased] section with new commits
+- ✅ Prepares version releases with proper dates
+- ✅ Generates release notes for GitHub/announcements
+- ✅ Validates changelog quality and format
+
+**Usage**:
+```
+> Generate CHANGELOG.md
+> Update changelog with unreleased changes
+> Prepare version v1.2.0 for release
+> Generate release notes for v1.2.0
+> Validate CHANGELOG.md format
+> What should the next version be?
+```
+
+**Example workflow**:
+1. Agent reads git tags and commit history
+2. Parses Conventional Commits format
+3. Maps types to changelog categories:
+   - `feat` → **Added**
+   - `fix` → **Fixed**
+   - `refactor`, `perf` → **Changed**
+4. Organizes by version (newest first)
+5. Detects breaking changes
+6. Generates or updates CHANGELOG.md
+7. Validates format compliance
+
+**Changelog Format**:
+```markdown
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- New features not yet released
+
+## [1.2.0] - 2025-01-20
+
+### Added
+- JWT authentication system
+- Adaptive quiz difficulty
+
+### Fixed
+- Password validation error messages
+- Quota calculation for large files
+
+[Unreleased]: https://github.com/username/repo/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/username/repo/compare/v1.1.0...v1.2.0
+```
+
+**Commit Type Mapping**:
+- `feat` → **Added** (new features)
+- `fix` → **Fixed** (bug fixes)
+- `refactor`, `perf` → **Changed** (improvements)
+- `docs`, `test` → Optional sections
+- `build`, `ci`, `chore` → Omitted (internal)
+
+**Breaking Changes Handling**:
+```markdown
+### Changed
+- ⚠️ **BREAKING**: API response format changed
+  - **Migration**: Update client code to use new field names
+  - **Impact**: All API consumers must update
+```
+
+**Semantic Versioning Guidance**:
+- **MAJOR** (X.0.0): Breaking changes
+- **MINOR** (0.X.0): New features (backward-compatible)
+- **PATCH** (0.0.X): Bug fixes (backward-compatible)
+
+---
+
+#### 8. **Conventions Reference Files**
 
 StudyForge utiliza archivos de convenciones para mantener consistencia en código generado por agentes AI.
 
@@ -1493,6 +1667,12 @@ User: "Update documentation for my changes"
 
 User: "Help me commit these changes"
 → Claude invokes commit-organizer agent automatically
+
+User: "Analyze commits from last month"
+→ Claude invokes git-historian agent automatically
+
+User: "Generate CHANGELOG.md"
+→ Claude invokes changelog-manager agent automatically
 ```
 
 #### Explicit Invocation
@@ -1504,6 +1684,8 @@ You can explicitly request a specific agent:
 > Have the security-reviewer audit this endpoint
 > Use docs-maintainer to validate all documentation
 > Use commit-organizer to organize my commits
+> Use git-historian to analyze commits from last quarter
+> Use changelog-manager to generate CHANGELOG.md
 ```
 
 #### Agent Context
@@ -1620,7 +1802,108 @@ See the existing agents in [`.claude/agents/`](.claude/agents/) for complete exa
 - **`docs/NEXT_STEPS.md`**: Current tasks and roadmap
  
 ---
- 
+
+## 🎯 Task Complexity Evaluation (for AI Assistants)
+
+Before starting implementation, evaluate task complexity to determine if you need to gather context from documentation:
+
+### 🟢 Simple Task (proceed directly)
+
+**Characteristics**:
+- Modifying existing code you've already read
+- Small bug fixes, typos, formatting
+- Adding simple validation or logging
+- Tasks confined to 1-2 files
+- You're already familiar with the code
+
+**Examples**:
+- "fix typo in README"
+- "add email validation to schema"
+- "update error message"
+- "format code with black"
+
+**Action**: Proceed directly with implementation
+
+---
+
+### 🟡 Moderate Task (read relevant code first)
+
+**Characteristics**:
+- Feature enhancements in familiar area
+- Refactoring within single module
+- Tasks spanning 2-3 files
+- You need to understand existing patterns
+
+**Examples**:
+- "improve error messages in auth service"
+- "extract helper function from repository"
+- "add new field to existing model"
+
+**Action**: Use Read tool to understand context, then proceed
+
+---
+
+### 🔴 Complex Task (use context-gatherer)
+
+**Characteristics**:
+- Creating new endpoints/features
+- Multi-layer changes (Model → Repository → Service → Router)
+- Security-sensitive operations (auth, ownership)
+- Database schema changes
+- Tasks spanning 3+ architectural layers
+- Unfamiliar area without prior context
+
+**Examples**:
+- "implement user preferences endpoint"
+- "add OAuth authentication"
+- "implement user preferences endpoint with proper security"
+- "optimize summary listing query"
+- "add new quiz type with adaptive difficulty"
+
+**Action**: Invoke `context-gatherer` agent to gather relevant context in parallel
+
+---
+
+### Decision Keywords
+
+**✅ Use context-gatherer when task includes**:
+- "new endpoint"
+- "implement feature"
+- "add authentication"
+- "with proper security"
+- "update database"
+- "create new [resource type]"
+- Multiple concerns mentioned (e.g., "with security and database changes")
+
+**❌ Proceed directly when task is**:
+- "fix [simple issue]"
+- "typo"
+- "update comment"
+- "add log statement"
+- "format code"
+
+---
+
+### Decision Flow
+
+```
+User Request
+    ↓
+Have I read the relevant code?
+    ↓ No
+Is this multi-layer/security-sensitive/database change?
+    ↓ Yes
+🔴 Use context-gatherer
+    ↓ (gathers context in parallel)
+Receive consolidated context
+    ↓
+Proceed with implementation
+```
+
+**Important**: When in doubt, prefer using context-gatherer. It's better to have too much context than too little, especially for critical features.
+
+---
+
 ## 🤖 Best Practices for AI Assistants
  
 ### When Making Changes
