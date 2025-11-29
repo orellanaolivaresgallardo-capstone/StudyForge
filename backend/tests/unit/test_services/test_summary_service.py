@@ -287,6 +287,67 @@ async def test_create_summary_from_file_openai_error(
     mock_db.rollback.assert_called()
 
 
+@patch('app.services.summary_service.OpenAIService')
+@patch('app.services.summary_service.FileProcessor')
+@patch('app.services.summary_service.UserRepository')
+@patch('app.services.summary_service.DocumentRepository')
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
+@patch('app.core.dependencies.verify_space_ownership')
+@patch('app.services.summary_service.log_error')
+@pytest.mark.asyncio
+async def test_create_summary_from_file_generic_error(
+    mock_log_error, mock_verify_space, mock_space_repo, mock_doc_repo,
+    mock_user_repo, mock_file_processor, mock_openai_service
+):
+    """create_summary_from_file debe manejar errores genéricos inesperados"""
+    mock_db = MagicMock()
+    user_id = uuid4()
+    study_space_id = uuid4()
+
+    mock_file = Mock(spec=UploadFile)
+    mock_file.filename = "test.pdf"
+    mock_file.read = AsyncMock(return_value=b"content")
+    mock_file.seek = AsyncMock()
+
+    mock_file_processor.validate_file.return_value = ("test.pdf", "pdf")
+    mock_file_processor.extract_text = AsyncMock(return_value="Extracted text")
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+    mock_user.max_file_size_bytes = 10 * 1024 * 1024
+    mock_user.storage_available_bytes = 10 * 1024 * 1024
+    mock_user_repo.get_by_id.return_value = mock_user
+
+    mock_study_space = Mock()
+    mock_study_space.id = study_space_id
+    mock_space_repo.get_by_id.return_value = mock_study_space
+    mock_verify_space.return_value = mock_study_space
+
+    # Simular error inesperado en DocumentRepository.create
+    mock_doc_repo.create.side_effect = RuntimeError("Database connection lost")
+
+    mock_openai = Mock()
+    mock_openai.model = "gpt-4"
+    mock_openai.generate_summary.return_value = {"title": "Test", "summary": "Text"}
+    mock_openai_service.return_value = mock_openai
+
+    service = SummaryService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        await service.create_summary_from_file(
+            db=mock_db,
+            user_id=user_id,
+            study_space_id=study_space_id,
+            file=mock_file,
+            expertise_level=ExpertiseLevel.BASICO
+        )
+
+    assert exc_info.value.status_code == 500
+    assert "Error interno al crear resumen" in exc_info.value.detail
+    mock_db.rollback.assert_called()
+    mock_log_error.assert_called_once()
+
+
 # ========================================
 # TESTS PARA get_summaries()
 # ========================================
@@ -531,6 +592,130 @@ def test_create_summary_from_documents_with_space_context(
     # Verify that space_context was passed to generate_summary
     call_args = mock_openai.generate_summary.call_args
     assert call_args[1]["space_context"] == "Machine Learning space"
+
+
+@patch('app.services.summary_service.OpenAIService')
+@patch('app.services.summary_service.DocumentRepository')
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
+@patch('app.core.dependencies.verify_document_ownership')
+@patch('app.core.dependencies.verify_space_ownership')
+@patch('app.services.summary_service.log_openai_request')
+def test_create_summary_from_documents_openai_error(
+    mock_log_openai, mock_verify_space, mock_verify_doc, mock_space_repo,
+    mock_doc_repo, mock_openai_service
+):
+    """create_summary_from_documents debe manejar errores de OpenAI"""
+    mock_db = MagicMock()
+    user_id = uuid4()
+    doc_id = uuid4()
+    study_space_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_document = Mock(spec=Document)
+    mock_document.id = doc_id
+    mock_document.title = "Test Document"
+    mock_document.file_name = "test.pdf"
+    mock_document.extracted_text = "Document text"
+
+    mock_study_space = Mock()
+    mock_study_space.id = study_space_id
+    mock_study_space.name = "Test Space"
+
+    mock_doc_repo.get_by_id.return_value = mock_document
+    mock_verify_doc.return_value = mock_document
+    mock_space_repo.get_by_id.return_value = mock_study_space
+    mock_verify_space.return_value = mock_study_space
+
+    # Simular error de OpenAI
+    mock_openai = Mock()
+    mock_openai.model = "gpt-4"
+    mock_openai.generate_summary.side_effect = Exception("OpenAI rate limit exceeded")
+    mock_openai_service.return_value = mock_openai
+
+    service = SummaryService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.create_summary_from_documents(
+            db=mock_db,
+            user=mock_user,
+            document_id=doc_id,
+            study_space_id=study_space_id,
+            expertise_level=ExpertiseLevel.MEDIO
+        )
+
+    assert exc_info.value.status_code == 500
+    assert "Error al generar resumen" in exc_info.value.detail
+    # Verificar que se llamó log_openai_request con status="failed"
+    assert mock_log_openai.call_count == 1
+    assert mock_log_openai.call_args[1]["status"] == "failed"
+
+
+@patch('app.services.summary_service.OpenAIService')
+@patch('app.services.summary_service.DocumentRepository')
+@patch('app.services.summary_service.SummaryRepository')
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
+@patch('app.core.dependencies.verify_document_ownership')
+@patch('app.core.dependencies.verify_space_ownership')
+@patch('app.services.summary_service.log_openai_request')
+@patch('app.services.summary_service.log_error')
+def test_create_summary_from_documents_generic_error(
+    mock_log_error, mock_log_openai, mock_verify_space, mock_verify_doc, mock_space_repo,
+    mock_summary_repo, mock_doc_repo, mock_openai_service
+):
+    """create_summary_from_documents debe manejar errores genéricos inesperados"""
+    mock_db = MagicMock()
+    user_id = uuid4()
+    doc_id = uuid4()
+    study_space_id = uuid4()
+
+    mock_user = Mock(spec=User)
+    mock_user.id = user_id
+
+    mock_document = Mock(spec=Document)
+    mock_document.id = doc_id
+    mock_document.title = "Test Document"
+    mock_document.file_name = "test.pdf"
+    mock_document.extracted_text = "Document text"
+
+    mock_study_space = Mock()
+    mock_study_space.id = study_space_id
+    mock_study_space.name = "Test Space"
+
+    mock_doc_repo.get_by_id.return_value = mock_document
+    mock_verify_doc.return_value = mock_document
+    mock_space_repo.get_by_id.return_value = mock_study_space
+    mock_verify_space.return_value = mock_study_space
+
+    mock_openai = Mock()
+    mock_openai.model = "gpt-4"
+    mock_openai.generate_summary.return_value = {
+        "title": "Summary",
+        "summary": "Text",
+        "topics": [],
+        "key_concepts": []
+    }
+    mock_openai_service.return_value = mock_openai
+
+    # Simular error inesperado en SummaryRepository.create
+    mock_summary_repo.create.side_effect = RuntimeError("Database deadlock")
+
+    service = SummaryService()
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.create_summary_from_documents(
+            db=mock_db,
+            user=mock_user,
+            document_id=doc_id,
+            study_space_id=study_space_id,
+            expertise_level=ExpertiseLevel.MEDIO
+        )
+
+    assert exc_info.value.status_code == 500
+    assert "Error interno al crear resumen" in exc_info.value.detail
+    mock_db.rollback.assert_called()
+    mock_log_error.assert_called_once()
 
 
 # ========================================

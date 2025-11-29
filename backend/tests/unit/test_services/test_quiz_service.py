@@ -247,9 +247,11 @@ async def test_create_quiz_from_file_min_questions(mock_openai_settings, mock_qu
 
 @patch('app.repositories.document_repository.DocumentRepository')
 @patch('app.core.dependencies.verify_document_ownership')
+@patch('app.core.dependencies.verify_space_ownership')
+@patch('app.repositories.study_space_repository.StudySpaceRepository')
 @patch('app.services.quiz_service.QuizRepository')
 @patch('app.services.openai_service.settings')
-def test_create_quiz_from_document_success(mock_openai_settings, mock_quiz_repo, mock_verify, mock_doc_repo):
+def test_create_quiz_from_document_success(mock_openai_settings, mock_quiz_repo, mock_space_repo, mock_verify_space, mock_verify, mock_doc_repo):
     """create_quiz_from_document debe crear quiz desde documento existente"""
     mock_openai_settings.OPENAI_API_KEY = "sk-test-key"
     mock_openai_settings.OPENAI_MODEL = "gpt-4"
@@ -260,6 +262,12 @@ def test_create_quiz_from_document_success(mock_openai_settings, mock_quiz_repo,
     document_id = uuid4()
     space_id = uuid4()
 
+    # Mock space
+    mock_space = Mock()
+    mock_space.id = space_id
+    mock_space.user_id = user.id
+    mock_space.description = "Math study space"
+
     # Mock document with study space
     mock_document = Mock()
     mock_document.id = document_id
@@ -267,13 +275,12 @@ def test_create_quiz_from_document_success(mock_openai_settings, mock_quiz_repo,
     mock_document.title = "Test Document"
     mock_document.file_name = "test.pdf"
     mock_document.file_type = "application/pdf"
-    mock_space = Mock()
-    mock_space.id = space_id
-    mock_space.description = "Math study space"
-    mock_document.study_spaces = [mock_space]
+    mock_document.study_spaces = [mock_space]  # Document pertenece al espacio
 
     mock_doc_repo.get_by_id.return_value = mock_document
     mock_verify.return_value = mock_document
+    mock_space_repo.get_by_id.return_value = mock_space
+    mock_verify_space.return_value = mock_space
 
     # Mock adaptive difficulty
     mock_db.execute.return_value.scalars.return_value.all.return_value = []
@@ -285,7 +292,7 @@ def test_create_quiz_from_document_success(mock_openai_settings, mock_quiz_repo,
     with patch.object(service.openai_service, 'generate_quiz', return_value=[
         {"question": "Q1", "options": {"correct": "A"}, "explanation": "Exp1"}
     ]) as mock_generate:
-        result = service.create_quiz_from_document(mock_db, user, document_id, max_questions=None)
+        result = service.create_quiz_from_document(mock_db, user, document_id, space_id, max_questions=None)
 
     assert result == mock_quiz
     mock_doc_repo.get_by_id.assert_called_once_with(mock_db, document_id)
@@ -304,6 +311,7 @@ def test_create_quiz_from_document_empty_text_fails(mock_verify, mock_doc_repo):
     mock_db = MagicMock()
     user = Mock(id=uuid4())
     document_id = uuid4()
+    space_id = uuid4()
 
     mock_document = Mock()
     mock_document.extracted_text = ""  # Empty text
@@ -313,7 +321,7 @@ def test_create_quiz_from_document_empty_text_fails(mock_verify, mock_doc_repo):
     service = QuizService()
 
     with pytest.raises(HTTPException) as exc_info:
-        service.create_quiz_from_document(mock_db, user, document_id, max_questions=None)
+        service.create_quiz_from_document(mock_db, user, document_id, space_id, max_questions=None)
 
     assert exc_info.value.status_code == 400
     assert "texto extraído" in exc_info.value.detail.lower()
