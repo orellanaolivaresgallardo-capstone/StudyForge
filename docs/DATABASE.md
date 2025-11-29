@@ -1,6 +1,6 @@
 # Base de Datos — StudyForge
 
-**Última actualización:** 2025-11-20
+**Última actualización:** 2025-11-28
 
 Este documento describe la arquitectura de base de datos de StudyForge con PostgreSQL 18.
 
@@ -103,20 +103,29 @@ updated_at: datetime
 
 ```python
 id: UUID (PK)
-user_id: UUID (FK -> Users)
+user_id: UUID (FK -> Users, CASCADE on delete)
+document_id: UUID (FK -> Documents, nullable, SET NULL on delete)  # Documento fuente (opcional si fue eliminado)
+study_space_id: UUID (FK -> StudySpaces, NOT NULL, CASCADE on delete)  # Espacio obligatorio
 title: str
 content: jsonb  # Contenido estructurado del resumen
 expertise_level: enum('basico', 'medio', 'avanzado')
 topics: jsonb  # Lista de temas identificados
 key_concepts: jsonb  # Conceptos clave destacados
-original_file_name: str  # Solo el nombre, NO el contenido
-original_file_type: str  # pdf, pptx, docx, txt
+
+# Campos de caché denormalizados (preservación histórica)
+source_document_title: str (nullable)  # Cache del título del documento
+source_document_filename: str (nullable)  # Cache del nombre del archivo
+document_state: str (NOT NULL, default='active_in_space')  # Estados: 'active_in_space' | 'removed_from_space' | 'permanently_deleted'
+
 created_at: datetime
 updated_at: datetime
 ```
 
 **Índices**:
-- `INDEX (user_id)`
+- `INDEX (user_id)` - Para listado por usuario
+- `INDEX (document_id)` - Para buscar por documento fuente
+- `INDEX (study_space_id)` - Para listado por espacio
+- `INDEX (expertise_level)` - Para filtrado por nivel
 - `INDEX (created_at DESC)` - Para ordenar por fecha
 
 **Estructura de `content` (JSONB)**:
@@ -137,6 +146,10 @@ updated_at: datetime
 - JSONB permite flexibilidad en estructura de contenido
 - Soporta queries SQL sobre campos JSON
 - `topics` y `key_concepts` generados por OpenAI
+- **Denormalización**: `source_document_title` y `source_document_filename` se cachean para preservar información histórica
+- Si el documento es eliminado, `document_id` se pone en NULL pero el caché se mantiene para referencia
+- `document_state` rastrea el estado del documento fuente para la UI ('active_in_space' si existe, 'removed_from_space' si se quitó del espacio, 'permanently_deleted' si se eliminó)
+- Si el espacio de estudio se elimina, todos los resúmenes se eliminan en cascada
 
 ---
 
@@ -144,19 +157,30 @@ updated_at: datetime
 
 ```python
 id: UUID (PK)
-user_id: UUID (FK -> Users)
-summary_id: UUID (FK -> Summaries, nullable)  # Puede generarse de resumen o documento temporal
+user_id: UUID (FK -> Users, CASCADE on delete)
+study_space_id: UUID (FK -> StudySpaces, NOT NULL, CASCADE on delete)  # Espacio obligatorio
+source_type: str (NOT NULL)  # 'document' | 'summary' | 'study_space'
 title: str
-topic: str  # "general" o tema específico
 difficulty_level: int  # 1-5, adaptativo según desempeño
 questions: jsonb  # Array de preguntas con opciones en formato JSON
+
+# Source tracking con FKs opcionales (solo uno presente según source_type)
+source_document_id: UUID (FK -> Documents, nullable, SET NULL on delete)  # Si source_type='document'
+source_summary_id: UUID (FK -> Summaries, nullable, SET NULL on delete)  # Si source_type='summary'
+
+# Campos de caché denormalizados (preservación histórica)
+source_names: jsonb (nullable)  # Cache de nombres de sources (formato: {"document": "nombre.pdf", "summary": "Título del resumen"})
+source_metadata: jsonb (nullable)  # Cache de metadatos y estados adicionales
+
 created_at: datetime
 ```
 
 **Índices**:
-- `INDEX (user_id)`
-- `INDEX (summary_id) WHERE summary_id IS NOT NULL` - Índice parcial
-- `INDEX (topic)` - Para filtrado por tema
+- `INDEX (user_id)` - Para listado por usuario
+- `INDEX (study_space_id)` - Para listado por espacio
+- `INDEX (source_document_id)` - Para buscar por documento fuente
+- `INDEX (source_summary_id)` - Para buscar por resumen fuente
+- `INDEX (difficulty_level)` - Para filtrado por dificultad
 
 **Estructura de `questions` (JSONB)**:
 ```json
@@ -176,6 +200,11 @@ created_at: datetime
 - Formato semántico (no posiciones A/B/C/D fijas)
 - Máximo 30 preguntas por cuestionario
 - Randomización se hace al crear el attempt, no aquí
+- **Source tracking**: `source_type` determina el origen ('document', 'summary', 'study_space')
+- **CheckConstraint**: Valida que solo un source (document/summary/study_space) esté presente según `source_type`
+- **Denormalización**: `source_names` y `source_metadata` se cachean para preservar información histórica
+- Si el source es eliminado, el FK se pone en NULL pero el caché se mantiene para referencia
+- Si el espacio de estudio se elimina, todos los quizzes se eliminan en cascada
 
 ---
 
@@ -221,8 +250,16 @@ Users (1) ──< (N) Documents      [CASCADE DELETE]
 Users (1) ──< (N) Summaries      [CASCADE DELETE]
 Users (1) ──< (N) Quizzes        [CASCADE DELETE]
 Users (1) ──< (N) QuizAttempts   [CASCADE DELETE]
+Users (1) ──< (N) StudySpaces    [CASCADE DELETE]
 
-Summaries (1) ──< (N) Quizzes    [SET NULL on delete]
+StudySpaces (1) ──< (N) Documents     [Many-to-Many via study_space_documents]
+StudySpaces (1) ──< (N) Summaries     [CASCADE DELETE]  # Summaries pertenecen a un espacio
+StudySpaces (1) ──< (N) Quizzes       [CASCADE DELETE]  # Quizzes pertenecen a un espacio
+
+Documents (1) ──< (N) Summaries  [SET NULL on delete]  # Summary.document_id nullable
+Summaries (1) ──< (N) Quizzes    [SET NULL on delete]  # Quiz.source_summary_id nullable
+Documents (1) ──< (N) Quizzes    [SET NULL on delete]  # Quiz.source_document_id nullable
+
 Quizzes (1) ──< (N) QuizAttempts [CASCADE DELETE]
 ```
 
@@ -230,15 +267,30 @@ Quizzes (1) ──< (N) QuizAttempts [CASCADE DELETE]
 
 **Eliminar un usuario**:
 - ✅ Elimina todos sus documentos
-- ✅ Elimina todos sus resúmenes
-- ✅ Elimina todos sus quizzes
+- ✅ Elimina todos sus espacios de estudio
+- ✅ Elimina todos sus resúmenes (vía espacios)
+- ✅ Elimina todos sus quizzes (vía espacios)
 - ✅ Elimina todos sus intentos de quiz
 - **Implementación**: `ondelete="CASCADE"` en SQLAlchemy
 
+**Eliminar un espacio de estudio**:
+- ✅ Elimina todos los resúmenes asociados (CASCADE)
+- ✅ Elimina todos los quizzes asociados (CASCADE)
+- ✅ Elimina relaciones many-to-many con documentos
+- ❌ NO elimina los documentos (pueden estar en otros espacios)
+- **Implementación**: `ondelete="CASCADE"` en Summary.study_space_id y Quiz.study_space_id
+
+**Eliminar un documento**:
+- ❌ NO elimina resúmenes generados desde él
+- ❌ NO elimina quizzes generados desde él
+- ✅ Los resúmenes quedan con `document_id = NULL` pero conservan cache (source_document_title, source_document_filename)
+- ✅ Los quizzes quedan con `source_document_id = NULL` pero conservan cache (source_names)
+- **Implementación**: `ondelete="SET NULL"` + denormalización
+
 **Eliminar un resumen**:
 - ❌ NO elimina quizzes asociados
-- ✅ Los quizzes quedan con `summary_id = NULL`
-- **Implementación**: `ondelete="SET NULL"`
+- ✅ Los quizzes quedan con `source_summary_id = NULL` pero conservan cache (source_names)
+- **Implementación**: `ondelete="SET NULL"` + denormalización
 
 **Eliminar un quiz**:
 - ✅ Elimina todos los intentos asociados
@@ -346,29 +398,32 @@ GROUP BY u.id, u.username
 ORDER BY doc_count DESC
 LIMIT 10;
 
--- Progreso de usuario en quizzes por tema
+-- Progreso de usuario en quizzes por espacio de estudio
 SELECT
-  topic,
+  ss.name AS space_name,
   COUNT(*) AS total_attempts,
-  ROUND(AVG(score), 2) AS avg_score,
-  MAX(score) AS best_score
+  ROUND(AVG(qa.score), 2) AS avg_score,
+  MAX(qa.score) AS best_score
 FROM studyforge.quiz_attempts qa
 JOIN studyforge.quizzes q ON qa.quiz_id = q.id
+JOIN studyforge.study_spaces ss ON q.study_space_id = ss.id
 WHERE qa.user_id = '<uuid>' AND qa.completed_at IS NOT NULL
-GROUP BY topic
+GROUP BY ss.id, ss.name
 ORDER BY avg_score DESC;
 
--- Quizzes más difíciles (menor score promedio)
+-- Quizzes más difíciles (menor score promedio) por espacio
 SELECT
   q.title,
-  q.topic,
+  ss.name AS space_name,
   q.difficulty_level,
+  q.source_type,
   COUNT(qa.id) AS attempts,
   ROUND(AVG(qa.score), 2) AS avg_score
 FROM studyforge.quizzes q
+JOIN studyforge.study_spaces ss ON q.study_space_id = ss.id
 JOIN studyforge.quiz_attempts qa ON q.id = qa.quiz_id
 WHERE qa.completed_at IS NOT NULL
-GROUP BY q.id, q.title, q.topic, q.difficulty_level
+GROUP BY q.id, q.title, ss.name, q.difficulty_level, q.source_type
 HAVING COUNT(qa.id) >= 5
 ORDER BY avg_score ASC
 LIMIT 10;

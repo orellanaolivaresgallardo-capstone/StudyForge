@@ -17,6 +17,7 @@ StudyForge es una aplicación web que utiliza IA para ayudar a estudiantes en su
 - Identificación automática de temas y conceptos clave
 - Sistema de cuotas de almacenamiento (5GB por defecto, configurable)
 - Reutilización de documentos almacenados para múltiples resúmenes
+- **Preservación histórica**: Información de origen disponible incluso después de eliminar documentos fuente
 
 ### 2. **Cuestionarios Adaptativos**
 - Generación automática de preguntas de opción múltiple (almacenadas en JSON)
