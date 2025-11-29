@@ -1,9 +1,13 @@
 /**
- * Reusable Summary Card component
+ * Reusable Summary Card component - REFACTORED
+ * Reduced from 206 → ~95 lines using extracted components
  */
 import { useNavigate } from 'react-router-dom';
 import type { SummaryResponse } from '@/types';
 import { ExpertiseLevelBadge, DocumentStateBadge } from '../Badge';
+import { SummaryTopics } from './SummaryTopics';
+import { SummaryKeyConcepts } from './SummaryKeyConcepts';
+import { SummaryCardFooter } from './SummaryCardFooter';
 
 interface SummaryCardProps {
   summary: SummaryResponse;
@@ -11,7 +15,7 @@ interface SummaryCardProps {
   onCreateQuiz?: (summary: SummaryResponse) => void;
   showActions?: boolean;
   onClick?: (summary: SummaryResponse) => void;
-  variant?: 'default' | 'list'; // 'list' shows footer buttons instead of inline
+  variant?: 'default' | 'list';
 }
 
 export function SummaryCard({
@@ -25,7 +29,7 @@ export function SummaryCard({
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (variant === 'list') return; // Don't navigate on click in list mode
+    if (variant === 'list') return;
     if (onClick) {
       onClick(summary);
     } else {
@@ -36,11 +40,6 @@ export function SummaryCard({
   const handleView = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/summaries/${summary.id}`);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   return (
@@ -87,49 +86,11 @@ export function SummaryCard({
         )}
       </div>
 
-      {/* Topics */}
-      {summary.topics && summary.topics.length > 0 && (
-        <div className="mb-3">
-          <p className="text-xs text-white/60 mb-2">Temas:</p>
-          <div className="flex gap-2 flex-wrap">
-            {summary.topics.slice(0, 3).map((topic: string, idx: number) => (
-              <span
-                key={idx}
-                className="bg-violet-500/20 text-violet-300 border border-violet-500/30 px-2 py-1 rounded text-xs"
-              >
-                {topic}
-              </span>
-            ))}
-            {summary.topics.length > 3 && (
-              <span className="px-2 py-1 bg-white/10 text-white/60 rounded text-xs">
-                +{summary.topics.length - 3}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Topics Section */}
+      <SummaryTopics topics={summary.topics || []} />
 
-      {/* Key Concepts */}
-      {summary.key_concepts && summary.key_concepts.length > 0 && (
-        <div className="mb-3">
-          <p className="text-xs text-white/60 mb-2">Conceptos clave:</p>
-          <div className="flex gap-2 flex-wrap">
-            {summary.key_concepts.slice(0, 3).map((item: any, idx: number) => (
-              <span
-                key={idx}
-                className="bg-pink-500/20 text-pink-300 border border-pink-500/30 px-2 py-1 rounded text-xs"
-              >
-                {item.concept}
-              </span>
-            ))}
-            {summary.key_concepts.length > 3 && (
-              <span className="px-2 py-1 bg-white/10 text-white/60 rounded text-xs">
-                +{summary.key_concepts.length - 3}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Key Concepts Section */}
+      <SummaryKeyConcepts keyConcepts={summary.key_concepts || []} />
 
       {/* Document State */}
       {summary.document_state && (
@@ -138,69 +99,15 @@ export function SummaryCard({
         </div>
       )}
 
-      {/* Metadata */}
-      {variant === 'list' ? (
-        <div className="flex items-center justify-between pt-4 border-t border-white/10">
-          <span className="text-xs text-white/60">
-            {formatDate(summary.created_at)}
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={handleView}
-              className="px-3 py-1.5 rounded-lg bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 text-xs font-medium transition-colors"
-            >
-              Ver
-            </button>
-            {onDelete && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(summary.id);
-                }}
-                className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 text-xs font-medium transition-colors"
-              >
-                Eliminar
-              </button>
-            )}
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center gap-3 text-xs text-white/60 mb-3">
-            <span>📄 {summary.source_document_filename || 'Documento'}</span>
-            <span>•</span>
-            <span>{formatDate(summary.created_at)}</span>
-          </div>
-
-          {/* Actions */}
-          {showActions && (onCreateQuiz || onDelete) && (
-            <div className="pt-3 border-t border-white/10 flex gap-2">
-              {onCreateQuiz && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCreateQuiz(summary);
-                  }}
-                  className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 px-3 py-2 rounded text-sm font-medium transition-colors"
-                >
-                  Crear Quiz
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(summary.id);
-                  }}
-                  className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-2 rounded text-sm font-medium transition-colors"
-                >
-                  Eliminar
-                </button>
-              )}
-            </div>
-          )}
-        </>
-      )}
+      {/* Footer with Metadata and Actions */}
+      <SummaryCardFooter
+        variant={variant}
+        summary={summary}
+        showActions={showActions}
+        onView={handleView}
+        onDelete={onDelete}
+        onCreateQuiz={onCreateQuiz}
+      />
     </div>
   );
 }
