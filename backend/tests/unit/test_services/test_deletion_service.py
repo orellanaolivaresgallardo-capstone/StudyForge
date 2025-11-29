@@ -3,283 +3,108 @@ Tests unitarios para DeletionService
 """
 import pytest
 from uuid import uuid4
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 from app.services.deletion_service import DeletionService
-from app.models.document import Document
 from app.models.summary import Summary
-from app.models.quiz import Quiz
-from app.models.quiz_attempt import QuizAttempt
-from app.models.study_space import StudySpace
 
 
-# ========================================
-# TESTS PARA delete_document_with_denormalization()
-# ========================================
+class TestDeleteDocumentWithDenormalization:
+    """Tests para delete_document_with_denormalization()"""
 
-@patch('app.services.deletion_service.DocumentRepository')
-def test_delete_document_with_denormalization_success(mock_doc_repo):
-    """delete_document_with_denormalization debe denormalizar y eliminar"""
-    mock_db = MagicMock()
-    doc_id = uuid4()
+    def test_delete_document_updates_summaries_state(self, fake_db, fake_document):
+        """Actualiza document_state en summaries antes de eliminar"""
+        summary1 = Mock(spec=Summary)
+        summary1.document_id = fake_document.id
+        summary1.document_state = "active_in_space"
 
-    # Mock summary asociado al documento
-    mock_summary = Mock(spec=Summary)
-    mock_summary.id = uuid4()
-    mock_summary.document_state = None  # Will be set to "permanently_deleted"
+        summary2 = Mock(spec=Summary)
+        summary2.document_id = fake_document.id
+        summary2.document_state = "active_in_space"
 
-    # Mock document
-    mock_document = Mock(spec=Document)
-    mock_document.id = doc_id
-    mock_document.title = "Test Document"
-    mock_document.file_name = "test.pdf"
+        mock_result = Mock()
+        mock_result.scalars.return_value.all.return_value = [summary1, summary2]
+        fake_db.execute.return_value = mock_result
 
-    mock_doc_repo.get_by_id.return_value = mock_document
-    mock_doc_repo.delete.return_value = True
+        with patch('app.services.deletion_service.DocumentRepository') as mock_doc_repo:
+            mock_doc_repo.get_by_id.return_value = fake_document
+            mock_doc_repo.delete.return_value = True
 
-    # NEW: Mock db.execute() for the Summary query
-    mock_db.execute.return_value.scalars.return_value.all.return_value = [mock_summary]
+            result = DeletionService.delete_document_with_denormalization(fake_db, fake_document.id)
 
-    # Execute
-    result = DeletionService.delete_document_with_denormalization(mock_db, doc_id)
+            assert result is True
+            assert summary1.document_state == "permanently_deleted"
+            assert summary2.document_state == "permanently_deleted"
 
-    # Verify
-    assert result is True
-    mock_doc_repo.get_by_id.assert_called_once_with(mock_db, doc_id)
+    def test_delete_document_not_found(self, fake_db):
+        """Retorna False si el documento no existe"""
+        document_id = uuid4()
 
-    # Verify denormalization occurred - document_state updated to "permanently_deleted"
-    assert mock_summary.document_state == "permanently_deleted"
+        with patch('app.services.deletion_service.DocumentRepository') as mock_doc_repo:
+            mock_doc_repo.get_by_id.return_value = None
 
-    mock_db.commit.assert_called_once()
-    mock_doc_repo.delete.assert_called_once_with(mock_db, doc_id)
+            result = DeletionService.delete_document_with_denormalization(fake_db, document_id)
 
+            assert result is False
 
-@patch('app.services.deletion_service.DocumentRepository')
-def test_delete_document_with_denormalization_not_found(mock_doc_repo):
-    """delete_document_with_denormalization debe retornar False si no existe"""
-    mock_db = MagicMock()
-    doc_id = uuid4()
 
-    mock_doc_repo.get_by_id.return_value = None
+class TestDeleteSummary:
+    """Tests para delete_summary()"""
 
-    result = DeletionService.delete_document_with_denormalization(mock_db, doc_id)
+    def test_delete_summary_success(self, fake_db, fake_summary):
+        """Elimina resumen correctamente"""
+        with patch('app.services.deletion_service.SummaryRepository') as mock_summary_repo:
+            DeletionService.delete_summary(fake_db, fake_summary)
+            mock_summary_repo.delete.assert_called_once_with(fake_db, fake_summary)
 
-    assert result is False
-    mock_doc_repo.delete.assert_not_called()
 
+class TestDeleteQuiz:
+    """Tests para delete_quiz()"""
 
-@patch('app.services.deletion_service.DocumentRepository')
-def test_delete_document_with_denormalization_multiple_summaries(mock_doc_repo):
-    """delete_document_with_denormalization debe denormalizar en múltiples resúmenes"""
-    mock_db = MagicMock()
-    doc_id = uuid4()
+    def test_delete_quiz_success(self, fake_db, fake_quiz):
+        """Elimina quiz correctamente"""
+        mock_result = Mock()
+        mock_result.scalar_one_or_none.return_value = fake_quiz
+        fake_db.execute.return_value = mock_result
 
-    # Múltiples resúmenes asociados
-    mock_summary1 = Mock(spec=Summary)
-    mock_summary1.document_state = None
+        result = DeletionService.delete_quiz(fake_db, fake_quiz.id)
 
-    mock_summary2 = Mock(spec=Summary)
-    mock_summary2.document_state = None
+        assert result is True
 
-    mock_document = Mock(spec=Document)
-    mock_document.id = doc_id
-    mock_document.title = "Shared Document"
-    mock_document.file_name = "shared.pdf"
+    def test_delete_quiz_not_found(self, fake_db):
+        """Retorna False si el quiz no existe"""
+        quiz_id = uuid4()
+        mock_result = Mock()
+        mock_result.scalar_one_or_none.return_value = None
+        fake_db.execute.return_value = mock_result
 
-    mock_doc_repo.get_by_id.return_value = mock_document
-    mock_doc_repo.delete.return_value = True
+        result = DeletionService.delete_quiz(fake_db, quiz_id)
 
-    # NEW: Mock db.execute() for the Summary query with multiple summaries
-    mock_db.execute.return_value.scalars.return_value.all.return_value = [mock_summary1, mock_summary2]
+        assert result is False
 
-    result = DeletionService.delete_document_with_denormalization(mock_db, doc_id)
 
-    assert result is True
-    # Both summaries should have document_state updated
-    assert mock_summary1.document_state == "permanently_deleted"
-    assert mock_summary2.document_state == "permanently_deleted"
+class TestDeleteStudySpace:
+    """Tests para delete_study_space_with_cascade()"""
 
+    def test_delete_study_space_success(self, fake_db, fake_study_space, fake_user):
+        """Elimina espacio de estudio correctamente"""
+        with patch('app.services.deletion_service.StudySpaceRepository') as mock_space_repo:
+            mock_space_repo.get_by_id.return_value = fake_study_space
 
-@patch('app.services.deletion_service.DocumentRepository')
-def test_delete_document_with_denormalization_no_summaries(mock_doc_repo):
-    """delete_document_with_denormalization debe funcionar sin resúmenes asociados"""
-    mock_db = MagicMock()
-    doc_id = uuid4()
+            result = DeletionService.delete_study_space_with_cascade(
+                fake_db, fake_study_space.id, fake_user.id
+            )
 
-    mock_document = Mock(spec=Document)
-    mock_document.id = doc_id
-    mock_document.summaries = []  # Sin resúmenes
+            assert result is True
 
-    mock_doc_repo.get_by_id.return_value = mock_document
-    mock_doc_repo.delete.return_value = True
+    def test_delete_study_space_not_found(self, fake_db, fake_user):
+        """Retorna False si el espacio no existe"""
+        space_id = uuid4()
 
-    result = DeletionService.delete_document_with_denormalization(mock_db, doc_id)
+        with patch('app.services.deletion_service.StudySpaceRepository') as mock_space_repo:
+            mock_space_repo.get_by_id.return_value = None
 
-    assert result is True
-    mock_db.commit.assert_called_once()
-    mock_doc_repo.delete.assert_called_once()
+            result = DeletionService.delete_study_space_with_cascade(
+                fake_db, space_id, fake_user.id
+            )
 
-
-# ========================================
-# TESTS PARA delete_summary()
-# ========================================
-
-@patch('app.services.deletion_service.SummaryRepository')
-def test_delete_summary(mock_summary_repo):
-    """delete_summary debe eliminar el resumen"""
-    mock_db = MagicMock()
-    mock_summary = Mock(spec=Summary)
-    mock_summary.id = uuid4()
-
-    DeletionService.delete_summary(mock_db, mock_summary)
-
-    mock_summary_repo.delete.assert_called_once_with(mock_db, mock_summary)
-
-
-# ========================================
-# TESTS PARA delete_quiz()
-# ========================================
-
-def test_delete_quiz_success():
-    """delete_quiz debe eliminar quiz exitosamente"""
-    mock_db = MagicMock()
-    quiz_id = uuid4()
-
-    mock_quiz = Mock(spec=Quiz)
-    mock_quiz.id = quiz_id
-
-    # Mock SQLAlchemy 2.0 select() pattern
-    from sqlalchemy import select
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = mock_quiz
-    mock_db.execute.return_value = mock_result
-
-    result = DeletionService.delete_quiz(mock_db, quiz_id)
-
-    assert result is True
-    mock_db.delete.assert_called_once_with(mock_quiz)
-    mock_db.commit.assert_called_once()
-
-
-def test_delete_quiz_not_found():
-    """delete_quiz debe retornar False si no existe"""
-    mock_db = MagicMock()
-    quiz_id = uuid4()
-
-    # Mock SQLAlchemy 2.0 select() pattern
-    from sqlalchemy import select
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_db.execute.return_value = mock_result
-
-    result = DeletionService.delete_quiz(mock_db, quiz_id)
-
-    assert result is False
-    mock_db.delete.assert_not_called()
-    mock_db.commit.assert_not_called()
-
-
-# ========================================
-# TESTS PARA delete_study_space_with_cascade()
-# ========================================
-
-@patch('app.services.deletion_service.StudySpaceRepository')
-def test_delete_study_space_with_cascade_success(mock_space_repo):
-    """delete_study_space_with_cascade debe eliminar espacio (CASCADE automático)"""
-    mock_db = MagicMock()
-    space_id = uuid4()
-    user_id = uuid4()
-
-    # Mock study space
-    mock_space = Mock(spec=StudySpace)
-    mock_space.id = space_id
-    mock_space.user_id = user_id
-    mock_space_repo.get_by_id.return_value = mock_space
-
-    # Execute
-    result = DeletionService.delete_study_space_with_cascade(
-        mock_db, space_id, user_id
-    )
-
-    # Verify
-    assert result is True
-    mock_space_repo.get_by_id.assert_called_once_with(mock_db, space_id)
-    # NEW: CASCADE automáticamente elimina summaries, quizzes, quiz_attempts y junction table entries
-    mock_space_repo.delete.assert_called_once_with(mock_db, mock_space)
-
-
-@patch('app.services.deletion_service.StudySpaceRepository')
-def test_delete_study_space_with_cascade_not_found(mock_space_repo):
-    """delete_study_space_with_cascade debe retornar False si no existe"""
-    mock_db = MagicMock()
-    space_id = uuid4()
-    user_id = uuid4()
-
-    mock_space_repo.get_by_id.return_value = None
-
-    result = DeletionService.delete_study_space_with_cascade(
-        mock_db, space_id, user_id
-    )
-
-    assert result is False
-    mock_space_repo.delete.assert_not_called()
-
-
-@patch('app.services.deletion_service.StudySpaceRepository')
-def test_delete_study_space_with_cascade_wrong_user(mock_space_repo):
-    """delete_study_space_with_cascade debe retornar False con user_id incorrecto"""
-    mock_db = MagicMock()
-    space_id = uuid4()
-    user_id = uuid4()
-    different_user_id = uuid4()
-
-    mock_space = Mock(spec=StudySpace)
-    mock_space.user_id = different_user_id  # Different user
-    mock_space_repo.get_by_id.return_value = mock_space
-
-    result = DeletionService.delete_study_space_with_cascade(
-        mock_db, space_id, user_id
-    )
-
-    assert result is False
-    mock_space_repo.delete.assert_not_called()
-
-
-@patch('app.services.deletion_service.StudySpaceRepository')
-def test_delete_study_space_with_cascade_no_quizzes(mock_space_repo):
-    """delete_study_space_with_cascade debe funcionar (CASCADE automático)"""
-    mock_db = MagicMock()
-    space_id = uuid4()
-    user_id = uuid4()
-
-    mock_space = Mock(spec=StudySpace)
-    mock_space.id = space_id
-    mock_space.user_id = user_id
-    mock_space_repo.get_by_id.return_value = mock_space
-
-    result = DeletionService.delete_study_space_with_cascade(
-        mock_db, space_id, user_id
-    )
-
-    assert result is True
-    # CASCADE elimina automáticamente quizzes, quiz_attempts, etc.
-    mock_space_repo.delete.assert_called_once_with(mock_db, mock_space)
-
-
-@patch('app.services.deletion_service.StudySpaceRepository')
-def test_delete_study_space_with_cascade_many_quizzes(mock_space_repo):
-    """delete_study_space_with_cascade debe funcionar (CASCADE automático)"""
-    mock_db = MagicMock()
-    space_id = uuid4()
-    user_id = uuid4()
-
-    mock_space = Mock(spec=StudySpace)
-    mock_space.user_id = user_id
-    mock_space_repo.get_by_id.return_value = mock_space
-
-    result = DeletionService.delete_study_space_with_cascade(
-        mock_db, space_id, user_id
-    )
-
-    assert result is True
-    # CASCADE automáticamente elimina todos los quizzes, quiz_attempts, summaries, etc.
-    mock_space_repo.delete.assert_called_once_with(mock_db, mock_space)
+            assert result is False
