@@ -1,0 +1,76 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(done)",
+      "Bash(cd:*)",
+      "Bash(ls:*)",
+      "Bash(dir:*)",
+      "Bash(pwd)",
+      "Bash(find:*)",
+      "Bash(echo:*)",
+
+      "Bash(python:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python app/main.py:*)",
+      "Bash(python manage.py:*)",
+
+      "Bash(backend/.venv/Scripts/activate:*)",
+      "Bash(backend/.venv/Scripts/activate.bat:*)",
+      "Bash(backend/.venv/Scripts/python.exe:*)",
+      "Bash(backend/.venv/Scripts/python:*)",
+      "Bash(backend/.venv/Scripts/pip.exe:*)",
+      "Bash(backend/.venv/Scripts/pip:*)",
+      "Bash(backend/.venv/Scripts/pytest.exe:*)",
+      "Bash(backend/.venv/Scripts/alembic.exe:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(.venv/Scripts/alembic:*)",
+      "Bash(deactivate:*)",
+
+      "Bash(pytest:*)",
+      "Bash(alembic:*)",
+      "Bash(alembic current:*)",
+      "Bash(uvicorn:*)",
+
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(pnpm:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build:*)",
+
+      "Bash(npx:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(tsc:*)",
+
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+
+      "Bash(psql:*)",
+      "Bash(curl:*)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(nul)"
+    ],
+    "deny": [],
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(git reset:*)",
+      "Bash(rm:*)",
+      "Bash(del:*)"
+    ]
+  },
+  "outputStyle": "default"
+}

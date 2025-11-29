@@ -17,8 +17,6 @@ dist/
 
 # Asistentes de IA
 .openai/
-.claude/
-CLAUDE.md
 .github/
 
 # Entornos
