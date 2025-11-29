@@ -3,6 +3,7 @@
 Router de documentos - Subir, listar, obtener y eliminar documentos.
 Con validación de cuotas de almacenamiento por usuario.
 """
+import os
 from uuid import UUID
 from typing import List
 from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException, status
@@ -25,7 +26,7 @@ from app.models.user import User
 router = APIRouter()
 
 
-@router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentDetailResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(..., description="Archivo a subir (PDF, DOCX, PPTX, TXT)"),
     study_space_ids: str = Form(..., description="IDs de espacios de estudio (separados por coma), al menos uno requerido"),
@@ -118,10 +119,12 @@ async def upload_document(
     extracted_text = await FileProcessor.extract_text(file)
 
     # 6. Crear documento en BD
+    # Si no se especifica título, usar filename sin extensión (más user-friendly)
+    default_title = os.path.splitext(filename)[0]  # "math.txt" → "math"
     document = DocumentRepository.create(
         db=db,
         user_id=current_user.id,
-        title=title or filename,
+        title=title or default_title,
         file_name=filename,
         file_type=file_type,
         file_size_bytes=file_size_bytes,
