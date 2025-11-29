@@ -96,7 +96,8 @@ class DocumentRepository:
             .offset(skip)
             .limit(limit)
         )
-        return list(db.execute(stmt).scalars().all())
+        # NOTE: .unique() is required when using joinedload() with collections
+        return list(db.execute(stmt).unique().scalars().all())
 
     @staticmethod
     def count_by_user(db: Session, user_id: UUID) -> int:

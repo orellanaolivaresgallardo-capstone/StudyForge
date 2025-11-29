@@ -146,7 +146,8 @@ def test_get_by_user_with_results():
         Mock(spec=Document, id=uuid4(), title="Doc 3"),
     ]
 
-    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_docs
+    # NOTE: .unique() is required when using joinedload() with collections
+    mock_db.execute.return_value.unique.return_value.scalars.return_value.all.return_value = mock_docs
 
     result = DocumentRepository.get_by_user(mock_db, user_id)
 
@@ -164,7 +165,8 @@ def test_get_by_user_with_pagination():
         Mock(spec=Document, id=uuid4(), title="Doc 5"),
     ]
 
-    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_docs
+    # NOTE: .unique() is required when using joinedload() with collections
+    mock_db.execute.return_value.unique.return_value.scalars.return_value.all.return_value = mock_docs
 
     result = DocumentRepository.get_by_user(mock_db, user_id, skip=3, limit=2)
 

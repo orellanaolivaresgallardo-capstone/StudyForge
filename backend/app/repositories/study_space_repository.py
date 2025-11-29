@@ -41,7 +41,7 @@ class StudySpaceRepository:
             .options(joinedload(StudySpace.summaries), joinedload(StudySpace.documents))
             .where(StudySpace.id == space_id)
         )
-        return db.execute(stmt).scalar_one_or_none()
+        return db.execute(stmt).unique().scalar_one_or_none()
 
     @staticmethod
     def get_by_user(
@@ -133,8 +133,8 @@ class StudySpaceRepository:
             }
         """
         from sqlalchemy.orm import joinedload
-        from app.repositories.quiz_attempt_repository import QuizAttemptRepository
-        from app.models import Quiz
+        from sqlalchemy import case, desc
+        from app.models import Quiz, QuizAttempt
 
         # 1. Contar total (sin paginación)
         count_stmt = select(func.count()).select_from(StudySpace).where(StudySpace.user_id == user_id)
@@ -152,28 +152,78 @@ class StudySpaceRepository:
             .offset(skip)
             .limit(limit)
         )
-        spaces = list(db.execute(spaces_stmt).scalars().all())
+        # NOTE: .unique() is required when using joinedload() with collections
+        spaces = list(db.execute(spaces_stmt).unique().scalars().all())
 
-        # 3. Para cada espacio, calcular stats
+        if not spaces:
+            return [], total
+
+        # 3. Obtener IDs de los espacios paginados
+        space_ids = [space.id for space in spaces]
+
+        # 4. Query optimizada: Obtener TODAS las stats de TODOS los espacios en UNA SOLA QUERY
+        # Subconsulta para los últimos 5 intentos por espacio
+        recent_attempts_subq = (
+            select(
+                Quiz.study_space_id,
+                QuizAttempt.score,
+                func.row_number().over(
+                    partition_by=Quiz.study_space_id,
+                    order_by=desc(QuizAttempt.completed_at)
+                ).label('rn')
+            )
+            .select_from(QuizAttempt)
+            .join(Quiz, QuizAttempt.quiz_id == Quiz.id)
+            .where(
+                QuizAttempt.user_id == user_id,
+                Quiz.study_space_id.in_(space_ids),
+                QuizAttempt.completed_at.isnot(None)
+            )
+        ).subquery()
+
+        # Query principal con agregaciones
+        stats_stmt = (
+            select(
+                Quiz.study_space_id,
+                func.count(func.distinct(Quiz.id)).label('num_quizzes'),
+                func.avg(
+                    case(
+                        (recent_attempts_subq.c.rn <= 5, recent_attempts_subq.c.score),
+                        else_=None
+                    )
+                ).label('avg_score')
+            )
+            .select_from(Quiz)
+            .outerjoin(
+                recent_attempts_subq,
+                Quiz.study_space_id == recent_attempts_subq.c.study_space_id
+            )
+            .where(Quiz.study_space_id.in_(space_ids))
+            .group_by(Quiz.study_space_id)
+        )
+
+        stats_result = db.execute(stats_stmt).all()
+
+        # 5. Crear lookup dict para stats por space_id
+        stats_by_space = {
+            row.study_space_id: {
+                'num_quizzes': row.num_quizzes or 0,
+                'avg_score': round(row.avg_score, 2) if row.avg_score else 0.0
+            }
+            for row in stats_result
+        }
+
+        # 6. Combinar espacios con stats
         result = []
         for space in spaces:
-            # Contar quizzes del espacio
-            quiz_count_stmt = select(func.count()).select_from(Quiz).where(Quiz.study_space_id == space.id)
-            num_quizzes = db.execute(quiz_count_stmt).scalar() or 0
-
-            # Calcular promedio usando mismo método que adaptive difficulty
-            recent_attempts = QuizAttemptRepository.get_recent_attempts_by_space(
-                db, user_id, space.id, limit=5
-            )
-            scores = [a.score for a in recent_attempts if a.score is not None]
-            avg_score = round(sum(scores) / len(scores), 2) if scores else 0.0
+            stats = stats_by_space.get(space.id, {'num_quizzes': 0, 'avg_score': 0.0})
 
             result.append({
                 'space': space,
                 'num_documents': len(space.documents),
                 'num_summaries': len(space.summaries),
-                'num_quizzes': num_quizzes,
-                'avg_score': avg_score
+                'num_quizzes': stats['num_quizzes'],
+                'avg_score': stats['avg_score']
             })
 
         return result, total

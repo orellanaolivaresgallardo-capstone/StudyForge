@@ -152,19 +152,22 @@ class QuizRepository:
         Returns:
             Lista de cuestionarios del espacio
         """
+        from sqlalchemy.orm import joinedload
+        from app.models.summary import Summary
+
         stmt = (
             select(Quiz)
             .where(Quiz.study_space_id == space_id)
             .where(Quiz.user_id == user_id)
             .options(
                 joinedload(Quiz.study_space),
-                joinedload(Quiz.summary)
+                joinedload(Quiz.summary).joinedload(Summary.document)  # ← Fix: eager load document (singular, one-to-one)
             )
             .order_by(Quiz.created_at.desc())
             .offset(skip)
             .limit(limit)
         )
-        return list(db.execute(stmt).scalars().all())
+        return list(db.execute(stmt).unique().scalars().all())
 
     @staticmethod
     def count_quizzes_by_space(db: Session, space_id: UUID, user_id: UUID) -> int:

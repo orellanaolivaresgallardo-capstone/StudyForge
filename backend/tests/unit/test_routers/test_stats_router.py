@@ -276,12 +276,11 @@ class TestGetProgressBySpace:
         fake_attempt2 = Mock()
         fake_attempt2.score = 90.0
 
-        # Configurar mocks de queries
-        mock_spaces_query = Mock()
-        mock_spaces_query.options.return_value = mock_spaces_query
-        mock_spaces_query.filter.return_value = mock_spaces_query
-        mock_spaces_query.all.return_value = [fake_study_space]
+        # Mock para SQLAlchemy 2.0 API (select query para espacios)
+        # NOTE: .unique() is required when using joinedload() with collections
+        fake_db.execute.return_value.unique.return_value.scalars.return_value.all.return_value = [fake_study_space]
 
+        # Mock para legacy API (db.query para quizzes y attempts)
         mock_quiz_query = Mock()
         mock_quiz_query.filter.return_value = mock_quiz_query
 
@@ -289,9 +288,7 @@ class TestGetProgressBySpace:
         mock_attempt_query.filter.return_value = mock_attempt_query
 
         def query_side_effect(model):
-            if "StudySpace" in str(model):
-                return mock_spaces_query
-            elif "Quiz" in str(model) and "Attempt" not in str(model):
+            if "Quiz" in str(model) and "Attempt" not in str(model):
                 # Primera llamada: quizzes del espacio
                 # Segunda llamada: quizzes globales
                 if not hasattr(query_side_effect, 'quiz_call_count'):
@@ -326,19 +323,17 @@ class TestGetProgressBySpace:
 
     def test_get_progress_by_space_no_spaces(self, fake_user, fake_db):
         """Debe manejar usuario sin espacios"""
-        mock_spaces_query = Mock()
-        mock_spaces_query.options.return_value = mock_spaces_query
-        mock_spaces_query.filter.return_value = mock_spaces_query
-        mock_spaces_query.all.return_value = []
+        # Mock para SQLAlchemy 2.0 API (select query para espacios)
+        # NOTE: .unique() is required when using joinedload() with collections
+        fake_db.execute.return_value.unique.return_value.scalars.return_value.all.return_value = []
 
+        # Mock para legacy API (db.query para quizzes globales)
         mock_quiz_query = Mock()
         mock_quiz_query.filter.return_value = mock_quiz_query
         mock_quiz_query.all.return_value = []
 
         def query_side_effect(model):
-            if "StudySpace" in str(model):
-                return mock_spaces_query
-            elif "Quiz" in str(model):
+            if "Quiz" in str(model):
                 return mock_quiz_query
             return Mock()
 
@@ -350,18 +345,18 @@ class TestGetProgressBySpace:
 
     def test_get_progress_by_space_with_global_quizzes(self, fake_user, fake_db):
         """Debe incluir entrada 'Global' para quizzes sin espacio"""
-        # No hay espacios, pero hay quizzes globales
-        mock_spaces_query = Mock()
-        mock_spaces_query.options.return_value = mock_spaces_query
-        mock_spaces_query.filter.return_value = mock_spaces_query
-        mock_spaces_query.all.return_value = []
+        # Mock para SQLAlchemy 2.0 API (select query para espacios)
+        # NOTE: .unique() is required when using joinedload() with collections
+        fake_db.execute.return_value.unique.return_value.scalars.return_value.all.return_value = []
 
+        # No hay espacios, pero hay quizzes globales
         fake_global_quiz = Mock()
         fake_global_quiz.id = uuid4()
 
         fake_attempt = Mock()
         fake_attempt.score = 88.0
 
+        # Mock para legacy API (db.query para quizzes y attempts)
         mock_quiz_query = Mock()
         mock_quiz_query.filter.return_value = mock_quiz_query
         mock_quiz_query.all.return_value = [fake_global_quiz]
@@ -371,9 +366,7 @@ class TestGetProgressBySpace:
         mock_attempt_query.all.return_value = [fake_attempt]
 
         def query_side_effect(model):
-            if "StudySpace" in str(model):
-                return mock_spaces_query
-            elif "Quiz" in str(model) and "Attempt" not in str(model):
+            if "Quiz" in str(model) and "Attempt" not in str(model):
                 return mock_quiz_query
             elif "QuizAttempt" in str(model):
                 return mock_attempt_query
@@ -395,19 +388,17 @@ class TestGetProgressBySpace:
         fake_study_space.documents = []
         fake_study_space.summaries = []
 
-        mock_spaces_query = Mock()
-        mock_spaces_query.options.return_value = mock_spaces_query
-        mock_spaces_query.filter.return_value = mock_spaces_query
-        mock_spaces_query.all.return_value = [fake_study_space]
+        # Mock para SQLAlchemy 2.0 API (select query para espacios)
+        # NOTE: .unique() is required when using joinedload() with collections
+        fake_db.execute.return_value.unique.return_value.scalars.return_value.all.return_value = [fake_study_space]
 
+        # Mock para legacy API (db.query para quizzes)
         mock_quiz_query = Mock()
         mock_quiz_query.filter.return_value = mock_quiz_query
         mock_quiz_query.all.return_value = []
 
         def query_side_effect(model):
-            if "StudySpace" in str(model):
-                return mock_spaces_query
-            elif "Quiz" in str(model):
+            if "Quiz" in str(model):
                 return mock_quiz_query
             return Mock()
 
@@ -435,11 +426,11 @@ class TestGetProgressBySpace:
         fake_attempt3 = Mock()
         fake_attempt3.score = 95.0
 
-        mock_spaces_query = Mock()
-        mock_spaces_query.options.return_value = mock_spaces_query
-        mock_spaces_query.filter.return_value = mock_spaces_query
-        mock_spaces_query.all.return_value = [fake_study_space]
+        # Mock para SQLAlchemy 2.0 API (select query para espacios)
+        # NOTE: .unique() is required when using joinedload() with collections
+        fake_db.execute.return_value.unique.return_value.scalars.return_value.all.return_value = [fake_study_space]
 
+        # Mock para legacy API (db.query para quizzes y attempts)
         mock_quiz_query = Mock()
         mock_quiz_query.filter.return_value = mock_quiz_query
 
@@ -447,9 +438,7 @@ class TestGetProgressBySpace:
         mock_attempt_query.filter.return_value = mock_attempt_query
 
         def query_side_effect(model):
-            if "StudySpace" in str(model):
-                return mock_spaces_query
-            elif "Quiz" in str(model) and "Attempt" not in str(model):
+            if "Quiz" in str(model) and "Attempt" not in str(model):
                 if not hasattr(query_side_effect, 'quiz_call_count'):
                     query_side_effect.quiz_call_count = 0
                 query_side_effect.quiz_call_count += 1

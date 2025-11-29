@@ -34,7 +34,19 @@ class Settings(BaseSettings):
     # Entorno
     ENV: str = "development"
     DEBUG: bool = True
-    LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    LOG_LEVEL: str = "DEBUG"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+    # Logging a archivos
+    LOG_TO_FILE: bool = True  # Habilitar guardado de logs en archivo
+    LOG_FILE_PATH: str = "logs/studyforge.log"  # Ruta del archivo de log
+    LOG_FILE_MAX_BYTES: int = 10485760  # 10 MB por archivo
+    LOG_FILE_BACKUP_COUNT: int = 5  # Mantener 5 archivos históricos
+
+    # SQL Logging
+    LOG_SQL_QUERIES: bool = True  # Habilitar logging de queries SQL
+    LOG_SQL_LEVEL: str = "DEBUG"  # Nivel de logging SQL (DEBUG, INFO)
+    LOG_SQL_TO_SEPARATE_FILE: bool = False  # Guardar SQL en archivo separado
+    LOG_SQL_FILE_PATH: str = "logs/sql.log"  # Ruta del archivo de SQL (si está separado)
 
     # CORS
     CORS_ORIGINS: list[str] = [

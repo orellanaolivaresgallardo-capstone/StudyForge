@@ -283,27 +283,22 @@ def get_space_quizzes(
     # Enrich with metadata
     enriched_quizzes = []
     for quiz in quizzes:
-        # Determine source_type
-        if quiz.study_space_id:
-            source_type = "space"
-        elif quiz.summary_id:
-            source_type = "summary"
-        else:
-            source_type = "file"
-
         quiz_dict = {
             "id": quiz.id,
             "user_id": quiz.user_id,
-            "summary_id": quiz.summary_id,
-            "study_space_id": quiz.study_space_id,
+            "study_space_id": quiz.study_space_id,  # NOW: Always present (NOT NULL)
+            "source_type": quiz.source_type,  # NEW: 'document' | 'summary' | 'study_space'
             "title": quiz.title,
             "difficulty_level": quiz.difficulty_level,
             "created_at": quiz.created_at,
             "questions": quiz.questions,
+            # NEW: Source tracking fields
+            "source_document_id": quiz.source_document_id,
+            "source_summary_id": quiz.source_summary_id,
+            "source_names": quiz.source_names,  # JSONB cache
+            "source_metadata": quiz.source_metadata,  # JSONB cache
+            # Computed fields
             "study_space_name": space.name,
-            "summary_title": quiz.summary.title if quiz.summary else None,
-            "document_names": [d.file_name for d in quiz.summary.documents] if quiz.summary else [],
-            "source_type": source_type,
             "num_questions": len(quiz.questions),
             "num_attempts": QuizAttemptRepository.count_attempts_by_quiz(db, quiz.id, current_user.id)
         }

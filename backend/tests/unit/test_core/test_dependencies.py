@@ -31,9 +31,9 @@ def test_get_current_user_valid_token(monkeypatch):
     mock_user.email = "test@example.com"
     mock_user.is_active = True
 
-    # Mock de la base de datos
+    # Mock de la base de datos (SQLAlchemy 2.0 API)
     mock_db = MagicMock()
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_user
 
     # Mock de decode_access_token
     def mock_decode(token):
@@ -95,9 +95,9 @@ def test_get_current_user_not_found(monkeypatch):
     """get_current_user debe lanzar 401 cuando el usuario no existe en DB"""
     user_id = str(uuid4())
 
-    # Mock de la base de datos - usuario no encontrado
+    # Mock de la base de datos - usuario no encontrado (SQLAlchemy 2.0 API)
     mock_db = MagicMock()
-    mock_db.query.return_value.filter.return_value.first.return_value = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
 
     # Mock de decode_access_token
     def mock_decode(token):
@@ -123,9 +123,9 @@ def test_get_current_user_inactive_user(monkeypatch):
     mock_user.id = user_id
     mock_user.is_active = False
 
-    # Mock de la base de datos
+    # Mock de la base de datos (SQLAlchemy 2.0 API)
     mock_db = MagicMock()
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_user
 
     # Mock de decode_access_token
     def mock_decode(token):

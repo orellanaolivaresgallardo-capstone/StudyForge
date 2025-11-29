@@ -148,13 +148,16 @@ def get_progress_by_space(
     results = []
 
     # 1. Estadísticas por cada espacio del usuario
+    from sqlalchemy import select
     from sqlalchemy.orm import joinedload
-    user_spaces = (
-        db.query(StudySpace)
+
+    stmt = (
+        select(StudySpace)
         .options(joinedload(StudySpace.documents), joinedload(StudySpace.summaries))
-        .filter(StudySpace.user_id == current_user.id)
-        .all()
+        .where(StudySpace.user_id == current_user.id)
     )
+    # NOTE: .unique() is required when using joinedload() with collections
+    user_spaces = list(db.execute(stmt).unique().scalars().all())
 
     for space in user_spaces:
         # Contar recursos
