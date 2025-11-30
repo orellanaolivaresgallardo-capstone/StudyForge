@@ -98,23 +98,26 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         app,
         max_requests: int = 100,
         window_seconds: int = 60,
-        exempt_paths: List[str] = None # type: ignore
+        exempt_paths: List[str] = None, # type: ignore
+        enable_test_bypass: bool = True
     ):
         """
         Inicializa el middleware.
-        
+
         Args:
             app: Aplicación FastAPI
             max_requests: Número máximo de requests por ventana
             window_seconds: Duración de la ventana en segundos
             exempt_paths: Rutas exentas de rate limiting
+            enable_test_bypass: Si True, bypass para TestClient (default True para compatibilidad)
         """
         super().__init__(app)
         self.rate_limiter = RateLimiter(max_requests, window_seconds)
         self.exempt_paths = exempt_paths or ["/health", "/docs", "/redoc", "/openapi.json"]
         self.max_requests = max_requests
         self.window_seconds = window_seconds
-        
+        self.enable_test_bypass = enable_test_bypass
+
         logger.info(
             f"Rate limiter initialized: {max_requests} requests per {window_seconds}s"
         )
@@ -137,9 +140,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Obtener identificador (IP del cliente)
         client_ip = request.client.host if request.client else "unknown"
 
-        # EXCEPCIÓN: Deshabilitar rate limiting para tests
+        # EXCEPCIÓN: Deshabilitar rate limiting para tests (si está habilitado)
         # TestClient de Starlette usa "testclient" como IP
-        if client_ip == "testclient":
+        if self.enable_test_bypass and client_ip == "testclient":
             return await call_next(request)
 
         # Verificar límite
