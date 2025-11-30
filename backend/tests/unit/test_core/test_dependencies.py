@@ -91,6 +91,25 @@ def test_get_current_user_malformed_token(monkeypatch):
     assert "malformado" in exc_info.value.detail
 
 
+def test_get_current_user_invalid_uuid(monkeypatch):
+    """get_current_user debe lanzar 401 cuando user_id no es un UUID válido"""
+    mock_db = MagicMock()
+
+    # Mock de decode_access_token retorna user_id inválido (no es UUID)
+    def mock_decode(token):
+        return {"sub": "not-a-valid-uuid-123"}  # String que no es UUID
+
+    monkeypatch.setattr("app.core.dependencies.decode_access_token", mock_decode)
+
+    credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="invalid_uuid_token")
+
+    with pytest.raises(HTTPException) as exc_info:
+        get_current_user(credentials, mock_db)
+
+    assert exc_info.value.status_code == 401
+    assert "ID inválido" in exc_info.value.detail
+
+
 def test_get_current_user_not_found(monkeypatch):
     """get_current_user debe lanzar 401 cuando el usuario no existe en DB"""
     user_id = str(uuid4())
