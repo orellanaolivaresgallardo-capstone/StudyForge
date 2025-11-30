@@ -178,7 +178,9 @@ Map user requests to specific procedures:
 | "new endpoint", "new feature" | Audit Workflows |
 | "outdated example", "broken link" | Common Issues and Fixes |
 | "hierarchy", "single source of truth" | Documentation Hierarchy |
-| "verify anchors", "HTML anchors", "update anchors" | (Built-in task) |
+| "verify anchors", "HTML anchors", "update anchors" | (Built-in Task 5) |
+| "validate examples directory", "check examples" | (Built-in Task 6) |
+| "check example sizes", "validate embedded examples" | (Built-in Task 7) |
 
 ## Common Tasks
 
@@ -250,6 +252,91 @@ grep '#section-name' CLAUDE.md
 
 # Verify format
 grep -E '##\s+<a id="[a-z0-9-]+"' docs/*.md
+```
+
+### Task 6: Validate Examples Directory
+
+**When**: Periodic validation or when `.claude/examples/` changes
+
+**Process**:
+1. Verify `.claude/examples/` structure and naming convention
+2. Check all CLAUDE.md references point to existing example files
+3. Detect orphaned examples (files without references in CLAUDE.md)
+4. Validate example file format is current
+
+**Naming convention**: `{agent-name}-{type}.md`
+- Examples: `commit-organizer-output.md`, `git-historian-report.md`
+
+**Files to monitor**:
+- `.claude/examples/*.md` (example files)
+- `CLAUDE.md` (references to examples)
+
+**Verification**:
+```bash
+# Find all example references in CLAUDE.md
+grep -o '\.claude/examples/[^)]*' CLAUDE.md
+
+# List all example files
+ls .claude/examples/
+
+# Detect broken links
+for file in $(grep -o '\.claude/examples/[^)]*' CLAUDE.md); do
+  [ ! -f "$file" ] && echo "Broken link: $file"
+done
+
+# Detect orphans (files not referenced)
+for file in .claude/examples/*.md; do
+  grep -q "$(basename $file)" CLAUDE.md || echo "Orphan: $file"
+done
+```
+
+**Report issues**:
+- ❌ Broken link: CLAUDE.md references non-existent example
+- ⚠️ Orphan file: Example exists but not referenced in CLAUDE.md
+- ⚠️ Naming violation: File doesn't follow `{agent}-{type}.md` pattern
+
+### Task 7: Validate Embedded Example Size
+
+**When**: CLAUDE.md changes or periodic validation
+
+**Process**:
+1. Extract all code blocks from CLAUDE.md
+2. Identify blocks labeled as "Example Output" or "Example workflow"
+3. Count lines in each example block
+4. Flag violations of size policy
+
+**Size Policy**:
+- ✅ Inline examples: ≤ 15 lines
+- ⚠️ Warning: 16-25 lines (recommend moving)
+- ❌ Error: > 25 lines (must move to `.claude/examples/`)
+
+**Verification**:
+```bash
+# Find example sections in CLAUDE.md
+grep -n "Example.*:" CLAUDE.md
+
+# Extract code blocks and count lines
+awk '/```markdown/,/```/ {if(/```markdown/)start=NR; if(/```$/&&start)print start":"NR-start}' CLAUDE.md
+
+# Report oversized examples
+grep -A 50 "Example Output:" CLAUDE.md | awk '/```/,/```/' | wc -l
+```
+
+**Report violations**:
+```markdown
+## ⚠️ Embedded Example Too Large
+
+**Location**: CLAUDE.md lines 1275-1341 (67 lines)
+**Type**: Example Output (commit-organizer)
+**Threshold**: 15 lines
+**Violation**: 347% over limit (67/15)
+
+**Recommendation**:
+1. Move to `.claude/examples/commit-organizer-output.md`
+2. Replace in CLAUDE.md with: `**Example output**: Ver [.claude/examples/commit-organizer-output.md]`
+3. Optionally keep 3-5 line snippet for quick reference
+
+**Impact**: Reduces CLAUDE.md by ~60 lines
 ```
 
 ## Critical Paths
