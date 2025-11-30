@@ -1144,11 +1144,11 @@ StudyForge includes specialized Claude Code agents to automate common developmen
 6. Generates comprehensive security report
 7. Provides specific fixes with code examples
 
-#### 4. **docs-maintainer** - Documentation Synchronization Agent
+#### 4. **docs-sentinel** - Documentation Guardian Agent
 
-**Purpose**: Maintains documentation with Single Source of Truth principle. Keeps CLAUDE.md, docs/, and README.md synchronized with current codebase. Detects outdated patterns, validates code examples, and ensures consistency.
+**Purpose**: Vigilant documentation guardian with structural change detection. Maintains Single Source of Truth principle, monitors documentation accuracy, and ensures synchronization between CLAUDE.md, docs/, and README.md. Proactively detects when code diverges from documentation.
 
-**Location**: [`.claude/agents/docs-maintainer.md`](.claude/agents/docs-maintainer.md)
+**Location**: [`.claude/agents/docs-sentinel.md`](.claude/agents/docs-sentinel.md)
 
 **When to use**:
 - After adding new features or endpoints
@@ -1349,7 +1349,74 @@ docs: Update API documentation for auth endpoints
 
 ---
 
-#### 6. **git-historian** - Git History Analysis Agent
+#### 6. **context-gatherer** - Parallel Context Coordinator
+
+**Purpose**: Coordinates parallel context retrieval for complex development tasks. When implementing multi-layer features (new endpoints, database changes, security-sensitive operations), this agent efficiently gathers relevant documentation from multiple sources simultaneously using doc-retriever.
+
+**Location**: [`.claude/agents/context-gatherer.md`](.claude/agents/context-gatherer.md)
+
+**When to use**:
+- Implementing new endpoints requiring context from architecture, security, and database docs
+- Database schema changes needing migration guidance and patterns
+- Frontend features consuming multiple backend endpoints
+- Security reviews requiring compliance and validation context
+- Performance optimizations needing query patterns and indexing strategies
+- Any complex task spanning 3+ architectural layers
+
+**Capabilities**:
+- ✅ Analyzes task requirements and identifies needed context sources (2-5 sources)
+- ✅ Invokes multiple doc-retriever instances IN PARALLEL for efficiency
+- ✅ Maps task types to appropriate documentation sections automatically
+- ✅ Consolidates results into unified, organized context
+- ✅ Provides clear rationale for each context source
+- ✅ Handles missing sections gracefully with alternatives
+- ✅ Recognizes when tasks are simple enough to skip context gathering
+
+**Usage**:
+```
+> Implement user preferences endpoint with proper security
+> Add new quiz difficulty algorithm with database schema
+> Create settings page consuming multiple API endpoints
+> Optimize summary listing query performance
+> Review authentication flow for security vulnerabilities
+```
+
+**Context Map Examples**:
+
+**New Endpoint**:
+- docs/ARCHITECTURE.md → API Endpoint Patterns
+- docs/SECURITY.md → Ownership Validation
+- docs/DATABASE.md → Creating Migrations (if needed)
+- .claude/conventions/code-style.md → Python/Pydantic patterns
+
+**Database Change**:
+- docs/DATABASE.md → Schema Design Principles
+- docs/DATABASE.md → Creating Migrations
+- docs/ARCHITECTURE.md → Repository Layer
+- docs/ARCHITECTURE.md → SQLAlchemy 2.0 Patterns
+
+**Security Review**:
+- docs/SECURITY.md → Complete document (critical)
+- docs/security/COMPLIANCE_CHECKLIST.md → ISO 27001 controls
+- docs/ARCHITECTURE.md → Ownership Validation Patterns
+- .claude/conventions/code-style.md → Input validation section
+
+**Performance Optimization**:
+- docs/DATABASE.md → Indexes and Query Optimization
+- docs/ARCHITECTURE.md → Repository Layer
+- .claude/conventions/code-style.md → SQLAlchemy patterns
+- docs/DATABASE.md → Denormalization Strategy
+
+**Key Benefits**:
+- ⚡ **Parallel execution**: Gathers 3-5 contexts in ~10s (vs 30-50s sequential)
+- 🎯 **Targeted retrieval**: Only loads relevant sections, not entire documents
+- 📚 **Organized output**: Numbered sections with source attribution
+- 🔄 **Consistent patterns**: Same context map for similar task types
+- ⚠️ **Smart fallback**: Detects when task is simple enough to skip gathering
+
+---
+
+#### 7. **git-historian** - Git History Analysis Agent
 
 **Purpose**: Analyzes git commit history to identify patterns, generate change reports, track component evolution, audit commit quality, and analyze branch lifecycles. Provides deep insights into project development over time.
 
@@ -1425,7 +1492,7 @@ docs: Update API documentation for auth endpoints
 
 ---
 
-#### 7. **changelog-manager** - CHANGELOG.md Generator
+#### 8. **changelog-manager** - CHANGELOG.md Generator
 
 **Purpose**: Generates and maintains CHANGELOG.md following Keep a Changelog format. Automatically parses Conventional Commits, organizes changes by version, detects breaking changes, and creates professional release notes.
 
@@ -1523,7 +1590,246 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-#### 8. **Conventions Reference Files**
+#### 9. **agents-maintainer** - Agent Ecosystem Health Monitor
+
+**Purpose**: Validates agent consistency, detects violations of conventions, and ensures agent ecosystem health. Maintenance agent that detects problems AND proposes immediate solutions by loading fix procedures from agent-maintenance-guide.md.
+
+**Location**: [`.claude/agents/agents-maintainer.md`](.claude/agents/agents-maintainer.md)
+
+**When to use**:
+- Running full agent audits (ensure all agents follow conventions)
+- Validating specific agent compliance
+- Checking for oversized agents (>500 lines indicator of embedded knowledge)
+- Detecting duplicate agent functionality
+- Ensuring agents are documented in CLAUDE.md
+- Validating Single Source of Truth principle (agents vs conventions separation)
+- Detecting meta-antipatterns (solution logic in agents, detection logic in conventions)
+
+**Capabilities**:
+- ✅ Validates agent front matter (required fields, Spanish directive, model selection)
+- ✅ Detects agent duplication and overlapping responsibilities
+- ✅ Ensures all agents are documented in CLAUDE.md
+- ✅ Checks agent consistency (proper tool permissions, permission modes)
+- ✅ Detects oversized agents (>500 lines) that may contain embedded knowledge
+- ✅ Validates Single Source of Truth: agents coordinate, conventions contain solutions
+- ✅ Detects meta-antipatterns (architectural violations)
+- ✅ Loads fix procedures from agent-maintenance-guide.md when problems detected
+- ✅ Proposes specific, actionable solutions with code examples
+
+**Usage**:
+```
+> Audit all agents for consistency
+> Validate the iso27001-auditor.md file
+> Check for duplicate agent functionality
+> Ensure all agents are documented in CLAUDE.md
+> Check for oversized agents
+> Detect meta-antipatterns in agent architecture
+```
+
+**Validation Categories**:
+
+**1. Agent Convention Validation**: Required front matter, Spanish directive, clear descriptions
+
+**2. Duplicate Agent Detection**: Multiple agents with overlapping responsibilities
+
+**3. Agent Documentation Sync**: All agents documented in CLAUDE.md
+
+**4. Consistency Checks**: Spanish directive, English instructions, proper model selection
+
+**5. Single Source of Truth Validation**: Agents use doc-retriever for knowledge
+
+**6. Meta-Antipattern Detection** (Critical):
+- **Solution in Agent (WRONG)**: Agents contain "Fix Procedure", "before/after" examples
+- **Detection in Conventions (WRONG)**: Conventions contain bash commands, thresholds
+- **Expected Architecture**:
+  - Agents: WHAT/HOW/WHEN to detect, decision logic, orchestration
+  - Conventions: HOW to fix, detailed procedures, templates, best practices
+
+**Problem-to-Severity Mapping**:
+- 🔴 **HIGH**: Missing Spanish directive, duplicate agents, solution in agent, not in CLAUDE.md
+- 🟡 **MEDIUM**: Oversized agent, excessive tools, stale references, instructions in Spanish
+- 🟢 **LOW**: Wrong model selection (cost optimization)
+
+Ver reporte completo de ejemplo: [.claude/examples/agents-maintainer-report.md](.claude/examples/agents-maintainer-report.md)
+
+**Key Principles**:
+- Detect problems proactively, propose solutions immediately
+- Load fix procedures from conventions (don't embed solutions)
+- Respond in Spanish to user
+- Classify by severity (🔴🟡🟢)
+- Provide specific, actionable fixes with code examples
+
+---
+
+### Expert Agents
+
+StudyForge includes specialized domain expert agents that provide focused knowledge for specific technical areas. These agents are optimized for fast, targeted responses (using Haiku model) and are located in [`.claude/agents/experts/`](.claude/agents/experts/).
+
+**Expert Agent Characteristics**:
+- ⚡ **Model**: Haiku (fast, cost-effective for knowledge retrieval)
+- 📚 **Purpose**: Provide domain-specific knowledge and patterns
+- 🎯 **Scope**: Focused on single technical area
+- 🔍 **Tools**: Read-only (Read, Grep, Glob)
+- 💬 **Output**: Always in Spanish
+
+**When to Use Expert Agents**:
+- Quick questions about specific technical area
+- Looking for code patterns or examples
+- Understanding existing implementations
+- Domain-specific best practices
+
+**Automatic Invocation**: Main assistant may invoke expert agents when needed for specialized knowledge.
+
+---
+
+#### 10.1 **backend-expert** - Python/FastAPI/SQLAlchemy Specialist
+
+**Purpose**: Python/FastAPI/SQLAlchemy expert for StudyForge backend development.
+
+**Location**: [`.claude/agents/experts/backend-expert.md`](.claude/agents/experts/backend-expert.md)
+
+**Expertise**:
+- Layered architecture (Router → Service → Repository → Model)
+- SQLAlchemy 2.0 patterns (select(), mapped_column)
+- FastAPI routers and dependencies
+- Pydantic schemas and validation
+- JWT authentication integration
+- OpenAI service integration
+
+**Usage**:
+```
+> How do I add a new endpoint following StudyForge patterns?
+> Show me SQLAlchemy 2.0 syntax for querying summaries
+> What's the correct layered architecture flow?
+> How to implement ownership validation in an endpoint?
+```
+
+---
+
+#### 10.2 **frontend-expert** - React/TypeScript Specialist
+
+**Purpose**: React/TypeScript/Tailwind expert for StudyForge frontend development.
+
+**Location**: [`.claude/agents/experts/frontend-expert.md`](.claude/agents/experts/frontend-expert.md)
+
+**Expertise**:
+- React 19 patterns and hooks
+- TypeScript type definitions
+- React Router v7 navigation
+- Tailwind CSS styling
+- API service integration
+- AuthContext usage
+
+**Usage**:
+```
+> How do I create a new page component?
+> Show me TypeScript types for API responses
+> How to use AuthContext for authentication?
+> What's the Tailwind pattern for modals?
+```
+
+---
+
+#### 10.3 **database-expert** - PostgreSQL/Alembic Specialist
+
+**Purpose**: PostgreSQL/Alembic/Schema expert for StudyForge database operations.
+
+**Location**: [`.claude/agents/experts/database-expert.md`](.claude/agents/experts/database-expert.md)
+
+**Expertise**:
+- PostgreSQL schema design
+- Alembic migration workflows
+- Index optimization
+- JSONB usage patterns
+- UUID primary keys
+- Database roles and permissions
+
+**Usage**:
+```
+> How do I create a new migration?
+> What indexes should I add for this query?
+> Show me JSONB query patterns
+> How to handle schema isolation (studyforge schema)?
+```
+
+---
+
+#### 10.4 **security-expert** - Authentication/Authorization Specialist
+
+**Purpose**: Authentication, authorization, and security expert for StudyForge.
+
+**Location**: [`.claude/agents/experts/security-expert.md`](.claude/agents/experts/security-expert.md)
+
+**Expertise**:
+- JWT authentication flow
+- Ownership validation patterns
+- Input validation (Pydantic)
+- File validation (magic numbers)
+- Argon2 password hashing
+- ISO 27001 security controls
+
+**Usage**:
+```
+> How does JWT authentication work in StudyForge?
+> Show me ownership validation implementation
+> How to validate file uploads securely?
+> What security controls are implemented?
+```
+
+---
+
+#### 10.5 **performance-expert** - Optimization Specialist
+
+**Purpose**: Analyzes and optimizes performance (queries, bundle size, API response times).
+
+**Location**: [`.claude/agents/experts/performance-expert.md`](.claude/agents/experts/performance-expert.md)
+
+**Expertise**:
+- Query optimization (SQLAlchemy)
+- Index strategy
+- N+1 query prevention
+- Frontend bundle optimization
+- API response time analysis
+- Database denormalization patterns
+
+**Usage**:
+```
+> This query is slow, how can I optimize it?
+> How to prevent N+1 queries for summaries?
+> What indexes are needed for this table?
+> How to reduce frontend bundle size?
+```
+
+---
+
+#### 10.6 **iso27001-auditor** - Security Compliance Specialist
+
+**Purpose**: Audits code for ISO 27001 compliance and validates security controls implementation.
+
+**Location**: [`.claude/agents/experts/iso27001-auditor.md`](.claude/agents/experts/iso27001-auditor.md)
+
+**Expertise**:
+- ISO/IEC 27001:2022 controls
+- Access control (A.9)
+- Cryptography (A.10)
+- Logging and monitoring (A.12.4)
+- Secure development (A.14)
+- Compliance checklist validation
+
+**Usage**:
+```
+> Audit access control implementation
+> Validate cryptography controls (A.10)
+> Check audit logging compliance
+> Review secure development practices
+> Generate compliance report
+```
+
+**Note**: Uses doc-retriever to load specific control knowledge from `.claude/conventions/iso27001-controls.md`.
+
+---
+
+#### 11. **Conventions Reference Files**
 
 StudyForge utiliza archivos de convenciones para mantener consistencia en código generado por agentes AI.
 
