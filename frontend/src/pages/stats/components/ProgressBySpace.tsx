@@ -51,19 +51,19 @@ export function ProgressBySpace({ progressBySpace, getScoreColor }: Props) {
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="bg-white/5 rounded-lg p-2">
-                <p className="text-xs text-white/60">Documentos</p>
+                <p className="text-xs text-slate-300">Documentos</p>
                 <p className="text-lg font-bold text-blue-400">{space.num_documents}</p>
               </div>
               <div className="bg-white/5 rounded-lg p-2">
-                <p className="text-xs text-white/60">Resúmenes</p>
+                <p className="text-xs text-slate-300">Resúmenes</p>
                 <p className="text-lg font-bold text-purple-400">{space.num_summaries}</p>
               </div>
               <div className="bg-white/5 rounded-lg p-2">
-                <p className="text-xs text-white/60">Quizzes</p>
+                <p className="text-xs text-slate-300">Quizzes</p>
                 <p className="text-lg font-bold text-pink-400">{space.num_quizzes}</p>
               </div>
               <div className="bg-white/5 rounded-lg p-2">
-                <p className="text-xs text-white/60">Intentos</p>
+                <p className="text-xs text-slate-300">Intentos</p>
                 <p className="text-lg font-bold text-cyan-400">{space.total_attempts}</p>
               </div>
             </div>
@@ -71,7 +71,7 @@ export function ProgressBySpace({ progressBySpace, getScoreColor }: Props) {
             {space.total_attempts > 0 && (
               <div className="border-t border-white/10 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-white/60">Promedio</span>
+                  <span className="text-xs text-slate-300">Promedio</span>
                   <span className={`text-xl font-bold ${getScoreColor(space.avg_score)}`}>
                     {space.avg_score}%
                   </span>
@@ -86,7 +86,7 @@ export function ProgressBySpace({ progressBySpace, getScoreColor }: Props) {
                 </div>
                 {space.best_score > 0 && (
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-white/60">Mejor</span>
+                    <span className="text-xs text-slate-300">Mejor</span>
                     <span className={`text-sm font-semibold ${getScoreColor(space.best_score)}`}>
                       {space.best_score}%
                     </span>

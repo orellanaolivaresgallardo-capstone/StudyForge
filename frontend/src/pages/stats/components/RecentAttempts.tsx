@@ -48,7 +48,7 @@ export function RecentAttempts({
                   >
                     {getDifficultyLabel(attempt.difficulty_level)}
                   </span>
-                  <span className="text-white/60">
+                  <span className="text-slate-300">
                     {new Date(attempt.completed_at).toLocaleDateString("es-ES", {
                       year: "numeric",
                       month: "short",

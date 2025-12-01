@@ -8,7 +8,7 @@ export function EmptyState() {
     <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-12 text-center">
       <div className="text-6xl mb-4">📈</div>
       <h2 className="text-2xl font-bold text-white mb-3">Aún no hay estadísticas</h2>
-      <p className="text-white/60 mb-6 max-w-md mx-auto">
+      <p className="text-slate-300 mb-6 max-w-md mx-auto">
         Comienza subiendo documentos y generando resúmenes para ver tu progreso aquí.
       </p>
       <button
