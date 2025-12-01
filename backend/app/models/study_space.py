@@ -39,11 +39,13 @@ class StudySpace(Base):
     # Relaciones
     user: Mapped["User"] = relationship(back_populates="study_spaces")
     # Relación 1-N con Summary (un espacio tiene muchos resúmenes)
-    summaries: Mapped[list["Summary"]] = relationship(back_populates="study_space")
+    # passive_deletes=True: Confía en el CASCADE de la DB en lugar de intentar SET NULL
+    summaries: Mapped[list["Summary"]] = relationship(back_populates="study_space", passive_deletes=True)
     # Relación muchos-a-muchos con documentos
     documents: Mapped[list["Document"]] = relationship(secondary="studyforge.study_space_documents", back_populates="study_spaces")
     # Relación 1-N con quizzes
-    quizzes: Mapped[list["Quiz"]] = relationship(back_populates="study_space")
+    # passive_deletes=True: Confía en el CASCADE de la DB en lugar de intentar SET NULL
+    quizzes: Mapped[list["Quiz"]] = relationship(back_populates="study_space", passive_deletes=True)
 
     def __repr__(self):
         return f"<StudySpace {self.name}>"
