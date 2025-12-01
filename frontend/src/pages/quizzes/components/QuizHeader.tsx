@@ -14,7 +14,7 @@ export function QuizHeader({ title, currentQuestion, totalQuestions, progress }:
           <h1 className="text-2xl font-bold text-white">{title}</h1>
         </div>
         <div className="text-right">
-          <div className="text-sm text-white/60">Progreso</div>
+          <div className="text-sm text-slate-300">Progreso</div>
           <div className="text-2xl font-bold text-violet-400">
             {currentQuestion} / {totalQuestions}
           </div>

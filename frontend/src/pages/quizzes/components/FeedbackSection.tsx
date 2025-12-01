@@ -30,7 +30,7 @@ export function FeedbackSection({ feedback }: Props) {
           </h3>
           <p className="text-white mt-1">{feedback.explanation}</p>
           {feedback.score_so_far !== undefined && (
-            <p className="text-xs text-white/60 mt-2">
+            <p className="text-xs text-slate-300 mt-2">
               Puntuación actual: {feedback.score_so_far.toFixed(1)}%
             </p>
           )}

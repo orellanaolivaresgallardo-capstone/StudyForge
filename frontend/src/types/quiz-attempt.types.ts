@@ -70,4 +70,5 @@ export interface QuizResultResponse {
   incorrect_answers: number;
   completed_at: string;
   questions: QuestionResultDetail[];
+  study_space_snapshot?: StudySpaceSnapshotData | null;
 }

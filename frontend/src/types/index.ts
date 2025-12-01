@@ -44,6 +44,8 @@ export type {
 
 // Quiz Attempts
 export type {
+  QuizSnapshotData,
+  StudySpaceSnapshotData,
   QuizAttemptResponse,
   QuizAttemptWithQuestionsResponse,
   QuizAttemptCreate,

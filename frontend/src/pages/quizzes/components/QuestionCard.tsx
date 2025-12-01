@@ -47,7 +47,7 @@ export function QuestionCard({
             } else if (isWrong) {
               buttonClasses += "bg-red-500/20 border-red-500 text-red-300";
             } else {
-              buttonClasses += "bg-white/5 border-white/10 text-white/60";
+              buttonClasses += "bg-white/5 border-white/10 text-slate-300";
             }
           } else {
             if (isSelected) {
@@ -72,7 +72,7 @@ export function QuestionCard({
                         ? "bg-green-500 text-white"
                         : isWrong
                         ? "bg-red-500 text-white"
-                        : "bg-white/10 text-white/60"
+                        : "bg-white/10 text-slate-300"
                       : isSelected
                       ? "bg-violet-500 text-white"
                       : "bg-white/10 text-white"

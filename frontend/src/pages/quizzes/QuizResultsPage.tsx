@@ -46,27 +46,6 @@ export default function QuizResultsPage() {
   return (
     <>
       <main className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-8 text-slate-50">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/summaries")}
-          className="flex items-center gap-2 text-white/60 hover:text-violet-400 transition-colors"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Volver a resúmenes
-        </button>
-
         {/* Loading State */}
         {isLoading && <LoadingSpinner message="Cargando resultados..." />}
 
@@ -83,7 +62,10 @@ export default function QuizResultsPage() {
 
             <QuestionReview questions={results.questions} />
 
-            <ResultActions quizId={results.quiz_id} />
+            <ResultActions
+              quizId={results.quiz_id}
+              studySpaceSnapshot={results.study_space_snapshot}
+            />
           </>
         )}
 

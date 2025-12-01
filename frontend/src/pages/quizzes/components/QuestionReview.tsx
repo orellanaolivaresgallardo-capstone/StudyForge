@@ -63,7 +63,7 @@ export function QuestionReview({ questions }: QuestionReviewProps) {
                           "bg-red-500/20 border-red-500 text-red-300";
                       } else {
                         optionClasses +=
-                          "bg-white/5 border-white/10 text-white/60";
+                          "bg-white/5 border-white/10 text-slate-300";
                       }
 
                       return (
@@ -110,7 +110,7 @@ export function QuestionReview({ questions }: QuestionReviewProps) {
                     <h4 className="text-sm font-semibold text-white mb-1">
                       Explicación:
                     </h4>
-                    <p className="text-sm text-white/60">
+                    <p className="text-sm text-slate-300">
                       {question.explanation}
                     </p>
                   </div>

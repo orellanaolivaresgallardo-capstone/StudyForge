@@ -57,7 +57,7 @@ export default function QuizzesPage() {
             <h1 className="text-3xl font-extrabold tracking-tight text-white">
               Mis Cuestionarios
             </h1>
-            <p className="text-white/60 mt-1">
+            <p className="text-slate-300 mt-1">
               Practica y evalúa tu comprensión con quizzes adaptativos
             </p>
           </div>
@@ -90,7 +90,7 @@ export default function QuizzesPage() {
           <div className="text-center py-20">
             <div className="inline-flex h-20 w-20 rounded-full bg-white/10 items-center justify-center mb-4">
               <svg
-                className="w-10 h-10 text-white/60"
+                className="w-10 h-10 text-slate-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -106,7 +106,7 @@ export default function QuizzesPage() {
             <h3 className="text-xl font-semibold text-white mb-2">
               No tienes cuestionarios aún
             </h3>
-            <p className="text-white/60 mb-6">
+            <p className="text-slate-300 mb-6">
               Crea tu primer cuestionario desde un resumen o un espacio de estudio
             </p>
             <div className="flex gap-3 justify-center">
@@ -158,7 +158,7 @@ export default function QuizzesPage() {
                 <h3 className="font-semibold text-white mb-1">
                   Sobre los cuestionarios adaptativos
                 </h3>
-                <p className="text-sm text-white/60">
+                <p className="text-sm text-slate-300">
                   La dificultad de los cuestionarios se ajusta automáticamente
                   según tu rendimiento en intentos anteriores. Cada quiz incluye
                   feedback inmediato con explicaciones detalladas para ayudarte

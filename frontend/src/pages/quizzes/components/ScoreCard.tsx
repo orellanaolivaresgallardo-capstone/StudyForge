@@ -50,7 +50,7 @@ export function ScoreCard({
             <div className={`text-4xl font-bold ${getScoreColor(score)}`}>
               {score.toFixed(0)}%
             </div>
-            <div className="text-xs text-white/60">
+            <div className="text-xs text-slate-300">
               {correctAnswers}/{totalQuestions}
             </div>
           </div>
@@ -60,7 +60,7 @@ export function ScoreCard({
         <h1 className="text-3xl font-bold text-white mb-2">
           Resultados del Cuestionario
         </h1>
-        <p className="text-white/60 mb-4">Quiz ID: {quizId.slice(0, 8)}</p>
+        <p className="text-slate-300 mb-4">Quiz ID: {quizId.slice(0, 8)}</p>
 
         {/* Message */}
         <p className="text-lg text-white mb-6">{getScoreMessage(score)}</p>
@@ -71,19 +71,19 @@ export function ScoreCard({
             <div className="text-2xl font-bold text-green-400">
               {correctAnswers}
             </div>
-            <div className="text-xs text-white/60">Correctas</div>
+            <div className="text-xs text-slate-300">Correctas</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4">
             <div className="text-2xl font-bold text-red-400">
               {incorrectAnswers}
             </div>
-            <div className="text-xs text-white/60">Incorrectas</div>
+            <div className="text-xs text-slate-300">Incorrectas</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4">
             <div className="text-2xl font-bold text-violet-400">
               {totalQuestions}
             </div>
-            <div className="text-xs text-white/60">Total</div>
+            <div className="text-xs text-slate-300">Total</div>
           </div>
         </div>
       </div>
