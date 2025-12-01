@@ -2,6 +2,7 @@
 /**
  * User dropdown menu for desktop
  */
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 interface UserMenuProps {
@@ -21,8 +22,31 @@ export function UserMenu({
   onClose,
   onLogout,
 }: UserMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Detectar clicks fuera del dropdown
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    // Agregar listener después de un pequeño delay para evitar el click inicial
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button
         onClick={onToggle}
         className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
@@ -54,9 +78,7 @@ export function UserMenu({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={onClose}></div>
-          <div className="absolute right-0 mt-2 w-56 glass card rounded-xl border border-white/10 shadow-2xl z-20">
+        <div className="absolute right-0 mt-2 w-56 glass card rounded-xl border border-white/10 shadow-2xl z-20">
             <div className="p-3 border-b border-white/10">
               <p className="text-sm font-semibold text-white truncate">
                 {username}
@@ -64,7 +86,8 @@ export function UserMenu({
               <p className="text-xs text-slate-300 truncate">{email}</p>
             </div>
             <div className="p-2">
-              <Link
+              {/* Temporalmente oculto - en desarrollo */}
+              {/* <Link
                 to="/profile"
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                 onClick={onClose}
@@ -83,8 +106,8 @@ export function UserMenu({
                   />
                 </svg>
                 Mi perfil
-              </Link>
-              <Link
+              </Link> */}
+              {/* <Link
                 to="/settings"
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                 onClick={onClose}
@@ -109,7 +132,7 @@ export function UserMenu({
                   />
                 </svg>
                 Configuración
-              </Link>
+              </Link> */}
               <button
                 onClick={onLogout}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
@@ -131,7 +154,6 @@ export function UserMenu({
               </button>
             </div>
           </div>
-        </>
       )}
     </div>
   );

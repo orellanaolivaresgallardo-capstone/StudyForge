@@ -32,22 +32,22 @@ export default function PublicHeader({ currentPage, subtitle }: PublicHeaderProp
           </div>
 
           {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
+          <nav className="hidden md:flex items-center gap-6 text-sm">
             <Link
               to="/"
-              className={currentPage === "home" ? "text-white font-semibold" : "hover:text-white"}
+              className={currentPage === "home" ? "text-white font-semibold px-3 py-2 rounded-lg bg-white/10" : "text-slate-100 font-medium hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all"}
             >
               Inicio
             </Link>
             <Link
               to="/features"
-              className={currentPage === "features" ? "text-white font-semibold" : "hover:text-white"}
+              className={currentPage === "features" ? "text-white font-semibold px-3 py-2 rounded-lg bg-white/10" : "text-slate-100 font-medium hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all"}
             >
               Características
             </Link>
             <Link
               to="/aboutus"
-              className={currentPage === "aboutus" ? "text-white font-semibold" : "hover:text-white"}
+              className={currentPage === "aboutus" ? "text-white font-semibold px-3 py-2 rounded-lg bg-white/10" : "text-slate-100 font-medium hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all"}
             >
               Sobre nosotros
             </Link>
@@ -93,21 +93,21 @@ export default function PublicHeader({ currentPage, subtitle }: PublicHeaderProp
             <div className="glass card rounded-2xl px-4 py-3 space-y-2">
               <Link
                 to="/"
-                className="block px-3 py-2 rounded-lg text-sm hover:bg-white/10"
+                className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-100 hover:bg-white/10 hover:text-white transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Inicio
               </Link>
               <Link
                 to="/features"
-                className="block px-3 py-2 rounded-lg text-sm hover:bg-white/10"
+                className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-100 hover:bg-white/10 hover:text-white transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Características
               </Link>
               <Link
                 to="/aboutus"
-                className="block px-3 py-2 rounded-lg text-sm hover:bg-white/10"
+                className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-100 hover:bg-white/10 hover:text-white transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Sobre nosotros

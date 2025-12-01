@@ -25,7 +25,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 glass card border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Logo - Left */}
           <Link
             to={isAuthenticated ? "/documents" : "/"}
             className="flex items-center gap-2 group"
@@ -40,11 +40,26 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* Desktop Navigation - Center */}
+          {isAuthenticated ? (
+            <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
+              <NavLinks variant="desktop" />
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
+              <Link
+                to="/"
+                className="text-sm font-semibold text-slate-100 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all"
+              >
+                Inicio
+              </Link>
+            </div>
+          )}
+
+          {/* Right Section */}
+          <div className="flex items-center gap-4">
             {isAuthenticated ? (
-              <>
-                <NavLinks variant="desktop" />
+              <div className="hidden md:flex items-center gap-4">
                 <QuotaWidget compact className="min-w-[200px]" />
                 <UserMenu
                   username={user?.username || "Usuario"}
@@ -54,18 +69,12 @@ export default function Navbar() {
                   onClose={() => setShowUserMenu(false)}
                   onLogout={handleLogout}
                 />
-              </>
+              </div>
             ) : (
-              <>
-                <Link
-                  to="/"
-                  className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                >
-                  Inicio
-                </Link>
+              <div className="hidden md:flex items-center gap-4">
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-100 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
                 >
                   Iniciar sesión
                 </Link>
@@ -75,38 +84,38 @@ export default function Navbar() {
                 >
                   Crear cuenta
                 </Link>
-              </>
+              </div>
             )}
-          </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden p-2 rounded-lg text-slate-300 hover:bg-white/10 transition-colors"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="md:hidden p-2 rounded-lg text-slate-300 hover:bg-white/10 transition-colors"
             >
-              {showMobileMenu ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
-          </button>
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                {showMobileMenu ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}

@@ -12,7 +12,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
         aria-hidden="true"
       />
       <PublicHeader currentPage="home" subtitle="Asistente de estudio con IA" />
@@ -94,15 +94,15 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl p-5 sm:p-6">
             <h3 className="font-semibold mb-1 text-sm sm:text-base text-white">Sube y organiza</h3>
-            <p className="text-xs sm:text-sm text-white/60">Procesa archivos y centraliza tu material de estudio.</p>
+            <p className="text-xs sm:text-sm text-slate-300">Procesa archivos y centraliza tu material de estudio.</p>
           </div>
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl p-5 sm:p-6">
             <h3 className="font-semibold mb-1 text-sm sm:text-base text-white">Resúmenes precisos</h3>
-            <p className="text-xs sm:text-sm text-white/60">Explicaciones claras y sintetizadas por IA.</p>
+            <p className="text-xs sm:text-sm text-slate-300">Explicaciones claras y sintetizadas por IA.</p>
           </div>
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl p-5 sm:p-6 sm:col-span-2 md:col-span-1">
             <h3 className="font-semibold mb-1 text-sm sm:text-base text-white">Quizzes adaptativos</h3>
-            <p className="text-xs sm:text-sm text-white/60">La dificultad se ajusta a tu rendimiento.</p>
+            <p className="text-xs sm:text-sm text-slate-300">La dificultad se ajusta a tu rendimiento.</p>
           </div>
         </div>
       </section>
@@ -114,15 +114,15 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6">
             <div className="rounded-xl bg-white/5 p-5">
               <div className="text-3xl font-black text-violet-400">3x</div>
-              <div className="text-sm text-white/60 mt-1">Velocidad de estudio</div>
+              <div className="text-sm text-slate-300 mt-1">Velocidad de estudio</div>
             </div>
             <div className="rounded-xl bg-white/5 p-5">
               <div className="text-3xl font-black text-violet-400">90%</div>
-              <div className="text-sm text-white/60 mt-1">Comprensión promedio</div>
+              <div className="text-sm text-slate-300 mt-1">Comprensión promedio</div>
             </div>
             <div className="rounded-xl bg-white/5 p-5">
               <div className="text-3xl font-black text-violet-400">24/7</div>
-              <div className="text-sm text-white/60 mt-1">Disponibilidad</div>
+              <div className="text-sm text-slate-300 mt-1">Disponibilidad</div>
             </div>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function LandingPage() {
         <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <h2 className="text-xl md:text-2xl font-extrabold text-white">¿Listo para transformar tu estudio?</h2>
-            <p className="text-white/60 mt-1">Únete a StudyForge y lleva tu aprendizaje al siguiente nivel.</p>
+            <p className="text-slate-300 mt-1">Únete a StudyForge y lleva tu aprendizaje al siguiente nivel.</p>
           </div>
           <Link to="/signup" className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-5 py-3 font-semibold inline-block text-center transition-colors">
             Empezar ahora
@@ -143,7 +143,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="relative border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-8 text-sm text-white/60 text-center">
+        <div className="max-w-7xl mx-auto px-6 py-8 text-sm text-slate-300 text-center">
           © {currentYear} StudyForge. Todos los derechos reservados.
         </div>
       </footer>

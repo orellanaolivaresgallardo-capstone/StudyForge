@@ -23,13 +23,14 @@ export function MobileMenu({
         <div className="space-y-3">
           <QuotaWidget compact={false} className="mb-4" />
           <NavLinks variant="mobile" onLinkClick={onClose} />
-          <Link
+          {/* Temporalmente oculto - en desarrollo */}
+          {/* <Link
             to="/profile"
             className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
             onClick={onClose}
           >
             Mi perfil
-          </Link>
+          </Link> */}
           <button
             onClick={() => {
               onLogout();
@@ -44,14 +45,14 @@ export function MobileMenu({
         <div className="space-y-2">
           <Link
             to="/"
-            className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+            className="block px-4 py-2 rounded-lg text-sm font-semibold text-slate-100 hover:bg-white/10 hover:text-white transition-colors"
             onClick={onClose}
           >
             Inicio
           </Link>
           <Link
             to="/login"
-            className="block px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+            className="block px-4 py-2 rounded-lg text-sm font-semibold text-slate-100 hover:bg-white/10 hover:text-white transition-colors"
             onClick={onClose}
           >
             Iniciar sesión
