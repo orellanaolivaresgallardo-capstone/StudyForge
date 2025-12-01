@@ -38,7 +38,7 @@ export function DifficultyBadge({
         <span>{config.label}</span>
       </span>
       {showDescription && (
-        <span className="text-xs text-white/60">{config.description}</span>
+        <span className="text-xs text-slate-300">{config.description}</span>
       )}
     </div>
   );

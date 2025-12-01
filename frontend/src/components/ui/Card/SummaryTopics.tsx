@@ -12,7 +12,7 @@ export function SummaryTopics({ topics, maxDisplay = 3 }: SummaryTopicsProps) {
 
   return (
     <div className="mb-3">
-      <p className="text-xs text-white/60 mb-2">Temas:</p>
+      <p className="text-xs text-slate-300 mb-2">Temas:</p>
       <div className="flex gap-2 flex-wrap">
         {topics.slice(0, maxDisplay).map((topic, idx) => (
           <span
@@ -23,7 +23,7 @@ export function SummaryTopics({ topics, maxDisplay = 3 }: SummaryTopicsProps) {
           </span>
         ))}
         {topics.length > maxDisplay && (
-          <span className="px-2 py-1 bg-white/10 text-white/60 rounded text-xs">
+          <span className="px-2 py-1 bg-white/10 text-slate-300 rounded text-xs">
             +{topics.length - maxDisplay}
           </span>
         )}

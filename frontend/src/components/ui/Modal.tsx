@@ -79,7 +79,7 @@ const Modal: React.FC<ModalProps> = ({
   return (
     <div
       className={`
-        fixed inset-0 z-50 flex items-center justify-center p-4
+        fixed inset-0 z-60 flex items-center justify-center p-4
         bg-black/70 backdrop-blur-sm
         ${isExiting ? 'animate-fadeOut' : 'animate-fadeIn'}
       `}
@@ -108,7 +108,7 @@ const Modal: React.FC<ModalProps> = ({
             {showCloseButton && (
               <button
                 onClick={handleClose}
-                className="text-white/80 hover:text-white transition-colors"
+                className="text-slate-100 hover:text-white transition-colors"
                 aria-label="Close modal"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

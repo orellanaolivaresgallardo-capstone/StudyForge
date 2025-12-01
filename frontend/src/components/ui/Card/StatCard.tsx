@@ -30,7 +30,7 @@ export function StatCard({ title, value, icon, trend, color = 'violet' }: StatCa
     >
       {/* Header with icon */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white/80 text-sm font-medium">{title}</h3>
+        <h3 className="text-slate-100 text-sm font-medium">{title}</h3>
         {icon && <span className="text-2xl">{icon}</span>}
       </div>
 
@@ -43,7 +43,7 @@ export function StatCard({ title, value, icon, trend, color = 'violet' }: StatCa
           <span className={trend.isPositive !== false ? 'text-green-400' : 'text-red-400'}>
             {trend.isPositive !== false ? '↑' : '↓'} {Math.abs(trend.value)}%
           </span>
-          <span className="text-white/60">{trend.label}</span>
+          <span className="text-slate-300">{trend.label}</span>
         </div>
       )}
     </div>

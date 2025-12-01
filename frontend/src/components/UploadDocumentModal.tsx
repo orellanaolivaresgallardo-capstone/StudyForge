@@ -124,7 +124,7 @@ export function UploadDocumentModal({
             </svg>
             <div className="flex-1 min-w-0">
               <p className="text-white font-medium truncate">{file.name}</p>
-              <p className="text-sm text-white/60">
+              <p className="text-sm text-slate-300">
                 {(file.size / 1024).toFixed(1)} KB
               </p>
             </div>
@@ -133,7 +133,7 @@ export function UploadDocumentModal({
 
         {/* Title input */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">
+          <label className="block text-sm font-medium text-slate-100 mb-2">
             Título (opcional)
           </label>
           <input
@@ -141,14 +141,14 @@ export function UploadDocumentModal({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Nombre del documento"
-            className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
         </div>
 
         {/* Space selection */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <label className="block text-sm font-medium text-white/80">
+            <label className="block text-sm font-medium text-slate-100">
               Asignar a espacio de estudio <span className="text-red-400">*</span>
             </label>
             {availableSpaces.length > 0 && (

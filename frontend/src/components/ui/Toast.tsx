@@ -35,7 +35,7 @@ const Toast: React.FC<ToastProps> = ({ message, type, duration = 3000, onClose }
     success: 'bg-green-500 text-white',
     error: 'bg-red-500 text-white',
     info: 'bg-blue-500 text-white',
-    warning: 'bg-yellow-500 text-gray-900',
+    warning: 'bg-yellow-400 text-gray-950 font-semibold',
   };
 
   const iconMap = {
@@ -48,7 +48,7 @@ const Toast: React.FC<ToastProps> = ({ message, type, duration = 3000, onClose }
   return (
     <div
       className={`
-        fixed top-4 right-4 z-50
+        fixed top-20 left-1/2 -translate-x-1/2 z-70
         flex items-center gap-3
         px-4 py-3 rounded-lg shadow-lg
         min-w-[300px] max-w-md

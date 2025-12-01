@@ -48,7 +48,7 @@ export function SummaryCard({
       className={`${
         variant === 'list'
           ? 'bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 hover:border-violet-400/30'
-          : 'bg-gradient-to-br from-blue-500/20 to-cyan-600/20 backdrop-blur-sm rounded-lg p-4 border border-white/10 hover:border-blue-500/50 cursor-pointer'
+          : 'bg-slate-800/50 backdrop-blur-sm rounded-lg p-4 border border-slate-700/50 hover:bg-slate-800/70 hover:border-brand-500/50 cursor-pointer'
       } transition-all group`}
     >
       {/* Header */}

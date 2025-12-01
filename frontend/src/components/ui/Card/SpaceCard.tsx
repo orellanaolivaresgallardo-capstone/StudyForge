@@ -53,7 +53,7 @@ export function SpaceCard({ space, onEdit, onDelete }: SpaceCardProps) {
               e.stopPropagation();
               onEdit(space);
             }}
-            className="text-white/60 hover:text-violet-400 transition-colors"
+            className="text-slate-300 hover:text-violet-400 transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -74,7 +74,7 @@ export function SpaceCard({ space, onEdit, onDelete }: SpaceCardProps) {
               e.stopPropagation();
               onDelete(space.id, space.name);
             }}
-            className="text-white/60 hover:text-red-400 transition-colors"
+            className="text-slate-300 hover:text-red-400 transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -98,7 +98,7 @@ export function SpaceCard({ space, onEdit, onDelete }: SpaceCardProps) {
       </h3>
 
       {space.description && (
-        <p className="text-white/75 text-sm mb-4 line-clamp-2 break-words" title={space.description}>
+        <p className="text-slate-200 text-sm mb-4 line-clamp-2 break-words" title={space.description}>
           {space.description}
         </p>
       )}
@@ -115,21 +115,21 @@ export function SpaceCard({ space, onEdit, onDelete }: SpaceCardProps) {
         {/* Counters */}
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-white/5 rounded-lg py-2">
-            <div className="text-white/70 text-xs">📄 Docs</div>
+            <div className="text-slate-300 text-xs">📄 Docs</div>
             <div className="text-white font-semibold">{space.num_documents}</div>
           </div>
           <div className="bg-white/5 rounded-lg py-2">
-            <div className="text-white/70 text-xs">📚 Resúm.</div>
+            <div className="text-slate-300 text-xs">📚 Resúm.</div>
             <div className="text-white font-semibold">{space.num_summaries}</div>
           </div>
           <div className="bg-white/5 rounded-lg py-2">
-            <div className="text-white/70 text-xs">📝 Quizzes</div>
+            <div className="text-slate-300 text-xs">📝 Quizzes</div>
             <div className="text-white font-semibold">{space.num_quizzes}</div>
           </div>
         </div>
       </div>
 
-      <div className="text-xs text-white/70">
+      <div className="text-xs text-slate-300">
         Creado el {formatDate(space.created_at)}
       </div>
     </div>
