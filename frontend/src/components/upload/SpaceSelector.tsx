@@ -17,7 +17,7 @@ export function SpaceSelector({
 }: SpaceSelectorProps) {
   if (spaces.length === 0) {
     return (
-      <div className="text-center py-6 text-white/60 text-sm">
+      <div className="text-center py-6 text-slate-300 text-sm">
         No tienes espacios de estudio. Crea uno arriba para continuar.
       </div>
     );
@@ -43,7 +43,7 @@ export function SpaceSelector({
           <div className="flex-1 min-w-0">
             <p className="text-white font-medium truncate">{space.name}</p>
             {space.description && (
-              <p className="text-xs text-white/60 truncate">
+              <p className="text-xs text-slate-300 truncate">
                 {space.description}
               </p>
             )}

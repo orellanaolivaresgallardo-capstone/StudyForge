@@ -41,11 +41,10 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ attempts, height = 
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-          <p className="font-semibold text-gray-900">{data.quizTitle}</p>
-          <p className="text-sm text-gray-600">Topic: {data.topic}</p>
-          <p className="text-sm text-gray-600">Date: {data.date}</p>
-          <p className="text-lg font-bold text-brand-600 mt-1">Score: {data.score}%</p>
+        <div className="bg-slate-800 border border-violet-500/50 p-3 rounded-lg shadow-xl backdrop-blur-sm">
+          <p className="font-semibold text-white">{data.quizTitle}</p>
+          <p className="text-sm text-slate-300">Fecha: {data.date}</p>
+          <p className="text-lg font-bold text-violet-400 mt-1">Puntaje: {data.score}%</p>
         </div>
       );
     }
@@ -54,44 +53,51 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ attempts, height = 
 
   if (attempts.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
-        <p className="text-gray-500">No performance data available yet.</p>
+      <div className="flex items-center justify-center h-64 bg-white/5 border border-white/10 rounded-lg">
+        <p className="text-slate-400">No hay datos de rendimiento disponibles aún.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-slate-900/30 rounded-xl p-4 border border-white/5">
       <ResponsiveContainer width="100%" height={height}>
         <LineChart
           data={chartData}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#475569" opacity={0.3} />
           <XAxis
             dataKey="date"
-            stroke="#6b7280"
-            style={{ fontSize: '12px' }}
+            stroke="#94a3b8"
+            style={{ fontSize: '12px', fill: '#cbd5e1' }}
+            tick={{ fill: '#cbd5e1' }}
           />
           <YAxis
             domain={[0, 100]}
-            stroke="#6b7280"
-            style={{ fontSize: '12px' }}
-            label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }}
+            stroke="#94a3b8"
+            style={{ fontSize: '12px', fill: '#cbd5e1' }}
+            tick={{ fill: '#cbd5e1' }}
+            label={{
+              value: 'Puntaje (%)',
+              angle: -90,
+              position: 'insideLeft',
+              style: { fontSize: '12px', fill: '#cbd5e1' }
+            }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend
-            wrapperStyle={{ fontSize: '14px' }}
+            wrapperStyle={{ fontSize: '14px', color: '#e2e8f0' }}
             iconType="line"
           />
           <Line
             type="monotone"
             dataKey="score"
-            stroke="#7C3AED"
-            strokeWidth={2}
-            dot={{ fill: '#7C3AED', r: 4 }}
-            activeDot={{ r: 6 }}
-            name="Performance"
+            stroke="#a78bfa"
+            strokeWidth={3}
+            dot={{ fill: '#8b5cf6', stroke: '#a78bfa', strokeWidth: 2, r: 5 }}
+            activeDot={{ r: 7, fill: '#c4b5fd', stroke: '#a78bfa', strokeWidth: 2 }}
+            name="Rendimiento"
           />
         </LineChart>
       </ResponsiveContainer>

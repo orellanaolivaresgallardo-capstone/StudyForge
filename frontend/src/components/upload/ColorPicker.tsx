@@ -15,7 +15,7 @@ export function ColorPicker({
 }: ColorPickerProps) {
   return (
     <div>
-      <label className="block text-xs text-white/60 mb-2">Color</label>
+      <label className="block text-xs text-slate-300 mb-2">Color</label>
       <div className="flex gap-2 flex-wrap">
         {colors.map((color) => (
           <button

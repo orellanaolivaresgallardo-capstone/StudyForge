@@ -34,14 +34,14 @@ export function CreateSpaceForm({
         value={name}
         onChange={(e) => onNameChange(e.target.value)}
         placeholder="Nombre del espacio *"
-        className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
       />
       <textarea
         value={description}
         onChange={(e) => onDescriptionChange(e.target.value)}
         placeholder="Descripción (opcional)"
         rows={2}
-        className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+        className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
       />
       <ColorPicker
         colors={colors}

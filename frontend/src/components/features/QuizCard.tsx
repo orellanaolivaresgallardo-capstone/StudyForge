@@ -113,14 +113,14 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz }) => {
           {getSourceLabel()}
         </span>
         {getSourceName() && (
-          <span className="text-sm text-white/80 truncate" title={getSourceName() || undefined}>
+          <span className="text-sm text-slate-100 truncate" title={getSourceName() || undefined}>
             {getSourceName()}
           </span>
         )}
       </div>
 
       {/* Metadata */}
-      <div className="flex items-center gap-4 text-xs text-white/75 pt-3 border-t border-slate-700">
+      <div className="flex items-center gap-4 text-xs text-slate-200 pt-3 border-t border-slate-700">
         <div className="flex items-center gap-1.5">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path

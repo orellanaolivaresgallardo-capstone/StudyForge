@@ -20,9 +20,12 @@ export default function QuotaWidget({ className = "", compact = false }: QuotaWi
   const { storageInfo, isLoading, error, refreshStorage } = useStorage();
 
   // Cargar información de almacenamiento al montar el componente
+  // Solo si no hay datos previos (evita recargas innecesarias al abrir/cerrar menú móvil)
   useEffect(() => {
-    refreshStorage();
-  }, [refreshStorage]);
+    if (!storageInfo && !isLoading) {
+      refreshStorage();
+    }
+  }, [refreshStorage, storageInfo, isLoading]);
 
   const formatBytes = (bytes: number): string => {
     if (bytes === 0) return "0 B";

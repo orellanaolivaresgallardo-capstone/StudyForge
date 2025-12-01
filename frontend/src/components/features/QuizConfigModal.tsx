@@ -62,13 +62,13 @@ export function QuizConfigModal({
     >
       <div className="space-y-6">
         {/* Descripción */}
-        <p className="text-white/80">
+        <p className="text-slate-100">
           {description}
         </p>
 
         {/* Input de número de preguntas */}
         <div>
-          <label className="block text-white/80 font-semibold mb-2">
+          <label className="block text-slate-100 font-semibold mb-2">
             Número de preguntas
           </label>
           <input
@@ -101,7 +101,7 @@ export function QuizConfigModal({
             disabled={isGenerating}
             className="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-white/20 text-white focus:outline-none focus:border-violet-500 transition-colors disabled:opacity-50"
           />
-          <p className="text-xs text-white/70 mt-1">
+          <p className="text-xs text-slate-300 mt-1">
             Entre 5 y 30 preguntas (recomendado: 10)
           </p>
           {validationError && (
