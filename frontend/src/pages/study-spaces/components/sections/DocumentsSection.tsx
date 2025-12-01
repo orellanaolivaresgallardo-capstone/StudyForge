@@ -35,7 +35,7 @@ export function DocumentsSection({
       {documents.length === 0 ? (
         <EmptyState
           icon={
-            <svg className="w-8 h-8 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -52,7 +52,7 @@ export function DocumentsSection({
           }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 gap-6">
           {documents.map((doc) => (
             <DocumentCard
               key={doc.id}

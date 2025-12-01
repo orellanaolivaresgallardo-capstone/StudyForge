@@ -39,16 +39,16 @@ export function CreateSummaryModal({
     >
       <div className="space-y-6">
         <div>
-          <p className="text-white/80 mb-2">
+          <p className="text-slate-100 mb-2">
             Documento: <strong>{document.title}</strong>
           </p>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-slate-300">
             Se generará un resumen automáticamente usando IA
           </p>
         </div>
 
         <div>
-          <label className="block text-white/80 font-semibold mb-3">
+          <label className="block text-slate-100 font-semibold mb-3">
             Nivel de Expertise
           </label>
           <div className="space-y-2">
@@ -75,7 +75,7 @@ export function CreateSummaryModal({
                   />
                   <div className="flex-1">
                     <div className="font-medium text-white capitalize">{config.label}</div>
-                    <div className="text-sm text-white/60 mt-1">{config.description}</div>
+                    <div className="text-sm text-slate-300 mt-1">{config.description}</div>
                   </div>
                 </label>
               );

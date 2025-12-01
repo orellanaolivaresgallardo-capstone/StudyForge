@@ -60,10 +60,10 @@ export function DeleteSpaceModal({
             </svg>
             <div className="flex-1">
               <h3 className="text-red-400 font-semibold mb-2">¡Atención! Esta acción no se puede deshacer</h3>
-              <p className="text-white/80 text-sm mb-3">
+              <p className="text-slate-100 text-sm mb-3">
                 Al eliminar el espacio <span className="font-bold text-white">"{spaceName}"</span>, se eliminarán permanentemente:
               </p>
-              <ul className="text-white/70 text-sm space-y-1.5 ml-1">
+              <ul className="text-slate-300 text-sm space-y-1.5 ml-1">
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
@@ -83,7 +83,7 @@ export function DeleteSpaceModal({
                   <span>Todo tu <strong>progreso</strong> (intentos y puntuaciones)</span>
                 </li>
               </ul>
-              <p className="text-white/60 text-xs mt-3 italic">
+              <p className="text-slate-300 text-xs mt-3 italic">
                 Los documentos NO se eliminarán, solo serán removidos del espacio.
               </p>
             </div>
@@ -92,7 +92,7 @@ export function DeleteSpaceModal({
 
         {/* Campo de contraseña */}
         <div>
-          <label htmlFor="password-confirm" className="block text-sm font-medium text-white/80 mb-2">
+          <label htmlFor="password-confirm" className="block text-sm font-medium text-slate-100 mb-2">
             Confirma tu contraseña para continuar
           </label>
           <div className="relative">
@@ -103,7 +103,7 @@ export function DeleteSpaceModal({
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Ingresa tu contraseña"
               disabled={isDeleting}
-              className="w-full px-4 py-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full px-4 py-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               autoComplete="current-password"
               required
             />
@@ -111,7 +111,7 @@ export function DeleteSpaceModal({
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
               disabled={isDeleting}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 disabled:opacity-50 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-slate-300 disabled:opacity-50 transition-colors"
               aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showPassword ? (

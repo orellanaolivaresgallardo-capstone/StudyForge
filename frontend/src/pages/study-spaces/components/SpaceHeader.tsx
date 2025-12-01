@@ -30,7 +30,7 @@ export default function SpaceHeader({ space, stats, onEdit, onCreateQuiz }: Spac
             {space.name}
           </h1>
           {space.description && (
-            <p className="text-white/60 mt-2">{space.description}</p>
+            <p className="text-slate-300 mt-2">{space.description}</p>
           )}
         </div>
         <button
@@ -54,19 +54,19 @@ export default function SpaceHeader({ space, stats, onEdit, onCreateQuiz }: Spac
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <div className="text-2xl font-bold text-violet-400">{stats.num_documents}</div>
-            <div className="text-sm text-white/60">Documentos</div>
+            <div className="text-sm text-slate-300">Documentos</div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <div className="text-2xl font-bold text-violet-400">{stats.num_summaries}</div>
-            <div className="text-sm text-white/60">Resúmenes</div>
+            <div className="text-sm text-slate-300">Resúmenes</div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <div className="text-2xl font-bold text-violet-400">{stats.num_quizzes}</div>
-            <div className="text-sm text-white/60">Quizzes</div>
+            <div className="text-sm text-slate-300">Quizzes</div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <div className="text-2xl font-bold text-violet-400">{stats.avg_score.toFixed(1)}%</div>
-            <div className="text-sm text-white/60">Promedio</div>
+            <div className="text-sm text-slate-300">Promedio</div>
           </div>
         </div>
       )}

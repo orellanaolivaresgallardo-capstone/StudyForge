@@ -66,7 +66,7 @@ export function CreateEditSpaceModal({
       <div className="space-y-6">
         {/* Name */}
         <div>
-          <label className="block text-white/80 font-semibold mb-2">
+          <label className="block text-slate-100 font-semibold mb-2">
             Nombre del Espacio *
           </label>
           <input
@@ -80,13 +80,13 @@ export function CreateEditSpaceModal({
 
         {/* Description */}
         <div>
-          <label className="block text-white/80 font-semibold mb-2">
-            Descripción (opcional)
+          <label className="block text-slate-100 font-semibold mb-2">
+            Contexto del espacio (opcional)
           </label>
           <textarea
             value={spaceDescription}
             onChange={(e) => setSpaceDescription(e.target.value)}
-            placeholder="Describe el contenido de este espacio..."
+            placeholder="Ej: Curso nivel universitario de cálculo diferencial e integral, enfoque en aplicaciones prácticas"
             rows={3}
             className="w-full bg-slate-900/50 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors resize-none"
           />
@@ -94,7 +94,7 @@ export function CreateEditSpaceModal({
 
         {/* Color */}
         <div>
-          <label className="block text-white/80 font-semibold mb-3">
+          <label className="block text-slate-100 font-semibold mb-3">
             Color del Espacio
           </label>
           <div className="grid grid-cols-6 gap-3">

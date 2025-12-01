@@ -31,7 +31,7 @@ export function AddResourceModal({
           <LoadingSpinner size="sm" />
         </div>
       ) : resources.length === 0 ? (
-        <p className="text-white/60 text-center py-8">{emptyMessage}</p>
+        <p className="text-slate-300 text-center py-8">{emptyMessage}</p>
       ) : (
         <div className="space-y-3">
           {resources.map((resource) => (
@@ -42,7 +42,7 @@ export function AddResourceModal({
             >
               <h3 className="font-semibold text-white">{resource.title}</h3>
               {'file_name' in resource && (
-                <p className="text-sm text-white/60 mt-1">{resource.file_name}</p>
+                <p className="text-sm text-slate-300 mt-1">{resource.file_name}</p>
               )}
               {'topics' in resource && resource.topics && (
                 <div className="flex gap-2 flex-wrap mt-2">
@@ -55,7 +55,7 @@ export function AddResourceModal({
                     </span>
                   ))}
                   {resource.topics.length > 3 && (
-                    <span className="px-2 py-1 bg-white/10 text-white/60 rounded text-xs">
+                    <span className="px-2 py-1 bg-white/10 text-slate-300 rounded text-xs">
                       +{resource.topics.length - 3}
                     </span>
                   )}

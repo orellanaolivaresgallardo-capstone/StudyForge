@@ -109,7 +109,7 @@ export default function StudySpacesPage() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-white">Espacios de Estudio</h1>
-            <p className="text-white/60 mt-2">
+            <p className="text-slate-300 mt-2">
               Organiza tus documentos y resúmenes en espacios temáticos
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function StudySpacesPage() {
           <EmptyState
             icon={
               <svg
-                className="w-8 h-8 text-white/60"
+                className="w-8 h-8 text-slate-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

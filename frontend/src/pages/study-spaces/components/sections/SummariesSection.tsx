@@ -25,7 +25,7 @@ export function SummariesSection({
       {summaries.length === 0 ? (
         <EmptyState
           icon={
-            <svg className="w-8 h-8 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
