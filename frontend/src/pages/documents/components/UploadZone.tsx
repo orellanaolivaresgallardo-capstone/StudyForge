@@ -58,10 +58,10 @@ export function UploadZone({ maxFileSizeMB, onFileSelect }: Props) {
           className="hidden"
           onChange={handleFileInputChange}
         />
-        <p className="text-white/80">
+        <p className="text-slate-100">
           Arrastra un <strong>PDF, DOCX, PPTX o TXT</strong> o haz click para seleccionar
         </p>
-        <p className="text-xs text-white/60 mt-1">
+        <p className="text-xs text-slate-300 mt-1">
           Máximo {maxFileSizeMB} MB por archivo
         </p>
       </div>

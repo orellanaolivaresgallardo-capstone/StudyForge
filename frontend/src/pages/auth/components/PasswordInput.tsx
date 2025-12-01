@@ -48,7 +48,7 @@ export function PasswordInput({
           minLength={minLength}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white placeholder-white/40 shadow-sm outline-none ring-violet-400/30 transition focus:border-violet-400 focus:ring-4"
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white placeholder-slate-400 shadow-sm outline-none ring-violet-400/30 transition focus:border-violet-400 focus:ring-4"
           placeholder={placeholder}
           aria-invalid={!!error}
           aria-describedby={
@@ -58,7 +58,7 @@ export function PasswordInput({
         <button
           type="button"
           onClick={() => setShowPassword((s) => !s)}
-          className="absolute inset-y-0 right-2 my-auto grid h-9 w-10 place-items-center rounded-lg text-white/60 hover:bg-white/10"
+          className="absolute inset-y-0 right-2 my-auto grid h-9 w-10 place-items-center rounded-lg text-slate-300 hover:bg-white/10"
           aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
         >
           {!showPassword ? (
@@ -83,7 +83,7 @@ export function PasswordInput({
         </button>
       </div>
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-white/60">
+        <p id={`${id}-hint`} className="mt-1 text-xs text-slate-300">
           {hint}
         </p>
       )}

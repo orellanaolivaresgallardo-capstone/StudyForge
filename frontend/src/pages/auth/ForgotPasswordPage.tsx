@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center relative overflow-hidden">
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
         aria-hidden="true"
       />
 
@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
           Recuperar contraseña
         </h1>
-        <p className="mt-2 text-white/60">
+        <p className="mt-2 text-slate-300">
           Ingresa tu correo electrónico y te enviaremos un enlace para
           restablecer tu contraseña.
         </p>
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
                 placeholder="tu@mail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
               />
             </div>
 
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
         )}
 
         {/* Links secundarios */}
-        <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-white/60 gap-3">
+        <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-slate-300 gap-3">
           <Link to="/login" className="text-violet-400 hover:text-violet-300 transition-colors">
             Volver al login
           </Link>
@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        <p className="mt-6 text-xs text-white/60">
+        <p className="mt-6 text-xs text-slate-300">
           Revisa también tu carpeta de spam si no encuentras el email.
         </p>
       </div>

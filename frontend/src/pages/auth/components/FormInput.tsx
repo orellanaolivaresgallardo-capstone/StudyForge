@@ -51,13 +51,13 @@ export function FormInput({
         pattern={pattern}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 shadow-sm outline-none ring-violet-400/30 transition focus:border-violet-400 focus:ring-4"
+        className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 shadow-sm outline-none ring-violet-400/30 transition focus:border-violet-400 focus:ring-4"
         placeholder={placeholder}
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
       />
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-white/60">
+        <p id={`${id}-hint`} className="mt-1 text-xs text-slate-300">
           {hint}
         </p>
       )}

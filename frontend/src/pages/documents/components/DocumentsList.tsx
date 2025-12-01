@@ -32,7 +32,7 @@ export function DocumentsList({ documents, isLoading, onDelete }: Props) {
     <section className="mx-auto max-w-3xl">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-0 mb-4">
         <h2 className="text-2xl font-bold tracking-tight text-white">Mis documentos</h2>
-        <div className="text-sm text-white/60">
+        <div className="text-sm text-slate-300">
           Total: <span className="text-white font-medium">{documents.length}</span>
         </div>
       </div>
@@ -41,7 +41,7 @@ export function DocumentsList({ documents, isLoading, onDelete }: Props) {
         <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="w-6 h-6 text-white/60"
+            className="w-6 h-6 text-slate-300"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -55,7 +55,7 @@ export function DocumentsList({ documents, isLoading, onDelete }: Props) {
           </svg>
           <div>
             <div className="font-medium text-white">Aún no tienes documentos</div>
-            <div className="text-white/60 text-xs">Sube uno arriba para comenzar</div>
+            <div className="text-slate-300 text-xs">Sube uno arriba para comenzar</div>
           </div>
         </div>
       ) : (
@@ -68,7 +68,7 @@ export function DocumentsList({ documents, isLoading, onDelete }: Props) {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-white truncate">{doc.title}</h3>
-                  <p className="text-sm text-white/60 mt-1">
+                  <p className="text-sm text-slate-300 mt-1">
                     {doc.file_type.toUpperCase()} • {Math.round(doc.file_size_bytes / 1024)} KB
                     {" • "}
                     {new Date(doc.created_at).toLocaleDateString("es-ES")}

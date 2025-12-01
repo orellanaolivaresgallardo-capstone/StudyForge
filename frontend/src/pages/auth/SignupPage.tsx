@@ -94,7 +94,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
         aria-hidden="true"
       />
 
@@ -105,7 +105,7 @@ export default function SignupPage() {
               <h1 className="text-4xl font-extrabold tracking-tight text-white">
                 Crear cuenta
               </h1>
-              <p className="mt-2 text-white/60">
+              <p className="mt-2 text-slate-300">
                 ¿Ya tienes cuenta?{" "}
                 <Link
                   to="/login"

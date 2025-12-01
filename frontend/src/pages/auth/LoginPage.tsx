@@ -61,14 +61,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center relative overflow-hidden font-[Inter,sans-serif]">
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
         aria-hidden="true"
       />
 
       {/* Card */}
       <div className="relative w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-xl p-8">
         <h1 className="text-3xl font-extrabold text-white">Iniciar sesión</h1>
-        <p className="mt-2 text-white/60">
+        <p className="mt-2 text-slate-300">
           Accede a tu cuenta o{" "}
           <Link to="/signup" className="text-violet-400 hover:text-violet-300 transition-colors">
             crea una nueva
@@ -89,7 +89,7 @@ export default function LoginPage() {
               placeholder="ejemplo@mail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
               aria-invalid={!!emailErr}
               aria-describedby="email-error"
             />
@@ -112,7 +112,7 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 shadow-sm focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20"
               aria-invalid={!!passErr}
               aria-describedby="pass-error"
             />
@@ -153,7 +153,7 @@ export default function LoginPage() {
             </span>
           </button>
 
-          <p className="text-center text-xs text-white/60">
+          <p className="text-center text-xs text-slate-300">
             Al iniciar sesión aceptas nuestros términos de servicio y política de privacidad.
           </p>
         </form>

@@ -127,10 +127,10 @@ export default function DocumentsPage() {
         >
           <div className="space-y-6">
             <div className="space-y-2">
-              <p className="text-white/80">
+              <p className="text-slate-100">
                 ¿Estás seguro de que quieres eliminar <strong>"{deleteModal.title}"</strong>?
               </p>
-              <p className="text-sm text-white/60">
+              <p className="text-sm text-slate-300">
                 Esta acción no se puede deshacer.
               </p>
             </div>
