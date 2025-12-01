@@ -109,14 +109,10 @@ def get_user_summary(
         QuizAttempt.completed_at.isnot(None),
     ).scalar()
 
-    # Espacios de estudio únicos donde el usuario ha completado quizzes
-    unique_spaces = db.query(func.count(func.distinct(Quiz.study_space_id))).join(
-        QuizAttempt, Quiz.id == QuizAttempt.quiz_id
-    ).filter(
-        QuizAttempt.user_id == current_user.id,
-        QuizAttempt.completed_at.isnot(None),
-        Quiz.study_space_id.isnot(None),  # Asegurar que tenga espacio
-    ).scalar()
+    # Total de espacios de estudio creados por el usuario
+    unique_spaces = db.query(StudySpace).filter(
+        StudySpace.user_id == current_user.id
+    ).count()
 
     return {
         "total_summaries": total_summaries,

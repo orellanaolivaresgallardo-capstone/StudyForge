@@ -277,4 +277,5 @@ def get_quiz_results(
         incorrect_answers=incorrect_count,
         completed_at=attempt.completed_at,
         questions=questions_details,
+        study_space_snapshot=attempt.study_space_snapshot,
     )

@@ -162,7 +162,19 @@ async def upload_document(
         }
     )
 
-    return document
+    # Construir respuesta con study_space_names
+    return DocumentDetailResponse(
+        id=document.id,
+        user_id=document.user_id,
+        title=document.title,
+        file_name=document.file_name,
+        file_type=document.file_type,
+        file_size_bytes=document.file_size_bytes,
+        created_at=document.created_at,
+        updated_at=document.updated_at,
+        extracted_text=document.extracted_text,
+        study_space_names=[space.name for space in document.study_spaces]
+    )
 
 
 @router.get("", response_model=DocumentListResponse)

@@ -99,3 +99,7 @@ class QuizResultResponse(BaseModel):
     incorrect_answers: int
     completed_at: datetime
     questions: List[QuestionResultDetail]
+    study_space_snapshot: Optional[StudySpaceSnapshotData] = Field(
+        None,
+        description="Snapshot del espacio de estudio (para navegación)"
+    )
