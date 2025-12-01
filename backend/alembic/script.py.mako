@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB
+from app.db import JSONBType
 ${imports if imports else ""}
 
 # revision identifiers, used by Alembic.

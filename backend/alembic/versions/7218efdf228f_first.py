@@ -1,19 +1,19 @@
 """first
 
-Revision ID: cad94131dda7
-Revises:
-Create Date: 2025-12-01 02:09:48.609167
+Revision ID: 7218efdf228f
+Revises: 
+Create Date: 2025-12-01 03:27:11.352511
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB
-
+from app.db import JSONBType
+from app.db import JSONBType
 
 # revision identifiers, used by Alembic.
-revision: str = 'cad94131dda7'
+revision: str = '7218efdf228f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -71,8 +71,8 @@ def upgrade() -> None:
     op.create_table('study_space_documents',
     sa.Column('study_space_id', sa.UUID(), nullable=False),
     sa.Column('document_id', sa.UUID(), nullable=False),
-    sa.ForeignKeyConstraint(['document_id'], ['studyforge.documents.id'], name=op.f('fk_study_space_documents_document_id_documents')),
-    sa.ForeignKeyConstraint(['study_space_id'], ['studyforge.study_spaces.id'], name=op.f('fk_study_space_documents_study_space_id_study_spaces')),
+    sa.ForeignKeyConstraint(['document_id'], ['studyforge.documents.id'], name=op.f('fk_study_space_documents_document_id_documents'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['study_space_id'], ['studyforge.study_spaces.id'], name=op.f('fk_study_space_documents_study_space_id_study_spaces'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('study_space_id', 'document_id', name=op.f('pk_study_space_documents')),
     schema='studyforge'
     )
@@ -82,10 +82,10 @@ def upgrade() -> None:
     sa.Column('document_id', sa.UUID(), nullable=True),
     sa.Column('study_space_id', sa.UUID(), nullable=False),
     sa.Column('title', sa.String(length=255), nullable=False),
-    sa.Column('content', JSONB(), nullable=False),
+    sa.Column('content', JSONBType(), nullable=False),
     sa.Column('expertise_level', sa.String(length=20), nullable=False),
-    sa.Column('topics', JSONB(), nullable=False),
-    sa.Column('key_concepts', JSONB(), nullable=False),
+    sa.Column('topics', JSONBType(), nullable=False),
+    sa.Column('key_concepts', JSONBType(), nullable=False),
     sa.Column('source_document_title', sa.String(length=255), nullable=True),
     sa.Column('source_document_filename', sa.String(length=255), nullable=True),
     sa.Column('document_state', sa.String(length=50), nullable=False),
@@ -108,11 +108,11 @@ def upgrade() -> None:
     sa.Column('source_type', sa.String(length=20), nullable=False),
     sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('difficulty_level', sa.Integer(), nullable=False),
-    sa.Column('questions', JSONB(), nullable=False),
+    sa.Column('questions', JSONBType(), nullable=False),
     sa.Column('source_document_id', sa.UUID(), nullable=True),
     sa.Column('source_summary_id', sa.UUID(), nullable=True),
-    sa.Column('source_names', JSONB(), nullable=True),
-    sa.Column('source_metadata', JSONB(), nullable=True),
+    sa.Column('source_names', JSONBType(), nullable=True),
+    sa.Column('source_metadata', JSONBType(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.CheckConstraint("(source_type = 'document' AND source_document_id IS NOT NULL AND source_summary_id IS NULL) OR (source_type = 'summary' AND source_summary_id IS NOT NULL AND source_document_id IS NULL) OR (source_type = 'study_space' AND source_document_id IS NULL AND source_summary_id IS NULL)", name=op.f('ck_quizzes_single_source_type')),
     sa.ForeignKeyConstraint(['source_document_id'], ['studyforge.documents.id'], name=op.f('fk_quizzes_source_document_id_documents'), ondelete='SET NULL'),
@@ -133,10 +133,10 @@ def upgrade() -> None:
     sa.Column('started_at', sa.DateTime(), nullable=False),
     sa.Column('completed_at', sa.DateTime(), nullable=True),
     sa.Column('score', sa.Float(), nullable=True),
-    sa.Column('correct_answers', JSONB(), nullable=False),
-    sa.Column('user_answers', JSONB(), nullable=False),
-    sa.Column('quiz_snapshot', JSONB(), nullable=True),
-    sa.Column('study_space_snapshot', JSONB(), nullable=True),
+    sa.Column('correct_answers', JSONBType(), nullable=False),
+    sa.Column('user_answers', JSONBType(), nullable=False),
+    sa.Column('quiz_snapshot', JSONBType(), nullable=True),
+    sa.Column('study_space_snapshot', JSONBType(), nullable=True),
     sa.Column('quiz_title', sa.String(length=255), nullable=False),
     sa.Column('quiz_state', sa.String(length=20), nullable=False),
     sa.ForeignKeyConstraint(['quiz_id'], ['studyforge.quizzes.id'], name=op.f('fk_quiz_attempts_quiz_id_quizzes'), ondelete='CASCADE'),

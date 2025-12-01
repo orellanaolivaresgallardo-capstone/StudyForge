@@ -53,7 +53,7 @@ class StudySpace(Base):
 study_space_documents = Table(
     'study_space_documents',
     Base.metadata,
-    Column('study_space_id', UUID(as_uuid=True), ForeignKey('studyforge.study_spaces.id'), primary_key=True),
-    Column('document_id', UUID(as_uuid=True), ForeignKey('studyforge.documents.id'), primary_key=True),
+    Column('study_space_id', UUID(as_uuid=True), ForeignKey('studyforge.study_spaces.id', ondelete='CASCADE'), primary_key=True),
+    Column('document_id', UUID(as_uuid=True), ForeignKey('studyforge.documents.id', ondelete='CASCADE'), primary_key=True),
     schema='studyforge'
 )

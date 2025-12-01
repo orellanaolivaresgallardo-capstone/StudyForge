@@ -14,11 +14,24 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Importar Base y todos los modelos
-from app.db import Base
+from app.db import Base, JSONBType
 from app.models import *
 
 # Metadata para autogenerate
 target_metadata = Base.metadata
+
+
+def render_item(type_, obj, autogen_context):
+    """Configurar cómo se renderizan tipos personalizados en migraciones."""
+    # Si es JSONBType, renderizar correctamente con import
+    if type_ == "type" and isinstance(obj, JSONBType):
+        # Agregar import necesario al inicio del archivo
+        autogen_context.imports.add("from app.db import JSONBType")
+        # Retornar string de cómo debe aparecer en la migración
+        return "JSONBType()"
+
+    # Default: dejar que Alembic lo maneje
+    return False
 
 # Constantes de schema
 SCHEMA = "studyforge"
@@ -53,6 +66,7 @@ COMMON_KW = dict(
     version_table=VERSION_TABLE,
     version_table_schema=SCHEMA,
     include_object=include_object,
+    render_item=render_item,  # Renderizar tipos personalizados correctamente
 )
 
 
