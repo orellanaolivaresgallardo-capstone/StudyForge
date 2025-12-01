@@ -72,7 +72,7 @@ class Summary(Base):
     user: Mapped["User"] = relationship(back_populates="summaries")
     document: Mapped["Document"] = relationship()  # No back_populates - nullable via FK definition
     study_space: Mapped["StudySpace"] = relationship(back_populates="summaries")
-    quizzes: Mapped[list["Quiz"]] = relationship(back_populates="summary", cascade="all, delete-orphan")
+    quizzes: Mapped[list["Quiz"]] = relationship(back_populates="summary")  # No cascade - FK maneja SET NULL automáticamente
 
     def __repr__(self):
         return f"<Summary {self.title} - {self.expertise_level}>"
