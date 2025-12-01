@@ -30,7 +30,7 @@ export function KeyConceptsSection({ keyConcepts }: Props) {
               <span className="text-violet-400">•</span>
               {item.concept}
             </h3>
-            <p className="text-white/80 leading-relaxed pl-6">{item.definition}</p>
+            <p className="text-slate-100 leading-relaxed pl-6">{item.definition}</p>
           </div>
         ))}
       </div>

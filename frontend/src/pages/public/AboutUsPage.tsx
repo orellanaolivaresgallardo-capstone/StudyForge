@@ -6,7 +6,7 @@ export default function AboutUsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
+        className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-cyan-600/10"
         aria-hidden="true"
       />
       <PublicHeader currentPage="aboutus" subtitle="Asistente de estudio con IA" />
@@ -21,14 +21,14 @@ export default function AboutUsPage() {
           <h1 className="text-4xl md:text-5xl font-black leading-tight text-white">
             Conoce al equipo detrás de la <span className="text-violet-400">nueva experiencia</span> de estudio con IA
           </h1>
-          <p className="mt-4 text-white/60 max-w-3xl">
+          <p className="mt-4 text-slate-300 max-w-3xl">
             Combinamos ingeniería, diseño y pedagogía para crear herramientas que convierten información compleja
             en aprendizaje claro y medible.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <span className="bg-white/10 text-white/80 text-xs px-3 py-1.5 rounded-full">IA responsable</span>
-            <span className="bg-white/10 text-white/80 text-xs px-3 py-1.5 rounded-full">Diseño centrado en el estudiante</span>
-            <span className="bg-white/10 text-white/80 text-xs px-3 py-1.5 rounded-full">Evidencia y métricas</span>
+            <span className="bg-white/10 text-slate-100 text-xs px-3 py-1.5 rounded-full">IA responsable</span>
+            <span className="bg-white/10 text-slate-100 text-xs px-3 py-1.5 rounded-full">Diseño centrado en el estudiante</span>
+            <span className="bg-white/10 text-slate-100 text-xs px-3 py-1.5 rounded-full">Evidencia y métricas</span>
           </div>
         </div>
       </section>
@@ -38,19 +38,19 @@ export default function AboutUsPage() {
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
             <h3 className="text-xl font-bold text-white">Nuestra misión</h3>
-            <p className="mt-2 text-white/60">
+            <p className="mt-2 text-slate-300">
               Democratizar el aprendizaje con tecnología que resuma, explique y evalúe de forma adaptativa, cuidando la privacidad.
             </p>
           </div>
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
             <h3 className="text-xl font-bold text-white">Nuestra visión</h3>
-            <p className="mt-2 text-white/60">
+            <p className="mt-2 text-slate-300">
               Ser la plataforma que convierte materiales dispersos en rutas de estudio personalizadas y medibles en todo LATAM.
             </p>
           </div>
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
             <h3 className="text-xl font-bold text-white">Nuestros principios</h3>
-            <ul className="mt-2 space-y-2 text-white/60">
+            <ul className="mt-2 space-y-2 text-slate-300">
               <li>• Claridad por sobre complejidad</li>
               <li>• Seguridad y transparencia</li>
               <li>• Iteración continua guiada por datos</li>
@@ -66,17 +66,17 @@ export default function AboutUsPage() {
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
             <div className="text-violet-400 text-sm font-semibold">2025 — Q1</div>
             <h4 className="mt-1 font-bold text-white">Prototipo y walking skeleton</h4>
-            <p className="mt-2 text-white/60">Carga de documentos, resúmenes base y demo funcional.</p>
+            <p className="mt-2 text-slate-300">Carga de documentos, resúmenes base y demo funcional.</p>
           </div>
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
             <div className="text-violet-400 text-sm font-semibold">2025 — Q2</div>
             <h4 className="mt-1 font-bold text-white">Quizzes adaptativos</h4>
-            <p className="mt-2 text-white/60">Banco dinámico de preguntas y métricas de progreso.</p>
+            <p className="mt-2 text-slate-300">Banco dinámico de preguntas y métricas de progreso.</p>
           </div>
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
             <div className="text-violet-400 text-sm font-semibold">2025 — Q3</div>
             <h4 className="mt-1 font-bold text-white">Escalamiento y seguridad</h4>
-            <p className="mt-2 text-white/60">Roles, cifrado en tránsito y despliegue en la nube.</p>
+            <p className="mt-2 text-slate-300">Roles, cifrado en tránsito y despliegue en la nube.</p>
           </div>
         </div>
       </section>
@@ -98,10 +98,10 @@ export default function AboutUsPage() {
               />
               <div>
                 <h3 className="font-semibold text-white">Martín Orellana</h3>
-                <p className="text-white/60 text-sm">Backend Developer & Product Owner</p>
+                <p className="text-slate-300 text-sm">Backend Developer & Product Owner</p>
               </div>
             </div>
-            <ul className="mt-4 text-sm text-white/60 space-y-1">
+            <ul className="mt-4 text-sm text-slate-300 space-y-1">
               <li>• API segura y trazabilidad</li>
               <li>• Integración con BD y storage</li>
             </ul>
@@ -120,10 +120,10 @@ export default function AboutUsPage() {
               />
               <div>
                 <h3 className="font-semibold text-white">Luis Olivarez</h3>
-                <p className="text-white/60 text-sm">Frontend Developer</p>
+                <p className="text-slate-300 text-sm">Frontend Developer</p>
               </div>
             </div>
-            <ul className="mt-4 text-sm text-white/60 space-y-1">
+            <ul className="mt-4 text-sm text-slate-300 space-y-1">
               <li>• UI accesible y responsiva</li>
               <li>• Performance y DX</li>
             </ul>
@@ -142,10 +142,10 @@ export default function AboutUsPage() {
               />
               <div>
                 <h3 className="font-semibold text-white">Sebastián Gallardo</h3>
-                <p className="text-white/60 text-sm">IA Developer & Scrum Master</p>
+                <p className="text-slate-300 text-sm">IA Developer & Scrum Master</p>
               </div>
             </div>
-            <ul className="mt-4 text-sm text-white/60 space-y-1">
+            <ul className="mt-4 text-sm text-slate-300 space-y-1">
               <li>• Resúmenes y generación</li>
               <li>• Evaluaciones adaptativas</li>
             </ul>
@@ -161,22 +161,22 @@ export default function AboutUsPage() {
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-3xl font-black text-violet-400">3x</div>
-                <div className="text-xs text-white/60">Velocidad de estudio</div>
+                <div className="text-xs text-slate-300">Velocidad de estudio</div>
               </div>
               <div>
                 <div className="text-3xl font-black text-violet-400">90%</div>
-                <div className="text-xs text-white/60">Comprensión promedio</div>
+                <div className="text-xs text-slate-300">Comprensión promedio</div>
               </div>
               <div>
                 <div className="text-3xl font-black text-violet-400">24/7</div>
-                <div className="text-xs text-white/60">Disponibilidad</div>
+                <div className="text-xs text-slate-300">Disponibilidad</div>
               </div>
             </div>
           </div>
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 flex flex-col justify-between">
             <div>
               <h3 className="text-xl font-bold text-white">¿Te sumas?</h3>
-              <p className="mt-2 text-white/60">Buscamos testers de la beta y alianzas con instituciones.</p>
+              <p className="mt-2 text-slate-300">Buscamos testers de la beta y alianzas con instituciones.</p>
             </div>
             <div className="mt-4">
               <Link to="/signup" className="inline-block bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-5 py-3 font-semibold transition-colors">
@@ -189,7 +189,7 @@ export default function AboutUsPage() {
 
       {/* Footer */}
       <footer className="relative border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-8 text-sm text-white/60 text-center">
+        <div className="max-w-7xl mx-auto px-6 py-8 text-sm text-slate-300 text-center">
           <span>© {new Date().getFullYear()} StudyForge. Todos los derechos reservados.</span>
         </div>
       </footer>

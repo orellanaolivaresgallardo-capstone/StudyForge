@@ -51,7 +51,7 @@ export function CreateSummaryModal({
       <div className="space-y-6">
         {/* Title */}
         <div>
-          <label className="block text-white/80 font-semibold mb-2">
+          <label className="block text-slate-100 font-semibold mb-2">
             Título (opcional)
           </label>
           <input
@@ -65,7 +65,7 @@ export function CreateSummaryModal({
 
         {/* Expertise Level */}
         <div>
-          <label className="block text-white/80 font-semibold mb-2">
+          <label className="block text-slate-100 font-semibold mb-2">
             Nivel de experiencia
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -76,7 +76,7 @@ export function CreateSummaryModal({
                 className={`px-4 py-3 rounded-xl font-medium transition-all ${
                   expertiseLevel === level
                     ? 'bg-violet-600 text-white'
-                    : 'bg-white/5 text-white/60 border border-white/10 hover:border-violet-400/50'
+                    : 'bg-white/5 text-slate-300 border border-white/10 hover:border-violet-400/50'
                 }`}
               >
                 {EXPERTISE_LEVELS[level].label}
@@ -87,11 +87,11 @@ export function CreateSummaryModal({
 
         {/* Study Space Selection */}
         <div>
-          <label className="block text-white/80 font-semibold mb-2">
+          <label className="block text-slate-100 font-semibold mb-2">
             Espacio de estudio *
           </label>
           {studySpaces.length === 0 ? (
-            <div className="text-center py-8 text-white/60">
+            <div className="text-center py-8 text-slate-300">
               No tienes espacios de estudio. Crea uno primero.
             </div>
           ) : (
@@ -112,11 +112,11 @@ export function CreateSummaryModal({
 
         {/* Document Selection */}
         <div>
-          <label className="block text-white/80 font-semibold mb-2">
+          <label className="block text-slate-100 font-semibold mb-2">
             Selecciona un documento *
           </label>
           {documents.length === 0 ? (
-            <div className="text-center py-8 text-white/60">
+            <div className="text-center py-8 text-slate-300">
               No tienes documentos. Sube algunos primero.
             </div>
           ) : (
@@ -145,7 +145,7 @@ export function CreateSummaryModal({
                     </div>
                     <div className="flex-1">
                       <p className="text-white font-medium">{doc.title}</p>
-                      <p className="text-xs text-white/60">
+                      <p className="text-xs text-slate-300">
                         {doc.file_type.toUpperCase()} •{' '}
                         {(doc.file_size_bytes / 1024).toFixed(1)} KB
                       </p>

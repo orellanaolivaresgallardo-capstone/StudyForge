@@ -40,7 +40,7 @@ export function SummaryHeader({ summary, onDelete, onGenerateQuiz }: Props) {
     <>
       <button
         onClick={() => navigate("/summaries")}
-        className="flex items-center gap-2 text-white/60 hover:text-violet-400 transition-colors"
+        className="flex items-center gap-2 text-slate-300 hover:text-violet-400 transition-colors"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -69,7 +69,7 @@ export function SummaryHeader({ summary, onDelete, onGenerateQuiz }: Props) {
           </button>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-white/60 mb-6">
+        <div className="flex items-center gap-4 text-sm text-slate-300 mb-6">
           <span className="flex items-center gap-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

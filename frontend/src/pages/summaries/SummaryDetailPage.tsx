@@ -110,8 +110,8 @@ export default function SummaryDetailPage() {
       <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Confirmar eliminación" size="sm">
         <div className="space-y-6">
           <div className="space-y-2">
-            <p className="text-white/80">¿Estás seguro de que deseas eliminar este resumen? Esta acción no se puede deshacer.</p>
-            <p className="text-sm text-white/60">Los documentos asociados <strong>no se eliminarán</strong> y podrás usarlos en otros resúmenes.</p>
+            <p className="text-slate-100">¿Estás seguro de que deseas eliminar este resumen? Esta acción no se puede deshacer.</p>
+            <p className="text-sm text-slate-300">Los documentos asociados <strong>no se eliminarán</strong> y podrás usarlos en otros resúmenes.</p>
           </div>
           <div className="flex gap-3 pt-2">
             <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors">

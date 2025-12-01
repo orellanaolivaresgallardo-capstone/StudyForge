@@ -34,7 +34,7 @@ export function DocumentsSection({ document }: Props) {
               <p className="font-semibold text-white group-hover:text-violet-400 transition-colors truncate">
                 {document.title}
               </p>
-              <p className="text-sm text-white/60 mt-1">
+              <p className="text-sm text-slate-300 mt-1">
                 {document.file_type.toUpperCase()} • {(document.file_size_bytes / 1024).toFixed(1)} KB
               </p>
             </div>

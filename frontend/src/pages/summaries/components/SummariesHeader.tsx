@@ -13,7 +13,7 @@ export function SummariesHeader({ onCreateSummary }: SummariesHeaderProps) {
         <h1 className="text-3xl font-extrabold tracking-tight text-white">
           Mis Resúmenes
         </h1>
-        <p className="text-white/60 mt-1">
+        <p className="text-slate-300 mt-1">
           Resúmenes generados por IA adaptados a tu nivel
         </p>
       </div>

@@ -119,7 +119,7 @@ export default function SummariesPage() {
         <EmptyState
           icon={
             <svg
-              className="w-10 h-10 text-white/60"
+              className="w-10 h-10 text-slate-300"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
